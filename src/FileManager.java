@@ -60,10 +60,6 @@ public class FileManager {
         return res.toString();
     }
 
-    void overwriteTemp(String something) {
-
-    }
-
     void printFilePaths() {
         for (String f : filePaths) {
             System.out.println(f);

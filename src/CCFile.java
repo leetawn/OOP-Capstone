@@ -29,9 +29,18 @@ public class CCFile {
     }
 
     void overwrite() {
-        System.out.println("Path: " + tempFile.getAbsolutePath());
-        try (BufferedReader br = new BufferedReader(new FileReader(path + ".tmp"));
-            BufferedWriter bw = new BufferedWriter(new FileWriter(path))) {
+        File original = new File(path);
+        File temp = new File(path + ".tmp");
+        // Extract name + extension
+        String name = original.getName();
+        int dotIndex = name.lastIndexOf('.');
+        String baseName = (dotIndex == -1) ? name : name.substring(0, dotIndex);
+        String ext = (dotIndex == -1) ? "" : name.substring(dotIndex);
+
+        // Create new filename: "filename (overwritten).ext"
+        File overwrittenFile = new File(original.getParent(), baseName + " (overwritten)" + ext);
+        try (BufferedReader br = new BufferedReader(new FileReader(original));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(overwrittenFile))) {
             String s;
             while ((s = br.readLine()) != null) {
                 bw.write(s);
@@ -40,6 +49,8 @@ public class CCFile {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        deleteFile(tempFile.getPath() + ".tmp");
+//        if (original.delete()) {
+//            temp.renameTo(original);
+//        }
     }
 }
