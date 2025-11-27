@@ -1,46 +1,41 @@
 import java.lang.*;
 import java.io.*;
 import java.util.*;
+
+/*
+    Some kind of File Wrapper
+    Initially creates a temporary file for users to edit.
+    Temporary files are deleted on save.
+    On save, a final version of the file is made.
+ */
+
 public class CCFile {
     private String path;
+    private String filename;
     private File tempFile;
-    private String finalFilename;
+    private File finalFile;
 
 
-    public CCFile(String path) {
+    public CCFile(String path, String filename) throws IOException {
         this.path = path;
-        tempFile = new File(path);
-        finalFilename = tempFile.getName();
-        //System.out.println("APAPAPAPPA: " + path);
-        try {
-            tempFile.createNewFile();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
+        this.filename = filename;
+        tempFile = new File(path, filename);
 
-    void deleteFile(String path) {
-        File delFile = new File(path);
-        if (delFile.delete()) {
-            System.out.println("Temporary file deleted!");
+        if (tempFile.exists()) {
+            System.out.println("Existing file loaded: " + tempFile.getAbsolutePath());
+        } else if (tempFile.createNewFile()) {
+            System.out.println("Temporary file created: " + tempFile.getAbsolutePath());
         } else {
-            System.out.println("Error in deleting temporary file.");
+            throw new IOException("Failed to create file for unknown reason!");
         }
     }
 
     void overwrite() {
-        File original = new File(path);
-        File temp = new File(path + ".tmp");
-        // Extract name + extension
-        String name = original.getName();
-        int dotIndex = name.lastIndexOf('.');
-        String baseName = (dotIndex == -1) ? name : name.substring(0, dotIndex);
-        String ext = (dotIndex == -1) ? "" : name.substring(dotIndex);
-
-        // Create new filename: "filename (overwritten).ext"
-        File overwrittenFile = new File(original.getParent(), baseName + " (overwritten)" + ext);
-        try (BufferedReader br = new BufferedReader(new FileReader(original));
-            BufferedWriter bw = new BufferedWriter(new FileWriter(overwrittenFile))) {
+        String[] filename_split = this.filename.split("\\.");
+        System.out.println(path);
+        finalFile = new File(path + "/" + filename_split[0] + "-f." + filename_split[1]);
+        try (BufferedReader br = new BufferedReader(new FileReader(tempFile));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(finalFile))) {
             String s;
             while ((s = br.readLine()) != null) {
                 bw.write(s);
@@ -49,8 +44,7 @@ public class CCFile {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-//        if (original.delete()) {
-//            temp.renameTo(original);
-//        }
+        if (tempFile.delete()) System.out.println("Temporary file has been deleted.");
+        System.out.println("Successfully overwritten!");
     }
 }

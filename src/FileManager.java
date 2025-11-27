@@ -1,10 +1,11 @@
 import java.io.*;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.*;
 import java.lang.*;
 public class FileManager {
     private String rootPath;
     private List<String> filePaths;
-    private String[] valid_extensions;
+    public String[] valid_extensions;
 
     public FileManager(String rootPath) {
         this.rootPath = rootPath;
@@ -15,15 +16,24 @@ public class FileManager {
     String getRootPath() {
         return this.rootPath;
     }
-    CCFile create(String filename) {
-        CCFile out;
-        String act_path = getRootPath() + "/" + filename;
-        System.out.println("Actual: " + act_path);
-        out = new CCFile(act_path);
+
+
+    CCFile create(String filename)  {
+        CCFile out = null;
+        String[] filename_split = filename.split("\\.");
+        if (filename_split.length < 2 || !Arrays.asList(valid_extensions).contains("." + filename_split[1])) {
+            System.out.println("This file extension is not supported! Please try another one.");
+            return null;
+        }
+        try {
+            out = new CCFile(this.rootPath, filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         if (out != null) {
             System.out.println("File successfully created!");
         } else {
-            System.out.println("File already exists!");
+            System.out.println("File creation failed!");
         }
         return out;
     }
@@ -67,11 +77,10 @@ public class FileManager {
     }
 
     public static void main(String[] args) {
-        FileManager fm = new FileManager("Z:/L12Y08W19");
-
-//        fm.load("C:\\Users\\L12Y08W19\\Desktop\\CSIT227-LA6");
+        FileManager fm = new FileManager("src/");
+        // fm.load("src/");
 //        fm.printFilePaths();
-        CCFile diddy = fm.create("diddy.txt");
-        diddy.overwrite();
+        CCFile tc1 = fm.create("a.mp3");
+        //tc1.overwrite();
     }
 }
