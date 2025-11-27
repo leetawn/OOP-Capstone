@@ -51,7 +51,6 @@ public class TextEditor extends JFrame {
         JTextArea codeArea = new JTextArea();
         codeArea.setTabSize(1);
         codeArea.setFont(new Font("Comic Sans MS", Font.PLAIN, 18));
-        codeArea.setText("#include <stdio.h>\n\nint main() {\n\n   return 0;\n}");
         codeArea.setMargin(new Insets(10, 10, 10, 10));
         codeArea.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
