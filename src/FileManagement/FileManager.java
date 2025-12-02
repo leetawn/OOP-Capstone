@@ -7,37 +7,58 @@ import java.util.*;
 
 public class FileManager {
     private static final Set<String> IGNORED_FOLDERS = Set.of(".git", ".svn", ".vscode", "target", "out", "bin");
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".c", ".cpp", ".h", ".hpp", ".java", ".py");
+    private static final Set<String> ALL_ALLOWED_EXTENSIONS = Set.of(".c", ".cpp", ".h", ".hpp",".java",".py");
+    private static final Set<String> JAVA_ALLOWED_EXTENSIONS = Set.of(".java");
+    private static final Set<String> CPP_ALLOWED_EXTENSIONS  = Set.of(".cpp", ".h", ".hpp");
+    private static final Set<String> C_ALLOWED_EXTENSIONS    = Set.of(".c", ".h");
+    private static final Set<String> PY_ALLOWED_EXTENSIONS   = Set.of(".py");
     private Path rootdir;
     private ArrayList<SFile> s_files;
+    private String language;
 
     // Opens a folder and make set it as rootdir, throws error when path is not dir
-    public FileManager(String rootpath) throws NotDirException {
+    public FileManager(String rootpath, String language) throws NotDirException {
         rootdir = Paths.get(rootpath);
+        this.language = language;
         if (!Files.isDirectory(rootdir)) throw new NotDirException();
 
         s_files = new ArrayList<>();
 
         try {
-            listAllContents(rootdir);
+            listAllContents(rootdir, getAllowedExtensions(language));
         } catch (IOException e) {}
     }
 
-    /****************** GETTERS ******************/
-    public Path getRootdir() {
-        return rootdir;
+    private Set<String> getAllowedExtensions(String lang) {
+        if (lang == null) return ALL_ALLOWED_EXTENSIONS;
+
+        return switch (lang.toLowerCase()) {
+            case "java" -> JAVA_ALLOWED_EXTENSIONS;
+            case "cpp" -> CPP_ALLOWED_EXTENSIONS;
+            case "c" -> C_ALLOWED_EXTENSIONS;
+            case "py" -> PY_ALLOWED_EXTENSIONS;
+            default -> ALL_ALLOWED_EXTENSIONS;
+        };
     }
 
+    /****************** GETTERS ******************/
+    public Path getRootdir() { return rootdir; }
+    public String getLanguage() { return language; }
+
     // @ TODO ETHAN, USE THIS FOR FILE TREE
-    public ArrayList<SFile> getFiles() {
-        return s_files;
+    public ArrayList<SFile> getFiles() { return s_files; }
+
+    /****************** INPUT/OUTPUT ******************/
+    public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
+    public Path getRelativePath(SFile sfile) {
+        return rootdir.relativize(sfile.getPath());
     }
 
     // @ TODO: REMOVE sout WHEN DEBUGGING IS DONE
-    private void listAllContents(Path rootDir) throws IOException {
+    private void listAllContents(Path rootDir, Set<String> allowed_extensions) throws IOException {
         Path absoluteRootDir = rootDir.toAbsolutePath().normalize();
 
-         System.out.println("--- Listing only: " + ALLOWED_EXTENSIONS + " inside: " + absoluteRootDir + " ---");
+         System.out.println("--- Listing only: " + allowed_extensions + " inside: " + absoluteRootDir + " ---");
 
         Files.walkFileTree(rootDir, new SimpleFileVisitor<Path>() {
 
@@ -69,7 +90,7 @@ public class FileManager {
                 String fileName = file.getFileName().toString().toLowerCase();
 
                 // NO JEWS ALLOWED
-                boolean isAllowed = ALLOWED_EXTENSIONS.stream()
+                boolean isAllowed = allowed_extensions.stream()
                         .anyMatch(fileName::endsWith);
 
                 if (isAllowed) {
@@ -90,9 +111,13 @@ public class FileManager {
     }
 
     public static void main(String[] args) {
+
         try {
-            new FileManager(".");
-        } catch (NotDirException ignored) {}
+            FileManager fm = new FileManager(".", "java");
+            SFile s = fm.getFiles().get(0);
+            Path p = fm.getRelativePath(s);
+            System.out.println("RELATIVE PATH: " + p);
+        } catch (Exception ignored) {}
     }
 
 }
