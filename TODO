@@ -1,5 +1,14 @@
+DONE:
+- Redirect input and output terminal
+
 TODO:
 - Continue FileManager
-- Redirect input and output terminal
 - GUI Integration
 - Cleanup
+
+TODO ETHAN:
+- FILE: Create, Delete, Save, Open Folder
+
+TODO GLENSH:
+- JUDGE: Diff, Score
+- C Judge is throwing
