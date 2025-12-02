@@ -36,7 +36,7 @@ public class FileManager {
             case "java" -> JAVA_ALLOWED_EXTENSIONS;
             case "cpp" -> CPP_ALLOWED_EXTENSIONS;
             case "c" -> C_ALLOWED_EXTENSIONS;
-            case "py" -> PY_ALLOWED_EXTENSIONS;
+            case "python", "py" -> PY_ALLOWED_EXTENSIONS;
             default -> ALL_ALLOWED_EXTENSIONS;
         };
     }
@@ -47,6 +47,17 @@ public class FileManager {
 
     // @ TODO ETHAN, USE THIS FOR FILE TREE
     public ArrayList<SFile> getFiles() { return s_files; }
+
+
+    /****************** SETTERS ******************/
+    public void setLanguage(String language)
+    {
+        this.language = language;
+        s_files.clear();
+        try {
+            listAllContents(rootdir, getAllowedExtensions(language));
+        } catch (IOException e) {}
+    }
 
     /****************** INPUT/OUTPUT ******************/
     public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }

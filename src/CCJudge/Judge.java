@@ -16,13 +16,17 @@ import java.util.stream.Collectors;
 public class Judge {
 
     private static final long TIME_LIMIT_MS = 2000;
-    private static final long INPUT_WAIT_MS = 180; // shits slow but still faster than codecum
+    private static final long INPUT_WAIT_MS = 128; // shits slow but still faster than codecum
     private static final String[] TEST_INPUTS = {"Alice", "Bob"};
 
     public static void main(String[] args) {
-        String[] s = {};
+        String[] s = {"Ethan"};
         try {
-            judge(new FileManager(".", "java"), s);
+            judge(new FileManager("COMPILER_TEST/CPP", "cpp"), s);
+            judge(new FileManager("COMPILER_TEST/JAVA", "java"), s);
+            judge(new FileManager("COMPILER_TEST/PYTHON", "python"), s);
+            judge(new FileManager("COMPILER_TEST/C", "c"), s);
+
         } catch (NotDirException ignored) {}
     }
 
@@ -135,11 +139,13 @@ public class Judge {
             } else if (process.exitValue() != 0) {
                 String errorOutput = readStream(process.getErrorStream());
                 System.err.println("Runtime Error Details:\n" + errorOutput);
+                process.destroy();
                 return "RTE (Runtime Error) - Exit Code: " + process.exitValue();
             } else {
                 System.out.println("\n--- Captured Interactive Transcript ---");
                 System.out.println(transcript.toString().trim());
                 System.out.println("---------------------------------------");
+                process.destroy();
                 return "AC (Execution Complete)";
             }
 
@@ -217,9 +223,15 @@ public class Judge {
                     Files.deleteIfExists(Paths.get(className));
                 }
             } else if (language.equals("cpp") || language.equals("c")) {
-                Files.deleteIfExists(Path.of(fm.getRootdir().toString() + "/Submission.exe"));
+                Path p = Paths.get(fm.getRootdir().toAbsolutePath().toString(),"Submission.exe");
+                System.out.println("Deleting " + p);
+                if (Files.exists(p)) { Files.delete(p); }
+                System.out.println("Deleted " + p);
             }
-        } catch (IOException ignored) { }
+        } catch (IOException e) {
+//            e.printStackTrace();
+//            System.out.println(e.getMessage());
+        }
     }
 
     // DON'T USE THIS!! IT WILL DELETE USERS FILES

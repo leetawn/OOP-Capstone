@@ -1,16 +1,12 @@
 package GUI;
 
 import FileManagement.*;
-import CustomExceptions.*;
-import FileManagement.NotDirException;
-
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 
 public class TextEditor {
     private JButton runCodeButton;
@@ -22,14 +18,15 @@ public class TextEditor {
 
     private FileManager fileManager;
 
-    public TextEditor() throws FileListingException, TreePopulationException {
+    public TextEditor() {
         try {
-            fileManager = new FileManager(".", "java"); // project root
+            fileManager = new FileManager(".","java"); // project root
         } catch (NotDirException e) {
-            throw new FileListingException("Invalid directory: " + e.getMessage(), e);
+            JOptionPane.showMessageDialog(null, "Invalid directory: " + e.getMessage());
+            return;
         }
 
-        buildFileTree(); // can throw TreePopulationException
+        buildFileTree();
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         dTextArea.setTabSize(4);
@@ -40,9 +37,11 @@ public class TextEditor {
 
             Object obj = node.getUserObject();
             if (obj instanceof SFile sfile) {
+                Path filePath = sfile.getPath();
                 try {
-                    openFile(sfile); // throws FileReadException
-                } catch (FileReadException ex) {
+                    String content = Files.readString(filePath);
+                    dTextArea.setText(content);
+                } catch (Exception ex) {
                     dTextArea.setText("// Error loading file: " + ex.getMessage());
                 }
             }
@@ -75,23 +74,12 @@ public class TextEditor {
         fileExplorer.add(new JScrollPane(fe_tree), BorderLayout.CENTER);
     }
 
-    private void buildFileTree() throws TreePopulationException {
-        ArrayList<SFile> files;
-        try {
-            files = fileManager.getFiles();
-        } catch (Exception e) {
-            throw new TreePopulationException("Failed to list files from FileManager", e);
-        }
-
+    private void buildFileTree() {
         DefaultMutableTreeNode rootNode =
                 new DefaultMutableTreeNode(fileManager.getRootdir().getFileName().toString());
 
-        try {
-            for (SFile sfile : files) {
-                addFileNode(rootNode, sfile);
-            }
-        } catch (Exception e) {
-            throw new TreePopulationException("Error while populating file tree", e);
+        for (SFile sfile : fileManager.getFiles()) {
+            addFileNode(rootNode, sfile);
         }
 
         fe_tree.setModel(new DefaultTreeModel(rootNode));
@@ -131,32 +119,19 @@ public class TextEditor {
         return null;
     }
 
-    private void openFile(SFile sfile) throws FileReadException {
-        try {
-            String content = Files.readString(sfile.getPath());
-            dTextArea.setText(content);
-        } catch (Exception e) {
-            throw new FileReadException("Failed to read file: " + sfile.getPath().toString(), e);
-        }
-    }
-
     public JPanel getMainPanel() {
         return mainPanel;
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            try {
-                TextEditor editor = new TextEditor();
-                JFrame frame = new JFrame("Text Editor with File Explorer");
-                frame.setContentPane(editor.getMainPanel());
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setSize(1200, 700);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            } catch (FileListingException | TreePopulationException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            TextEditor editor = new TextEditor();
+            JFrame frame = new JFrame("Text Editor with File Explorer");
+            frame.setContentPane(editor.getMainPanel());
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(1200, 700);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         });
     }
 }
