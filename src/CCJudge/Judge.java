@@ -1,11 +1,15 @@
 package CCJudge;
 
+import FileManagement.FileManager;
+import FileManagement.NotDirException;
+import FileManagement.SFile;
+
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+//import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -16,20 +20,23 @@ public class Judge {
     private static final String[] TEST_INPUTS = {"Alice", "Bob"};
 
     public static void main(String[] args) {
-        test_judge();
+        String[] s = {};
+        try {
+            judge(new FileManager(".", "java"), s);
+        } catch (NotDirException ignored) {}
     }
 
-    public static void judge(String language, SubmissionFile[] files, String[] test_inputs) {
+    public static void judge(FileManager fm, String[] test_inputs) {
 
         String verdict = "Unknown Error";
 
         try {
-            verdict = compile(files, language);
+            verdict = compile(fm);
             if (verdict.startsWith("CE")) {
                 System.out.println("Result: **" + verdict + "**");
                 return;
             }
-            verdict = judgeInteractively(language, test_inputs);
+            verdict = judgeInteractively(fm, test_inputs);
 
         } catch (Exception e) {
             System.err.println("Judge System Failure: " + e.getMessage());
@@ -37,7 +44,7 @@ public class Judge {
         } finally {
             // --- 5. Cleanup ---
             System.out.println("\n--- Cleanup ---");
-            cleanup(files, language);
+            cleanup(fm);
             System.out.println("Final Result: **" + verdict + "**");
         }
     }
@@ -57,7 +64,7 @@ public class Judge {
                 return;
             }
 
-            verdict = judgeInteractively(language, TEST_INPUTS);
+            verdict = judgeInteractively(null, TEST_INPUTS);
 
         } catch (Exception e) {
             System.err.println("Judge System Failure: " + e.getMessage());
@@ -70,13 +77,14 @@ public class Judge {
     }
     // PRIVATE FUNCTIONS ------------------
 
-    private static String judgeInteractively(String language, String[] testInputs) {
+    private static String judgeInteractively(FileManager fm, String[] testInputs) {
         Process process = null;
         try {
-            String[] executeCommand = ExecutionConfig.getExecuteCommand(language);
+            String[] executeCommand = ExecutionConfig.getExecuteCommand(fm);
             ProcessBuilder pb = new ProcessBuilder(executeCommand);
+
             // Set working directory to '.' (current directory) for execution
-            pb.directory(new File("."));
+            pb.directory(fm.getRootdir().toFile());
 
             System.out.println("-> Executing: " + String.join(" ", executeCommand));
             process = pb.start();
@@ -85,7 +93,7 @@ public class Judge {
             StringBuilder transcript = new StringBuilder();
 
             // Start the asynchronous output reader
-            Future<Void> outputReader = executor.submit(new OutputReader(process.getInputStream(), transcript));
+            executor.submit(new OutputReader(process.getInputStream(), transcript));
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
             int inputIndex = 0;
@@ -157,6 +165,25 @@ public class Judge {
         ProcessBuilder pb = new ProcessBuilder(compileCommand);
         pb.directory(new File("."));
 
+        return startCompilation(pb);
+    }
+
+    private static String compile(FileManager fm) throws Exception {
+        String[] compileCommand = ExecutionConfig.getCompileCommand(fm);
+
+        if (compileCommand == null) {
+            System.out.println("-> No compilation required for " + fm.getLanguage());
+            return "No Compilation";
+        }
+
+        System.out.println("-> Compiling: " + String.join(" ", compileCommand));
+        ProcessBuilder pb = new ProcessBuilder(compileCommand);
+        pb.directory(fm.getRootdir().toFile());
+
+        return startCompilation(pb);
+    }
+
+    private static String startCompilation(ProcessBuilder pb) throws IOException, InterruptedException {
         Process compileProcess = pb.start();
 
         String errorOutput = readStream(compileProcess.getErrorStream());
@@ -181,25 +208,26 @@ public class Judge {
         }
     }
 
-    private static void cleanup(SubmissionFile[] files, String language) {
+    private static void cleanup(FileManager fm) {
+        String language = fm.getLanguage();
         try {
             if (language.equals("java")) {
-                for (SubmissionFile file : files) {
-                    String className = file.filename().replace(".java", ".class");
+                for (SFile file : fm.getFiles()) {
+                    String className = fm.getRelativePath(file).toString().replace(".java", ".class");
                     Files.deleteIfExists(Paths.get(className));
                 }
             } else if (language.equals("cpp") || language.equals("c")) {
-                Files.deleteIfExists(Paths.get("Submission.exe"));
+                Files.deleteIfExists(Path.of(fm.getRootdir().toString() + "/Submission.exe"));
             }
-        } catch (IOException e) { }
+        } catch (IOException ignored) { }
     }
 
-    // DONT USE THIS!! IT WILL DELETE USERS FILES
+    // DON'T USE THIS!! IT WILL DELETE USERS FILES
     private static void test_cleanup(SubmissionFile[] files, String language) {
         for (SubmissionFile file : files) {
             try {
                 Files.deleteIfExists(Paths.get(file.filename()));
-            } catch (IOException e) {}
+            } catch (IOException ignored) {}
         }
 
         try {

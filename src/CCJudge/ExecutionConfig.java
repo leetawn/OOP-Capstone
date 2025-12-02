@@ -1,7 +1,11 @@
 package CCJudge;
 
+import FileManagement.FileManager;
+import FileManagement.SFile;
+
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.*;
 
 // idk gpt said suggested this shit might as well use it
 record SubmissionFile(String filename, String content) {}
@@ -131,6 +135,13 @@ public class ExecutionConfig {
     // return compile command for our terminal, shits ass but its aihgt
     public static String[] getCompileCommand(String language, SubmissionFile[] files) {
         String[] sourceFilenames = Arrays.stream(files).map(SubmissionFile::filename).toArray(String[]::new);
+        return getCompileCommand(language, sourceFilenames);
+    }
+    public static String[] getCompileCommand(FileManager fm) {
+        String[] sourceFilenames = fm.getFiles().stream().map(fm::getRelativePath).map(Path::toString).toArray(String[]::new);
+        return getCompileCommand(fm.getLanguage(), sourceFilenames);
+    }
+    private static String[] getCompileCommand(String language, String[] sourceFilenames) {
 
         String[] command;
         switch (language) {
@@ -171,10 +182,10 @@ public class ExecutionConfig {
         }
     }
 
-    public static String[] getExecuteCommand(String language) {
-        return switch (language) {
+    public static String[] getExecuteCommand(FileManager fm) {
+        return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", "Main"}; // idk if Main is in all program
-            case "cpp", "c" -> new String[]{Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission"};
+            case "cpp", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
             case "python" -> new String[]{"python3", "main.py"};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
