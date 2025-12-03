@@ -38,10 +38,13 @@ public class TextEditor {
 
             Object obj = node.getUserObject();
             if (obj instanceof SFile sfile) {
-                Path filePath = sfile.getPath();
+
                 try {
+                    fileManager.setCurrentFile(sfile);
+                    Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
+                    System.out.println("Current file set to: " + fileManager.getCurrentFileStringPath());
                 } catch (Exception ex) {
                     dTextArea.setText("// Error loading file: " + ex.getMessage());
                 }
