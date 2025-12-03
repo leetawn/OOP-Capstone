@@ -28,7 +28,7 @@ public class TextEditor extends JPanel {
         initializeComponents();
         initializeBackend();
         setupLayout();
-        setupEventListeners();
+        setupEventListeners(); //
     }
 
     private void initializeComponents() {
