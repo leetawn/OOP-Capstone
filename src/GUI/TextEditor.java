@@ -159,24 +159,24 @@ public class TextEditor extends JPanel {
         panel.add(Box.createHorizontalGlue(), gbc);
 
         // Entry Point Button
+        // FIXME: I THINK I FUCKED UP YOUR ENTRY BUTTON ETHAN
         gbc.gridx = 2;
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel("Language:"), gbc);
         panel.add(setEntryPointButton, gbc);
-        JLabel languageLabel = new JLabel("Language:");
-        languageLabel.setBackground(Color.decode("#28313b"));
-        languageLabel.setForeground(Color.WHITE);
-        languageLabel.setOpaque(true);
-        panel.add(languageLabel, gbc);
 
         // Language Label
         gbc.gridx = 3;
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel("Language:"), gbc);
+        JLabel languageLabel = new JLabel("Language:");
+        languageLabel.setBackground(Color.decode("#28313b"));
+        languageLabel.setForeground(Color.WHITE);
+        languageLabel.setOpaque(true);
+        panel.add(languageLabel, gbc);
+//        panel.add(new JLabel("Language:"), gbc);
 
         // Language Dropdown
         gbc.gridx = 4;
