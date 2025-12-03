@@ -35,6 +35,7 @@ public class SFile {
 
     /****************** GETTERS ******************/
 
+    // TODO: @GODSPRO magamit ni nimo nga function para sa Ctrl + S
     public String getContent() { return content; }
     public Path getPath() { return path; }
     public String getStringPath() { return path.toString(); }
@@ -42,6 +43,7 @@ public class SFile {
     /****************** SETTERS ******************/
 
     // when editing in JTextArea in GUI use this to set the content to write */
+    // TODO: @GODSPRO magamit ni nimo nga function para sa Ctrl + S
     public void setContent(String content) { this.content = content; }
 
     /****************** INPUT/OUTPUT ******************/
