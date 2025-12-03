@@ -3,6 +3,7 @@ package FileManagement;
 import CustomExceptions.NotDirException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -29,7 +30,7 @@ public class FileManager {
         s_files = new ArrayList<>();
 
         try {
-            listAllContents(rootdir, getAllowedExtensions(language));
+            listAllContents(rootdir, ALL_ALLOWED_EXTENSIONS);
         } catch (IOException e) {}
     }
 
@@ -53,31 +54,40 @@ public class FileManager {
 
     // file renaming and deleting forgot to fking add these xD
     public boolean renameFile(SFile sfile, String newName) {
+        Path oldPath = sfile.getPath();
+        Path newPath = oldPath.getParent().resolve(newName);
+
+        if (Files.exists(newPath)) {
+            System.err.println("Error: Destination path already exists.");
+            return false;
+        }
+
         try {
-            Path oldPath = sfile.getPath();
-            Path newPath = oldPath.resolveSibling(newName);
+            Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING);
 
-            if (Files.exists(newPath)) {
-                System.err.println("File already exists: " + newPath);
-                return false;
-            }
+            sfile.setPath(newPath);
 
-            Files.move(oldPath, newPath);
-            s_files.remove(sfile);
-            SFile renamed = new SFile(newPath);
-            s_files.add(renamed);
+            if (Files.isDirectory(newPath)) {
 
-            if (currentFile != null && currentFile.equals(sfile)) {
-                currentFile = renamed;
+                for (SFile currentFile : s_files) {
+                    Path currentOldPath = currentFile.getPath();
+
+                    if (currentOldPath.startsWith(oldPath)) {
+                        // Calculate the new path
+                        Path relativePath = oldPath.relativize(currentOldPath);
+                        Path updatedPath = newPath.resolve(relativePath);
+
+                        currentFile.setPath(updatedPath);
+                    }
+                }
             }
 
             return true;
         } catch (IOException e) {
-            System.err.println("Failed to rename file: " + e.getMessage());
+            System.err.println("Error renaming path or updating references: " + e.getMessage());
             return false;
         }
     }
-
     public boolean deleteFile(SFile sfile) {
         if (sfile == null) return false;
 
@@ -122,10 +132,6 @@ public class FileManager {
     public void setLanguage(String language)
     {
         this.language = language;
-        s_files.clear();
-        try {
-            listAllContents(rootdir, getAllowedExtensions(language));
-        } catch (IOException e) {}
     }
 
     public void setCurrentFile(SFile currentFile) {
@@ -152,6 +158,37 @@ public class FileManager {
         }
     }
 
+    public boolean deleteFolder(Path dirPath) {
+        if (dirPath == null || !Files.exists(dirPath)) {
+            return true;
+        }
+        if (!Files.isDirectory(dirPath)) {
+            return deleteFile(new SFile(dirPath));
+        }
+
+        try {
+            Files.walk(dirPath)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                            if (!Files.isDirectory(path)) {
+                                s_files.removeIf(sfile -> sfile.getPath().equals(path));
+                            }
+                        } catch (IOException e) {
+                            System.err.println("Failed to delete path: " + path + ". Error: " + e.getMessage());
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+
+            return !Files.exists(dirPath);
+
+        } catch (IOException | UncheckedIOException e) {
+            System.err.println("Error during recursive folder deletion of " + dirPath);
+            return false;
+        }
+    }
+
     /****************** INPUT/OUTPUT ******************/
     public Path getRelativePath(SFile sfile) {
         return rootdir.relativize(sfile.getPath());
@@ -163,11 +200,10 @@ public class FileManager {
         };
     }
 
-    // @ TODO: REMOVE sout WHEN DEBUGGING IS DONE
     private void listAllContents(Path rootDir, Set<String> allowed_extensions) throws IOException {
         Path absoluteRootDir = rootDir.toAbsolutePath().normalize();
 
-         System.out.println("--- Listing only: " + allowed_extensions + " inside: " + absoluteRootDir + " ---");
+        System.out.println("--- Listing all files inside: " + absoluteRootDir + " ---");
 
         Files.walkFileTree(rootDir, new SimpleFileVisitor<Path>() {
 
@@ -188,7 +224,7 @@ public class FileManager {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
 
-                // System.out.println("[DIR]  " + dir);
+                System.out.println("[DIR]  " + dir);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -196,16 +232,8 @@ public class FileManager {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
 
-                String fileName = file.getFileName().toString().toLowerCase();
-
-                // NO JEWS ALLOWED
-                boolean isAllowed = allowed_extensions.stream()
-                        .anyMatch(fileName::endsWith);
-
-                if (isAllowed) {
-                    s_files.add(new SFile(file));
-                     System.out.println("[FILE] " + file);
-                }
+                s_files.add(new SFile(file));
+                System.out.println("[FILE] " + file);
 
                 return FileVisitResult.CONTINUE;
             }
