@@ -3,7 +3,9 @@ package GUI;
 import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +13,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.List;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -27,24 +28,75 @@ public class TextEditor extends JPanel {
         initializeComponents();
         initializeBackend();
         setupLayout();
-        setupEventListeners();
+        setupEventListeners(); //
     }
 
     private void initializeComponents() {
         runCodeButton = new JButton("Run Code");
-        addFileButton = new JButton("Add File");
-        openFolderButton = new JButton("Open Folder");
-        dTextArea = new JTextArea();
-        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-        actualOutputArea = new JTextArea();
-        expectedOutputArea = new JTextArea();
+        runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        runCodeButton.setBackground(Color.decode("#568afc"));
+        runCodeButton.setForeground(Color.WHITE);
+        runCodeButton.setOpaque(true);
+        runCodeButton.setBorderPainted(false);
+        runCodeButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        // Pass 'this' TextEditor instance to the FileExplorer
+        addFileButton = new JButton("Add File");
+        addFileButton.setBackground(Color.decode("#568afc"));
+        addFileButton.setForeground(Color.WHITE);
+        addFileButton.setOpaque(true);
+        addFileButton.setBorderPainted(false);
+        addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
+
+        openFolderButton = new JButton("Open Folder");
+        openFolderButton.setBackground(Color.decode("#568afc"));
+        openFolderButton.setForeground(Color.WHITE);
+        openFolderButton.setOpaque(true);
+        openFolderButton.setBorderPainted(false);
+        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+
+        dTextArea = new JTextArea();
+        dTextArea.setBackground(Color.decode("#1f2335"));
+        dTextArea.setCaretColor(Color.WHITE);
+        dTextArea.setForeground(Color.WHITE);
+
+        languageSelectDropdown = new JComboBox<>(new String[]{"   C", "   C++", "   Java", "   Python"});
+        languageSelectDropdown.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton("▼");
+                button.setBackground(Color.decode("#568afc"));
+                button.setForeground(Color.WHITE);
+                button.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+                return button;
+            }
+
+            @Override
+            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+                g.setColor(Color.decode("#568afc"));
+                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            }
+        });
+
+        languageSelectDropdown.setBackground(Color.decode("#568afc"));
+        languageSelectDropdown.setForeground(Color.WHITE);
+        languageSelectDropdown.setOpaque(true);
+
+        actualOutputArea = new JTextArea();
+        actualOutputArea.setBackground(Color.decode("#1f2335"));
+        actualOutputArea.setCaretColor(Color.WHITE);
+        actualOutputArea.setForeground(Color.WHITE);
+
+        expectedOutputArea = new JTextArea();
+        expectedOutputArea.setBackground(Color.decode("#1f2335"));
+        expectedOutputArea.setCaretColor(Color.WHITE);
+        expectedOutputArea.setForeground(Color.WHITE);
+
         fileExplorerPanel = new FileExplorer(".", dTextArea, this);
     }
 
     private void setupLayout() {
         setLayout(new GridBagLayout());
+        setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(3, 3, 3, 3);
@@ -59,6 +111,7 @@ public class TextEditor extends JPanel {
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         JSeparator divider = new JSeparator(JSeparator.VERTICAL);
+        divider.setBackground(Color.decode("#28313b"));
         divider.setPreferredSize(new Dimension(1, 0));
         add(divider, gbc);
 
@@ -70,6 +123,7 @@ public class TextEditor extends JPanel {
 
     private JPanel createLeftPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -83,6 +137,7 @@ public class TextEditor extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         JPanel fileButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        fileButtonsPanel.setBackground(Color.decode("#28313b"));
         fileButtonsPanel.add(openFolderButton);
         fileButtonsPanel.add(addFileButton);
         panel.add(fileButtonsPanel, gbc);
@@ -96,7 +151,11 @@ public class TextEditor extends JPanel {
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel("Language:"), gbc);
+        JLabel languageLabel = new JLabel("Language:");
+        languageLabel.setBackground(Color.decode("#28313b"));
+        languageLabel.setForeground(Color.WHITE);
+        languageLabel.setOpaque(true);
+        panel.add(languageLabel, gbc);
 
         gbc.gridx = 3;
         gbc.weightx = 0.0;
@@ -117,7 +176,10 @@ public class TextEditor extends JPanel {
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
         JScrollPane editorScroll = new JScrollPane(dTextArea);
-        editorScroll.setBorder(BorderFactory.createTitledBorder("Editor"));
+        editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
+        editorScroll.setBackground(Color.decode("#1f2335"));
+        TitledBorder titledBorder = (TitledBorder) editorScroll.getBorder();
+        titledBorder.setTitleColor(Color.WHITE);
         panel.add(editorScroll, gbc);
 
         gbc.gridx = 3;
@@ -127,6 +189,7 @@ public class TextEditor extends JPanel {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.decode("#28313b"));
         buttonPanel.add(runCodeButton);
         panel.add(buttonPanel, gbc);
 
@@ -142,6 +205,7 @@ public class TextEditor extends JPanel {
 
     private JPanel createRightPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -151,19 +215,26 @@ public class TextEditor extends JPanel {
         gbc.weightx = 1.0;
         gbc.weighty = 0.5;
         JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setBackground(Color.decode("#1f2335"));
         actualScroll.setBorder(BorderFactory.createTitledBorder("Actual Output"));
+        TitledBorder titledBorder3 = (TitledBorder) actualScroll.getBorder();
+        titledBorder3.setTitleColor(Color.WHITE);
         panel.add(actualScroll, gbc);
 
         gbc.gridy = 1;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(new JSeparator(), gbc);
+        JSeparator tempSeparator = new JSeparator(JSeparator.HORIZONTAL);
+        panel.add(tempSeparator, gbc);
 
         gbc.gridy = 2;
         gbc.weighty = 0.5;
         gbc.fill = GridBagConstraints.BOTH;
         JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setBackground(Color.decode("#1f2335"));
         expectedScroll.setBorder(BorderFactory.createTitledBorder("Expected Output"));
+        TitledBorder titledBorder2 = (TitledBorder) expectedScroll.getBorder();
+        titledBorder2.setTitleColor(Color.WHITE);
         panel.add(expectedScroll, gbc);
 
         return panel;
@@ -172,10 +243,12 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setTabSize(4);
+        dTextArea.setTabSize(1);
 
         actualOutputArea.setEditable(false);
+        actualOutputArea.setCaretColor(Color.decode("#1f2335"));
         expectedOutputArea.setEditable(false);
+        expectedOutputArea.setCaretColor(Color.decode("#1f2335"));
         actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
     }
@@ -186,9 +259,7 @@ public class TextEditor extends JPanel {
 
         if (currentFile != null) {
             String content = dTextArea.getText();
-            // Crucial step: Update the SFile object's internal content field
             currentFile.setContent(content);
-            // Write the SFile content (which now holds the latest JTextArea content) to the disk
             currentFile.writeOut();
             System.out.println("File saved: " + currentFile.getStringPath());
         }
@@ -209,7 +280,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        openFolderButton.addActionListener(e -> {
+        openFolderButton.addActionListener(_ -> {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
@@ -231,30 +302,43 @@ public class TextEditor extends JPanel {
             }
         });
 
-        languageSelectDropdown.addActionListener(e -> {
+        languageSelectDropdown.addActionListener(_ -> {
             String selectedLang = (String) languageSelectDropdown.getSelectedItem();
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (selectedLang != null && fileManager != null) {
                 fileManager.setLanguage(selectedLang.toLowerCase());
+                fileExplorerPanel.buildFileTree();
                 System.out.println("Language changed to: " + selectedLang);
             }
         });
 
-        addFileButton.addActionListener(e -> {
+        addFileButton.addActionListener(_ -> {
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (fileManager == null) return;
 
-            DefaultMutableTreeNode node = fileExplorerPanel.getSelectedNode();
+            DefaultMutableTreeNode selectedNode = fileExplorerPanel.getSelectedNode();
             Path targetDir = fileManager.getRootdir();
+            DefaultMutableTreeNode parentNodeInTree;
 
-            if (node != null) {
-                Object obj = node.getUserObject();
+            if (selectedNode != null) {
+                Object obj = selectedNode.getUserObject();
+
                 if (obj instanceof SFile sfile) {
-                    targetDir = sfile.getPath().getParent();
+                    if (Files.isDirectory(sfile.getPath())) {
+                        targetDir = sfile.getPath();
+                        parentNodeInTree = selectedNode;
+                    } else {
+                        targetDir = sfile.getPath().getParent();
+                        parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
+                    }
                 } else {
-                    targetDir = fileExplorerPanel.resolveNodeToPath(node);
+                    targetDir = fileExplorerPanel.resolveNodeToPath(selectedNode);
+                    parentNodeInTree = selectedNode;
                 }
+            } else {
+                parentNodeInTree = (DefaultMutableTreeNode) fileExplorerPanel.getFeTree().getModel().getRoot();
             }
+
 
             String fileName = JOptionPane.showInputDialog(this, "Enter new file name (with extension):");
             if (fileName == null || fileName.isBlank()) return;
@@ -283,7 +367,13 @@ public class TextEditor extends JPanel {
                 fileManager.setCurrentFile(newSFile);
                 dTextArea.setText(newSFile.getContent());
 
-                fileExplorerPanel.buildFileTree();
+                DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
+                DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
+
+                model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+                fileExplorerPanel.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
+                fileExplorerPanel.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
 
                 JOptionPane.showMessageDialog(this, "File created: " + newFilePath);
             } catch (Exception ex) {
@@ -293,7 +383,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        runCodeButton.addActionListener(e -> {
+        runCodeButton.addActionListener(_ -> {
             saveCurrentFileContent();
             actualOutputArea.setText("Executing code...\n");
             expectedOutputArea.setText("Expected output will appear here");
