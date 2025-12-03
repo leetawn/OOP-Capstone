@@ -1,5 +1,6 @@
 package FileManagement;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,5 +55,12 @@ public class SFile {
         try {
             Files.writeString(path, content);
         } catch (Exception ignored) {}
+    }
+    void delete() {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ignored) {
+            System.out.printf("SFile.deleteDenied: %s\n", path);
+        }
     }
 }
