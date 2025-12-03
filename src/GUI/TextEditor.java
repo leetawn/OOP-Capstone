@@ -8,12 +8,13 @@ import java.awt.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.*;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
     private JTextArea dTextArea;
-    private JComboBox<String> comboBox1;
+    private JComboBox<String> languageSelectDropdown;
     private JTree fe_tree;
     private JPanel fileExplorer;
     private FileManager fileManager;
@@ -31,7 +32,7 @@ public class TextEditor extends JPanel {
         runCodeButton = new JButton("Run Code");
         addFileButton = new JButton("Add File");
         dTextArea = new JTextArea();
-        comboBox1 = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
         fe_tree = new JTree();
         fileExplorer = new JPanel();
         actualOutputArea = new JTextArea();
@@ -95,8 +96,8 @@ public class TextEditor extends JPanel {
 
         gbc.gridx = 3;
         gbc.weightx = 0.0;
-        comboBox1.setPreferredSize(new Dimension(120, 25));
-        panel.add(comboBox1, gbc);
+        languageSelectDropdown.setPreferredSize(new Dimension(120, 25));
+        panel.add(languageSelectDropdown, gbc);
 
         // File explorer panel
         gbc.gridx = 0;
@@ -234,20 +235,91 @@ public class TextEditor extends JPanel {
             }
         });
 
-        // Add File button action
-        addFileButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-
-            int result = fileChooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fileChooser.getSelectedFile();
-                // TODO: Add logic to handle selected file
-                JOptionPane.showMessageDialog(this,
-                        "Selected file: " + selectedFile.getName() + "\n" +
-                                "This feature would copy/add the file to the project.");
+        languageSelectDropdown.addActionListener(e -> {
+            String selectedLang = (String) languageSelectDropdown.getSelectedItem();
+            if (selectedLang != null && fileManager != null) {
+                fileManager.setLanguage(selectedLang.toLowerCase());
+                System.out.println("Language changed to: " + selectedLang);
             }
         });
+
+
+        // Add File button action
+        addFileButton.addActionListener(e -> {
+            try {
+                // Ask for file name
+                String fileName = JOptionPane.showInputDialog(
+                        this,
+                        "Enter new file name (with extension):",
+                        "Add New File",
+                        JOptionPane.PLAIN_MESSAGE
+                );
+
+                if (fileName == null || fileName.isBlank()) return; // cancelled or empty input
+
+                // Determine target directory
+                Path targetDir;
+                DefaultMutableTreeNode selectedNode =
+                        (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+
+                if (selectedNode != null && selectedNode.getUserObject() instanceof SFile sfile) {
+                    Path selectedPath = sfile.getPath();
+                    targetDir = Files.isDirectory(selectedPath)
+                            ? selectedPath
+                            : selectedPath.getParent();
+                } else {
+                    targetDir = fileManager.getRootdir();
+                }
+
+                // --- Validate file extension according to FileManager's language ---
+                if (!fileManager.isAllowedFile(fileName)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Invalid file extension for current language (" + fileManager.getLanguage() + ").\n" +
+                                    "Allowed: " + fileManager.isAllowedFile(fileName),
+                            "Invalid Extension",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // --- Use FileManager + SFile to create file ---
+                Path newFilePath = targetDir.resolve(fileName);
+
+                if (Files.exists(newFilePath)) {
+                    JOptionPane.showMessageDialog(this,
+                            "File already exists: " + newFilePath.getFileName(),
+                            "Error", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Create new SFile through standard class logic
+                Files.createFile(newFilePath);
+                SFile newFile = new SFile(newFilePath);
+
+                // Register it into the FileManager list for consistency
+                fileManager.getFiles().add(newFile);
+
+                // Refresh the file tree to reflect the change
+                buildFileTree();
+
+                // Optional: Select or load the new file
+                dTextArea.setText("");
+                fileManager.setCurrentFile(newFile);
+
+                JOptionPane.showMessageDialog(this,
+                        "File created successfully: " + newFile.getPath().getFileName(),
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Failed to create file:\n" + ex.getMessage(),
+                        "File Creation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        });
+
+
 
         // Run button action
         runCodeButton.addActionListener(e -> {

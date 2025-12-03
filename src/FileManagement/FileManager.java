@@ -45,6 +45,12 @@ public class FileManager {
         };
     }
 
+    // Check if file is allowed
+    public boolean isAllowedFile(String filename) {
+        if (filename == null) return false;
+        return ALL_ALLOWED_EXTENSIONS.stream().anyMatch(filename::endsWith);
+    }
+
     /****************** GETTERS ******************/
     public Path getRootdir() { return rootdir; }
     public String getLanguage() { return language; }
