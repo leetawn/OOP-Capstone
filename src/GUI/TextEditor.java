@@ -9,36 +9,195 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class TextEditor {
+public class TextEditor extends JPanel {
     private JButton runCodeButton;
+    private JButton addFileButton;
     private JTextArea dTextArea;
-    private JComboBox comboBox1;
+    private JComboBox<String> comboBox1;
     private JTree fe_tree;
     private JPanel fileExplorer;
-    private JPanel mainPanel;
-
     private FileManager fileManager;
+    private JTextArea actualOutputArea;
+    private JTextArea expectedOutputArea;
 
     public TextEditor() {
+        initializeComponents();
+        setupLayout();
+        initializeBackend();
+        setupEventListeners();
+    }
+
+    private void initializeComponents() {
+        runCodeButton = new JButton("Run Code");
+        addFileButton = new JButton("Add File");
+        dTextArea = new JTextArea();
+        comboBox1 = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+        fe_tree = new JTree();
+        fileExplorer = new JPanel();
+        actualOutputArea = new JTextArea();
+        expectedOutputArea = new JTextArea();
+    }
+
+    private void setupLayout() {
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Left panel - File explorer and editor
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.6;
+        gbc.weighty = 1.0;
+        add(createLeftPanel(), gbc);
+
+        // Divider
+        gbc.gridx = 1;
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        JSeparator divider = new JSeparator(JSeparator.VERTICAL);
+        divider.setPreferredSize(new Dimension(1, 0));
+        add(divider, gbc);
+
+        // Right panel - Output areas
+        gbc.gridx = 2;
+        gbc.weightx = 0.4;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(createRightPanel(), gbc);
+    }
+
+    private JPanel createLeftPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Top row: Add File button (left) and Language combo (right)
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.0;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel.add(addFileButton, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(Box.createHorizontalGlue(), gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel("Language:"), gbc);
+
+        gbc.gridx = 3;
+        gbc.weightx = 0.0;
+        comboBox1.setPreferredSize(new Dimension(120, 25));
+        panel.add(comboBox1, gbc);
+
+        // File explorer panel
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weighty = 0.4;
+        gbc.fill = GridBagConstraints.BOTH;
+        JScrollPane treeScroll = new JScrollPane(fe_tree);
+        treeScroll.setBorder(BorderFactory.createTitledBorder("File Explorer"));
+        panel.add(treeScroll, gbc);
+
+        // Text editor panel
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.gridwidth = 3;
+        gbc.weighty = 0.6;
+        JScrollPane editorScroll = new JScrollPane(dTextArea);
+        editorScroll.setBorder(BorderFactory.createTitledBorder("Editor"));
+        panel.add(editorScroll, gbc);
+
+        // Empty space for alignment
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(Box.createHorizontalGlue(), gbc);
+
+        // Run button (right side, bottom of Text Editor)
+        gbc.gridx = 3;
+        gbc.weightx = 0.0;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(runCodeButton);
+        panel.add(buttonPanel, gbc);
+
+        return panel;
+    }
+
+    private JPanel createRightPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Actual Output
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.5;
+        JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setBorder(BorderFactory.createTitledBorder("Actual Output"));
+        panel.add(actualScroll, gbc);
+
+        // Divider
+        gbc.gridy = 1;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(new JSeparator(), gbc);
+
+        // Expected Output
+        gbc.gridy = 2;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setBorder(BorderFactory.createTitledBorder("Expected Output"));
+        panel.add(expectedScroll, gbc);
+
+        return panel;
+    }
+
+    private void initializeBackend() {
         try {
-            fileManager = new FileManager(".","java"); // project root
+            fileManager = new FileManager(".", "java"); // project root
+            buildFileTree();
+
+            // Setup text editor
+            dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+            dTextArea.setTabSize(4);
+
+            // Setup output areas
+            actualOutputArea.setEditable(false);
+            expectedOutputArea.setEditable(false);
+            actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+            expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+
         } catch (NotDirException e) {
-            JOptionPane.showMessageDialog(null, "Invalid directory: " + e.getMessage());
-            return;
+            JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
+    }
 
-        buildFileTree();
-
-        dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setTabSize(4);
-
+    private void setupEventListeners() {
+        // File tree selection listener
         fe_tree.addTreeSelectionListener(e -> {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
             if (node == null) return;
 
             Object obj = node.getUserObject();
             if (obj instanceof SFile sfile) {
-
                 try {
                     fileManager.setCurrentFile(sfile);
                     Path filePath = sfile.getPath();
@@ -51,6 +210,7 @@ public class TextEditor {
             }
         });
 
+        // Custom tree cell renderer
         fe_tree.setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(
@@ -74,8 +234,27 @@ public class TextEditor {
             }
         });
 
-        fileExplorer.setLayout(new BorderLayout());
-        fileExplorer.add(new JScrollPane(fe_tree), BorderLayout.CENTER);
+        // Add File button action
+        addFileButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+            int result = fileChooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                // TODO: Add logic to handle selected file
+                JOptionPane.showMessageDialog(this,
+                        "Selected file: " + selectedFile.getName() + "\n" +
+                                "This feature would copy/add the file to the project.");
+            }
+        });
+
+        // Run button action
+        runCodeButton.addActionListener(e -> {
+            // TODO: Add code execution logic here
+            actualOutputArea.setText("Executing code...\n");
+            expectedOutputArea.setText("Expected output will appear here");
+        });
     }
 
     private void buildFileTree() {
@@ -123,17 +302,13 @@ public class TextEditor {
         return null;
     }
 
-    public JPanel getMainPanel() {
-        return mainPanel;
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            TextEditor editor = new TextEditor();
             JFrame frame = new JFrame("Text Editor with File Explorer");
-            frame.setContentPane(editor.getMainPanel());
+            TextEditor editor = new TextEditor();
+            frame.setContentPane(editor);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1200, 700);
+            frame.setSize(1400, 800);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
