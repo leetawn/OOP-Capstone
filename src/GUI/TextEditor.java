@@ -39,7 +39,6 @@ public class TextEditor extends JPanel {
         actualOutputArea = new JTextArea();
         expectedOutputArea = new JTextArea();
 
-        // Pass 'this' TextEditor instance to the FileExplorer
         fileExplorerPanel = new FileExplorer(".", dTextArea, this);
     }
 
@@ -186,9 +185,7 @@ public class TextEditor extends JPanel {
 
         if (currentFile != null) {
             String content = dTextArea.getText();
-            // Crucial step: Update the SFile object's internal content field
             currentFile.setContent(content);
-            // Write the SFile content (which now holds the latest JTextArea content) to the disk
             currentFile.writeOut();
             System.out.println("File saved: " + currentFile.getStringPath());
         }
@@ -236,6 +233,7 @@ public class TextEditor extends JPanel {
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (selectedLang != null && fileManager != null) {
                 fileManager.setLanguage(selectedLang.toLowerCase());
+                fileExplorerPanel.buildFileTree();
                 System.out.println("Language changed to: " + selectedLang);
             }
         });
@@ -244,17 +242,29 @@ public class TextEditor extends JPanel {
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (fileManager == null) return;
 
-            DefaultMutableTreeNode node = fileExplorerPanel.getSelectedNode();
+            DefaultMutableTreeNode selectedNode = fileExplorerPanel.getSelectedNode();
             Path targetDir = fileManager.getRootdir();
+            DefaultMutableTreeNode parentNodeInTree;
 
-            if (node != null) {
-                Object obj = node.getUserObject();
+            if (selectedNode != null) {
+                Object obj = selectedNode.getUserObject();
+
                 if (obj instanceof SFile sfile) {
-                    targetDir = sfile.getPath().getParent();
+                    if (Files.isDirectory(sfile.getPath())) {
+                        targetDir = sfile.getPath();
+                        parentNodeInTree = selectedNode;
+                    } else {
+                        targetDir = sfile.getPath().getParent();
+                        parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
+                    }
                 } else {
-                    targetDir = fileExplorerPanel.resolveNodeToPath(node);
+                    targetDir = fileExplorerPanel.resolveNodeToPath(selectedNode);
+                    parentNodeInTree = selectedNode;
                 }
+            } else {
+                parentNodeInTree = (DefaultMutableTreeNode) fileExplorerPanel.getFeTree().getModel().getRoot();
             }
+
 
             String fileName = JOptionPane.showInputDialog(this, "Enter new file name (with extension):");
             if (fileName == null || fileName.isBlank()) return;
@@ -283,7 +293,13 @@ public class TextEditor extends JPanel {
                 fileManager.setCurrentFile(newSFile);
                 dTextArea.setText(newSFile.getContent());
 
-                fileExplorerPanel.buildFileTree();
+                DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
+                DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
+
+                model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+                fileExplorerPanel.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
+                fileExplorerPanel.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
 
                 JOptionPane.showMessageDialog(this, "File created: " + newFilePath);
             } catch (Exception ex) {

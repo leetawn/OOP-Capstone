@@ -10,11 +10,13 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class FileExplorer extends JPanel {
     private JTree fe_tree;
@@ -22,6 +24,7 @@ public class FileExplorer extends JPanel {
     private JTextArea dTextArea;
     private JPopupMenu contextMenu;
     private JMenuItem renameItem;
+    private JMenuItem createFolderItem;
     private JMenuItem deleteItem;
     private TextEditor textEditor;
 
@@ -84,8 +87,12 @@ public class FileExplorer extends JPanel {
         contextMenu = new JPopupMenu();
         renameItem =  new JMenuItem("Rename");
         deleteItem = new JMenuItem("Delete");
+        createFolderItem = new JMenuItem("Create folder");
+
+        contextMenu.addSeparator();
         contextMenu.add(renameItem);
         contextMenu.add(deleteItem);
+        contextMenu.add(createFolderItem);
     }
 
     private void setupLayout() {
@@ -103,19 +110,23 @@ public class FileExplorer extends JPanel {
 
             Object obj = node.getUserObject();
             if (obj instanceof SFile sfile) {
-                if (!Files.isDirectory(sfile.getPath())) {
-                    try {
-                        textEditor.saveCurrentFileContent();
 
-                        fileManager.setCurrentFile(sfile);
+                if (Files.isDirectory(sfile.getPath())) {
+                    System.out.println("Selected folder: " + sfile.getPath().getFileName());
+                    return;
+                }
 
-                        Path filePath = sfile.getPath();
-                        String content = Files.readString(filePath);
-                        dTextArea.setText(content);
-                        System.out.println("Current file set to: " + fileManager.getCurrentFileStringPath());
-                    } catch (Exception ex) {
-                        dTextArea.setText("// Error loading file: " + ex.getMessage());
-                    }
+                try {
+                    textEditor.saveCurrentFileContent();
+
+                    fileManager.setCurrentFile(sfile);
+
+                    Path filePath = sfile.getPath();
+                    String content = Files.readString(filePath);
+                    dTextArea.setText(content);
+                    System.out.println("Current file set to: " + fileManager.getCurrentFileStringPath());
+                } catch (Exception ex) {
+                    dTextArea.setText("// Error loading file: " + ex.getMessage());
                 }
             }
         });
@@ -129,17 +140,78 @@ public class FileExplorer extends JPanel {
 
                     if (selRow != -1) {
                         fe_tree.setSelectionPath(selPath);
-                        DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
-                        if (node != null && node.getUserObject() instanceof SFile) {
-                            contextMenu.show(fe_tree, e.getX(), e.getY());
-                        }
+                    } else {
+                        fe_tree.setSelectionRow(0);
                     }
+
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+
+                    if (node != null && node.getUserObject() instanceof SFile) {
+                        renameItem.setVisible(true);
+                        deleteItem.setVisible(true);
+                    } else {
+                        renameItem.setVisible(false);
+                        deleteItem.setVisible(false);
+                    }
+
+                    contextMenu.show(fe_tree, e.getX(), e.getY());
+                }
+            }
+        });
+
+        createFolderItem.addActionListener(e -> {
+            FileManager fm = getFileManager();
+            if (fm == null) return;
+
+            DefaultMutableTreeNode selectedTreePathNode = getSelectedNode();
+            Path directoryToCreateIn = fileManager.getRootdir();
+            DefaultMutableTreeNode parentNodeInTree;
+
+            if (selectedTreePathNode != null) {
+                Object obj = selectedTreePathNode.getUserObject();
+                if (obj instanceof SFile sfile) {
+                    directoryToCreateIn = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
+                    parentNodeInTree = Files.isDirectory(sfile.getPath()) ? selectedTreePathNode : (DefaultMutableTreeNode) selectedTreePathNode.getParent();
+                } else {
+                    directoryToCreateIn = fileManager.getRootdir();
+                    parentNodeInTree = selectedTreePathNode;
+                }
+            } else {
+                parentNodeInTree = (DefaultMutableTreeNode) fe_tree.getModel().getRoot();
+            }
+
+            String newFolderName = JOptionPane.showInputDialog(null, "Enter new folder name:");
+
+            if (newFolderName != null && !newFolderName.isBlank()) {
+                if (newFolderName.contains(File.separator) || newFolderName.startsWith(".")) {
+                    JOptionPane.showMessageDialog(null, "Invalid folder name. Cannot contain path separators or start with '.'", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                boolean success = fm.createFolder(directoryToCreateIn, newFolderName);
+
+                if (success) {
+                    Path newFolderPath = directoryToCreateIn.resolve(newFolderName);
+                    SFile newDirSFile = new SFile(newFolderPath);
+
+                    DefaultMutableTreeNode newFolderTreeNode = new DefaultMutableTreeNode(newDirSFile);
+
+                    DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
+
+                    model.insertNodeInto(newFolderTreeNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+                    fe_tree.expandPath(new TreePath(parentNodeInTree.getPath()));
+
+                    JOptionPane.showMessageDialog(null, "Folder created successfully in " + directoryToCreateIn.getFileName());
+                } else {
+                    JOptionPane.showMessageDialog(null, "Failed to create folder.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
         deleteItem.addActionListener(e -> {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+
             if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
 
             if (Files.isDirectory(sfile.getPath())) {
@@ -153,9 +225,24 @@ public class FileExplorer extends JPanel {
 
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean success = fileManager.deleteFile(sfile);
+
                 if (success) {
-                    buildFileTree();
-                    dTextArea.setText("");
+
+                    DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
+                    DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+
+                    if (parentNode != null) {
+                        model.removeNodeFromParent(node);
+
+                        if (sfile.equals(fileManager.getCurrentFile())) {
+                            dTextArea.setText("");
+                            fileManager.setCurrentFile(null);
+                        }
+                    } else {
+                        buildFileTree();
+                    }
+
+
                     JOptionPane.showMessageDialog(null, "File deleted successfully.");
                 } else {
                     JOptionPane.showMessageDialog(null, "Failed to delete file.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -180,7 +267,8 @@ public class FileExplorer extends JPanel {
             if (!fileManager.isAllowedFile(newName)) {
                 JOptionPane.showMessageDialog(null,
                         "Invalid file extension.\nAllowed: .c, .cpp, .h, .hpp, .java, .py",
-                        "Invalid Extension", JOptionPane.WARNING_MESSAGE);
+                        "Invalid Extension",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -196,102 +284,84 @@ public class FileExplorer extends JPanel {
 
     public void buildFileTree() {
         if (fileManager == null) return;
-        DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(fileManager.getRootdir().getFileName().toString());
 
-        ArrayList<SFile> allFiles = fileManager.getFiles();
+        Path rootPath = fileManager.getRootdir();
 
-        for (SFile sfile : allFiles) {
-            addFileNode(rootNode, sfile);
+        if (rootPath == null || !Files.exists(rootPath)) {
+            fe_tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Project Not Found")));
+            return;
         }
+
+        DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(rootPath.getFileName().toString());
+
+        recursivelyAddNodes(rootNode, rootPath);
 
         fe_tree.setModel(new DefaultTreeModel(rootNode));
         fe_tree.expandPath(new TreePath(rootNode));
     }
 
-    private void addFileNode(DefaultMutableTreeNode root, SFile sfile) {
-        Path filePath = sfile.getPath();
-        Path relativePath = fileManager.getRootdir().relativize(filePath);
-        String[] parts = relativePath.toString()
-                .split(File.separator.equals("\\") ? "\\\\" : File.separator);
 
-        DefaultMutableTreeNode current = root;
+    private void recursivelyAddNodes(DefaultMutableTreeNode parentNode, Path parentPath) {
+        try {
+            List<Path> contents = new ArrayList<>();
+            try (Stream<Path> stream = Files.list(parentPath)) {
+                stream.forEach(contents::add);
+            }
 
-        for (int i = 0; i < parts.length; i++) {
-            String partName = parts[i];
-            DefaultMutableTreeNode child = findChild(current, partName);
+            contents.sort((p1, p2) -> {
+                boolean isDir1 = Files.isDirectory(p1);
+                boolean isDir2 = Files.isDirectory(p2);
 
-            if (child == null) {
-                Object userObj = (i == parts.length - 1) ? sfile : partName;
-                child = new DefaultMutableTreeNode(userObj);
-                current.add(child);
+                if (isDir1 && !isDir2) return -1;
+                if (!isDir1 && isDir2) return 1;
 
-                List<DefaultMutableTreeNode> folders = new ArrayList<>();
-                List<DefaultMutableTreeNode> files = new ArrayList<>();
+                return p1.getFileName().toString().compareToIgnoreCase(p2.getFileName().toString());
+            });
 
-                for (int j = 0; j < current.getChildCount(); j++) {
-                    DefaultMutableTreeNode c = (DefaultMutableTreeNode) current.getChildAt(j);
-                    Object obj = c.getUserObject();
+            ArrayList<SFile> sFiles = fileManager.getFiles();
 
-                    boolean isFolder = false;
-                    if (obj instanceof String) {
-                        isFolder = true;
-                    } else if (obj instanceof SFile sf) {
-                        try {
-                            isFolder = Files.isDirectory(sf.getPath());
-                        } catch (Exception ex) {
-                        }
-                    }
+            for (Path childPath : contents) {
+                String fileName = childPath.getFileName().toString();
 
-                    if (isFolder) {
-                        folders.add(c);
-                    } else {
-                        files.add(c);
-                    }
+                if (Files.isHidden(childPath) || fileName.startsWith(".")) {
+                    continue;
                 }
 
-                current.removeAllChildren();
-                folders.forEach(current::add);
-                files.forEach(current::add);
+                if (Files.isDirectory(childPath)) {
+                    SFile dirSFile = new SFile(childPath);
+                    DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(dirSFile);
+
+                    parentNode.add(childNode);
+
+                    recursivelyAddNodes(childNode, childPath);
+                } else {
+                    SFile targetSFile = sFiles.stream()
+                            .filter(sf -> sf.getPath().equals(childPath))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (targetSFile != null) {
+                        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(targetSFile);
+                        parentNode.add(childNode);
+                    }
+                }
             }
-            current = child;
+        } catch (IOException e) {
+            System.err.println("Error reading directory for tree build: " + e.getMessage());
         }
     }
 
-    private DefaultMutableTreeNode findChild(DefaultMutableTreeNode parent, String name) {
-        for (int i = 0; i < parent.getChildCount(); i++) {
-            DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
-            Object obj = child.getUserObject();
-
-            if (obj instanceof SFile sfile) {
-                if (sfile.getPath().getFileName().toString().equals(name)) {
-                    return child;
-                }
-            } else if (obj.equals(name)) {
-                return child;
-            }
-        }
-        return null;
-    }
 
     public Path resolveNodeToPath(DefaultMutableTreeNode node) {
-        LinkedList<String> parts = new LinkedList<>();
-        DefaultMutableTreeNode current = node;
+        Object userObject = node.getUserObject();
 
-        while (current != null && current.getParent() != null) {
-            Object obj = current.getUserObject();
-            if (obj instanceof String folderName) {
-                parts.addFirst(folderName);
-            } else if (obj instanceof SFile sfile && Files.isDirectory(sfile.getPath())) {
-                parts.addFirst(sfile.getPath().getFileName().toString());
-            }
-            current = (DefaultMutableTreeNode) current.getParent();
+        if (userObject instanceof SFile sfile) {
+            return sfile.getPath();
         }
-
-        Path path = fileManager.getRootdir();
-        for (String part : parts) {
-            path = path.resolve(part);
+        if (userObject instanceof String) {
+            return fileManager.getRootdir();
         }
-        return path;
+        return fileManager.getRootdir();
     }
 
     public FileManager getFileManager() {
@@ -300,5 +370,9 @@ public class FileExplorer extends JPanel {
 
     public DefaultMutableTreeNode getSelectedNode() {
         return (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+    }
+
+    public JTree getFeTree() {
+        return fe_tree;
     }
 }

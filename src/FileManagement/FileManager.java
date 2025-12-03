@@ -133,6 +133,26 @@ public class FileManager {
     public void setCurrentFile(SFile currentFile) {
         this.currentFile = currentFile;
     }
+    public boolean createFolder(Path targetDir, String folderName) {
+        if (targetDir == null || folderName == null || folderName.isBlank()) {
+            return false;
+        }
+        Path newDirPath = targetDir.resolve(folderName);
+
+        try {
+            if (Files.exists(newDirPath)) {
+                System.out.println("Error: Directory already exists at " + newDirPath);
+                return false;
+            }
+            Files.createDirectory(newDirPath);
+            System.out.println("Folder created successfully: " + newDirPath);
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Failed to create directory: " + newDirPath + ". Error: " + e.getMessage());
+            return false;
+        }
+    }
 
     /****************** INPUT/OUTPUT ******************/
     public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
