@@ -1,5 +1,7 @@
 package FileManagement;
 
+import CustomExceptions.NotDirException;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -12,16 +14,18 @@ public class FileManager {
     private static final Set<String> CPP_ALLOWED_EXTENSIONS  = Set.of(".cpp", ".h", ".hpp");
     private static final Set<String> C_ALLOWED_EXTENSIONS    = Set.of(".c", ".h");
     private static final Set<String> PY_ALLOWED_EXTENSIONS   = Set.of(".py");
-    private Path rootdir;
+    private final Path rootdir;
+    private SFile currentFile;
     private ArrayList<SFile> s_files;
     private String language;
 
     // Opens a folder and make set it as rootdir, throws error when path is not dir
     public FileManager(String rootpath, String language) throws NotDirException {
         rootdir = Paths.get(rootpath);
+        currentFile = null;
         this.language = language;
-        if (!Files.isDirectory(rootdir)) throw new NotDirException();
 
+        if (!Files.isDirectory(rootdir)) throw new NotDirException();
         s_files = new ArrayList<>();
 
         try {
@@ -47,7 +51,11 @@ public class FileManager {
 
     // @ TODO ETHAN, USE THIS FOR FILE TREE
     public ArrayList<SFile> getFiles() { return s_files; }
-
+    public SFile getCurrentFile() { return currentFile; }
+    public String getCurrentFileStringPath() {
+        if (currentFile == null) return null;
+        return getRelativePath(currentFile).toString();
+    }
 
     /****************** SETTERS ******************/
     public void setLanguage(String language)
@@ -57,6 +65,10 @@ public class FileManager {
         try {
             listAllContents(rootdir, getAllowedExtensions(language));
         } catch (IOException e) {}
+    }
+
+    public void setCurrentFile(SFile currentFile) {
+        this.currentFile = currentFile;
     }
 
     /****************** INPUT/OUTPUT ******************/

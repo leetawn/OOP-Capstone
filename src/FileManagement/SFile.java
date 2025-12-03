@@ -37,6 +37,7 @@ public class SFile {
 
     public String getContent() { return content; }
     public Path getPath() { return path; }
+    public String getStringPath() { return path.toString(); }
 
     /****************** SETTERS ******************/
 

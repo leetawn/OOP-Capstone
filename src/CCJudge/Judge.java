@@ -1,7 +1,7 @@
 package CCJudge;
 
+import CustomExceptions.NotDirException;
 import FileManagement.FileManager;
-import FileManagement.NotDirException;
 import FileManagement.SFile;
 
 import java.io.*;
@@ -9,7 +9,6 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-//import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -22,12 +21,18 @@ public class Judge {
     public static void main(String[] args) {
         String[] s = {"Ethan"};
         try {
+            // JAVA JUDGE DEMO
+            FileManager fm = new FileManager("src", "java");
+            // SET Current file with fm.setCurrentFile(SFile);
+            /* Ignore this line this is just so FileManager has a current file since by default it has no CurrentFile you have to set it */ for (SFile f : fm.getFiles()) { if (f.getPath().getFileName().toString().contains("TestMain")) { fm.setCurrentFile(f); break; } }
+            judge(fm, null);
+
+            // CPP, C, PYTHON JUDGE DEMO
             judge(new FileManager("COMPILER_TEST/CPP", "cpp"), s);
-            judge(new FileManager("COMPILER_TEST/JAVA", "java"), s);
             judge(new FileManager("COMPILER_TEST/PYTHON", "python"), s);
             judge(new FileManager("COMPILER_TEST/C", "c"), s);
 
-        } catch (NotDirException ignored) {}
+        } catch (NotDirException e) {}
     }
 
     public static void judge(FileManager fm, String[] test_inputs) {
@@ -49,37 +54,9 @@ public class Judge {
             // --- 5. Cleanup ---
             System.out.println("\n--- Cleanup ---");
             cleanup(fm);
-            System.out.println("Final Result: **" + verdict + "**");
+            System.out.printf("Final Result: **%s**\n\n", verdict);
         }
     }
-
-    public static void test_judge() {
-        String language = "cpp";
-
-        String verdict = "Unknown Error";
-        SubmissionFile[] files = ExecutionConfig.getTestFiles(language);
-
-        try {
-            setupSubmission(files);
-
-            verdict = compile(files, language);
-            if (verdict.startsWith("CE")) {
-                System.out.println("Result: **" + verdict + "**");
-                return;
-            }
-
-            verdict = judgeInteractively(null, TEST_INPUTS);
-
-        } catch (Exception e) {
-            System.err.println("Judge System Failure: " + e.getMessage());
-            verdict = "System Error";
-        } finally {
-            System.out.println("\n--- Cleanup ---");
-            test_cleanup(files, language);
-            System.out.println("Final Result: **" + verdict + "**");
-        }
-    }
-    // PRIVATE FUNCTIONS ------------------
 
     private static String judgeInteractively(FileManager fm, String[] testInputs) {
         Process process = null;
@@ -104,7 +81,7 @@ public class Judge {
             long startTime = System.currentTimeMillis();
 
             // Main interaction loop
-            while (inputIndex < testInputs.length) {
+            while (testInputs != null && inputIndex < testInputs.length) {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
                     return "TLE (Time Limit Exceeded)";
@@ -159,21 +136,6 @@ public class Judge {
         }
     }
 
-    private static String compile(SubmissionFile[] files, String language) throws Exception {
-        String[] compileCommand = ExecutionConfig.getCompileCommand(language, files);
-
-        if (compileCommand == null) {
-            System.out.println("-> No compilation required for " + language);
-            return "No Compilation";
-        }
-
-        System.out.println("-> Compiling: " + String.join(" ", compileCommand));
-        ProcessBuilder pb = new ProcessBuilder(compileCommand);
-        pb.directory(new File("."));
-
-        return startCompilation(pb);
-    }
-
     private static String compile(FileManager fm) throws Exception {
         String[] compileCommand = ExecutionConfig.getCompileCommand(fm);
 
@@ -201,13 +163,6 @@ public class Judge {
         return "Compilation Success";
     }
 
-    private static void setupSubmission(SubmissionFile[] files) throws IOException {
-        System.out.println("-> Setting up " + files.length + " source files...");
-        for (SubmissionFile file : files) {
-            Files.writeString(Paths.get(file.filename()), file.content());
-        }
-    }
-
     private static String readStream(InputStream is) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             return reader.lines().collect(Collectors.joining("\n"));
@@ -218,8 +173,9 @@ public class Judge {
         String language = fm.getLanguage();
         try {
             if (language.equals("java")) {
+                Files.deleteIfExists(Paths.get(fm.getCurrentFile().getPath().getParent().toString(),"SubmissionFile.class"));
                 for (SFile file : fm.getFiles()) {
-                    String className = fm.getRelativePath(file).toString().replace(".java", ".class");
+                    String className = file.getPath().toAbsolutePath().toString().replace(".java", ".class");
                     Files.deleteIfExists(Paths.get(className));
                 }
             } else if (language.equals("cpp") || language.equals("c")) {
@@ -232,28 +188,5 @@ public class Judge {
 //            e.printStackTrace();
 //            System.out.println(e.getMessage());
         }
-    }
-
-    // DON'T USE THIS!! IT WILL DELETE USERS FILES
-    private static void test_cleanup(SubmissionFile[] files, String language) {
-        for (SubmissionFile file : files) {
-            try {
-                Files.deleteIfExists(Paths.get(file.filename()));
-            } catch (IOException ignored) {}
-        }
-
-        try {
-            if (language.equals("java")) {
-                // del nig ahh java
-                for (SubmissionFile file : files) {
-                    String className = file.filename().replace(".java", ".class");
-                    Files.deleteIfExists(Paths.get(className));
-                }
-            } else if (language.equals("cpp") || language.equals("c")) {
-                // del exe
-                Files.deleteIfExists(Paths.get("Submission.exe"));
-                System.out.println("Deleted Submission.exe");
-            }
-        } catch (IOException e) { /* Ignore */ }
     }
 }

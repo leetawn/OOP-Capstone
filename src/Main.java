@@ -2,6 +2,6 @@ import CCJudge.Judge;
 
 public class Main {
     public static void main(String[] args) {
-        Judge.test_judge();
+        System.out.println("Welcome to CCJudge!");
     }
 }

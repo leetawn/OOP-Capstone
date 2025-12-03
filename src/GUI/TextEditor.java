@@ -1,5 +1,6 @@
 package GUI;
 
+import CustomExceptions.NotDirException;
 import FileManagement.*;
 import javax.swing.*;
 import javax.swing.tree.*;
