@@ -82,7 +82,14 @@ public class TextEditor extends JPanel {
         languageSelectDropdown.setOpaque(true);
 
         actualOutputArea = new JTextArea();
+        actualOutputArea.setBackground(Color.decode("#1f2335"));
+        actualOutputArea.setCaretColor(Color.WHITE);
+        actualOutputArea.setForeground(Color.WHITE);
+
         expectedOutputArea = new JTextArea();
+        expectedOutputArea.setBackground(Color.decode("#1f2335"));
+        expectedOutputArea.setCaretColor(Color.WHITE);
+        expectedOutputArea.setForeground(Color.WHITE);
 
         fileExplorerPanel = new FileExplorer(".", dTextArea, this);
     }
@@ -208,7 +215,10 @@ public class TextEditor extends JPanel {
         gbc.weightx = 1.0;
         gbc.weighty = 0.5;
         JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setBackground(Color.decode("#1f2335"));
         actualScroll.setBorder(BorderFactory.createTitledBorder("Actual Output"));
+        TitledBorder titledBorder3 = (TitledBorder) actualScroll.getBorder();
+        titledBorder3.setTitleColor(Color.WHITE);
         panel.add(actualScroll, gbc);
 
         gbc.gridy = 1;
@@ -221,7 +231,10 @@ public class TextEditor extends JPanel {
         gbc.weighty = 0.5;
         gbc.fill = GridBagConstraints.BOTH;
         JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setBackground(Color.decode("#1f2335"));
         expectedScroll.setBorder(BorderFactory.createTitledBorder("Expected Output"));
+        TitledBorder titledBorder2 = (TitledBorder) expectedScroll.getBorder();
+        titledBorder2.setTitleColor(Color.WHITE);
         panel.add(expectedScroll, gbc);
 
         return panel;
@@ -233,7 +246,9 @@ public class TextEditor extends JPanel {
         dTextArea.setTabSize(1);
 
         actualOutputArea.setEditable(false);
+        actualOutputArea.setCaretColor(Color.decode("#1f2335"));
         expectedOutputArea.setEditable(false);
+        expectedOutputArea.setCaretColor(Color.decode("#1f2335"));
         actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
     }
