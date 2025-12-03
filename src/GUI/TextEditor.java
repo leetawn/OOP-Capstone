@@ -52,7 +52,7 @@ public class TextEditor extends JPanel {
         addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
         openFolderButton = new JButton("Open Folder");
-        createFolderButton = new JButton("Create Folder");
+//        createFolderButton = new JButton("Create Folder");
         setEntryPointButton = new JButton("Set Entry Point");
         setEntryPointButton.setVisible(false); // Hidden by default
 
@@ -63,6 +63,12 @@ public class TextEditor extends JPanel {
         openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
         createFolderButton = new JButton("Create Folder");
+        createFolderButton.setBackground(Color.decode("#568afc"));
+        createFolderButton.setForeground(Color.WHITE);
+        createFolderButton.setOpaque(true);
+        createFolderButton.setBorderPainted(false);
+        createFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+
         dTextArea = new JTextArea();
         dTextArea.setBackground(Color.decode("#1f2335"));
         dTextArea.setCaretColor(Color.WHITE);
