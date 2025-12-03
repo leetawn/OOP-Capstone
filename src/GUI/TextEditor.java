@@ -95,7 +95,11 @@ public class TextEditor extends JPanel {
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel("Language:"), gbc);
+        JLabel languageLabel = new JLabel("Language:");
+        languageLabel.setBackground(Color.decode("#28313b"));
+        languageLabel.setForeground(Color.WHITE);
+        languageLabel.setOpaque(true);
+        panel.add(languageLabel, gbc);
 
         gbc.gridx = 3;
         gbc.weightx = 0.0;
