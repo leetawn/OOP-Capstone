@@ -49,14 +49,9 @@ public class FileManager {
             }
 
             Files.move(oldPath, newPath);
-            s_files.remove(sfile);
-            SFile renamed = new SFile(newPath);
-            s_files.add(renamed);
-
             if (currentFile != null && currentFile.equals(sfile)) {
-                currentFile = renamed;
+                currentFile = all_files.getLast();
             }
-
             return true;
         } catch (IOException e) {
             System.err.println("Failed to rename file: " + e.getMessage());
@@ -68,20 +63,14 @@ public class FileManager {
 
         try {
             Path filePath = sfile.getPath();
-
             if (!Files.exists(filePath)) {
                 System.err.println("File not found: " + filePath);
                 return false;
             }
-
             Files.delete(filePath);
-
-            s_files.remove(sfile);
-
             if (currentFile != null && currentFile.equals(sfile)) {
                 currentFile = null;
             }
-
             System.out.println("[DELETED] " + filePath);
             return true;
 
@@ -93,6 +82,26 @@ public class FileManager {
     public boolean isAllowedFile(String filename) {
         if (filename == null) return false;
         return ALL_ALLOWED_EXTENSIONS.stream().anyMatch(filename::endsWith);
+    }
+    public boolean createFolder(Path targetDir, String folderName) {
+        if (targetDir == null || folderName == null || folderName.isBlank()) {
+            return false;
+        }
+        Path newDirPath = targetDir.resolve(folderName);
+
+        try {
+            if (Files.exists(newDirPath)) {
+                System.out.println("Error: Directory already exists at " + newDirPath);
+                return false;
+            }
+            Files.createDirectory(newDirPath);
+            System.out.println("Folder created successfully: " + newDirPath);
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Failed to create directory: " + newDirPath + ". Error: " + e.getMessage());
+            return false;
+        }
     }
 
     /****************** File Manager ******************/
