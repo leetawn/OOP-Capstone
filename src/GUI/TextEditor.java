@@ -4,6 +4,7 @@ import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
 import javax.swing.event.*;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
@@ -53,8 +54,28 @@ public class TextEditor extends JPanel {
         openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
         dTextArea = new JTextArea();
-        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
 
+        languageSelectDropdown = new JComboBox<>(new String[]{"   C", "   C++", "   Java", "   Python"});
+        languageSelectDropdown.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton("▼");
+                button.setBackground(Color.decode("#568afc"));
+                button.setForeground(Color.WHITE);
+                button.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+                return button;
+            }
+
+            @Override
+            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+                g.setColor(Color.decode("#568afc"));
+                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            }
+        });
+
+        languageSelectDropdown.setBackground(Color.decode("#568afc"));
+        languageSelectDropdown.setForeground(Color.WHITE);
+        languageSelectDropdown.setOpaque(true);
 
         actualOutputArea = new JTextArea();
         expectedOutputArea = new JTextArea();
