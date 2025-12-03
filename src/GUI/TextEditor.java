@@ -31,10 +31,31 @@ public class TextEditor extends JPanel {
 
     private void initializeComponents() {
         runCodeButton = new JButton("Run Code");
+        runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        runCodeButton.setBackground(Color.decode("#568afc"));
+        runCodeButton.setForeground(Color.WHITE);
+        runCodeButton.setOpaque(true);
+        runCodeButton.setBorderPainted(false);
+        runCodeButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
         addFileButton = new JButton("Add File");
+        addFileButton.setBackground(Color.decode("#568afc"));
+        addFileButton.setForeground(Color.WHITE);
+        addFileButton.setOpaque(true);
+        addFileButton.setBorderPainted(false);
+        addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
+
         openFolderButton = new JButton("Open Folder");
+        openFolderButton.setBackground(Color.decode("#568afc"));
+        openFolderButton.setForeground(Color.WHITE);
+        openFolderButton.setOpaque(true);
+        openFolderButton.setBorderPainted(false);
+        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+
         dTextArea = new JTextArea();
         languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+
+
         actualOutputArea = new JTextArea();
         expectedOutputArea = new JTextArea();
 
