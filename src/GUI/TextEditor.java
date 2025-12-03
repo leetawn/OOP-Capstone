@@ -69,6 +69,7 @@ public class TextEditor extends JPanel {
 
     private JPanel createLeftPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
