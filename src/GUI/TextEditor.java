@@ -115,7 +115,7 @@ public class TextEditor extends JPanel {
         gbc.gridwidth = 3;
         gbc.weighty = 0.6;
         JScrollPane editorScroll = new JScrollPane(dTextArea);
-        editorScroll.setBorder(BorderFactory.createTitledBorder("Editor"));
+        editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
         panel.add(editorScroll, gbc);
 
         // Empty space for alignment
@@ -178,7 +178,7 @@ public class TextEditor extends JPanel {
 
             // Setup text editor
             dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-            dTextArea.setTabSize(4);
+            dTextArea.setTabSize(2);
 
             // Setup output areas
             actualOutputArea.setEditable(false);
