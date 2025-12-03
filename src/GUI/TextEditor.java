@@ -11,7 +11,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.List;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -44,6 +43,7 @@ public class TextEditor extends JPanel {
 
     private void setupLayout() {
         setLayout(new GridBagLayout());
+        setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(3, 3, 3, 3);
@@ -58,6 +58,7 @@ public class TextEditor extends JPanel {
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         JSeparator divider = new JSeparator(JSeparator.VERTICAL);
+        divider.setBackground(Color.decode("#28313b"));
         divider.setPreferredSize(new Dimension(1, 0));
         add(divider, gbc);
 
@@ -83,6 +84,7 @@ public class TextEditor extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         JPanel fileButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        fileButtonsPanel.setBackground(Color.decode("#28313b"));
         fileButtonsPanel.add(openFolderButton);
         fileButtonsPanel.add(addFileButton);
         panel.add(fileButtonsPanel, gbc);
@@ -131,6 +133,7 @@ public class TextEditor extends JPanel {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.decode("#28313b"));
         buttonPanel.add(runCodeButton);
         panel.add(buttonPanel, gbc);
 
@@ -146,6 +149,7 @@ public class TextEditor extends JPanel {
 
     private JPanel createRightPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -161,7 +165,8 @@ public class TextEditor extends JPanel {
         gbc.gridy = 1;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(new JSeparator(), gbc);
+        JSeparator tempSeparator = new JSeparator(JSeparator.HORIZONTAL);
+        panel.add(tempSeparator, gbc);
 
         gbc.gridy = 2;
         gbc.weighty = 0.5;
@@ -176,7 +181,7 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setTabSize(4);
+        dTextArea.setTabSize(1);
 
         actualOutputArea.setEditable(false);
         expectedOutputArea.setEditable(false);
@@ -211,7 +216,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        openFolderButton.addActionListener(e -> {
+        openFolderButton.addActionListener(_ -> {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
@@ -233,7 +238,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        languageSelectDropdown.addActionListener(e -> {
+        languageSelectDropdown.addActionListener(_ -> {
             String selectedLang = (String) languageSelectDropdown.getSelectedItem();
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (selectedLang != null && fileManager != null) {
@@ -243,7 +248,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        addFileButton.addActionListener(e -> {
+        addFileButton.addActionListener(_ -> {
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (fileManager == null) return;
 
@@ -314,7 +319,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        runCodeButton.addActionListener(e -> {
+        runCodeButton.addActionListener(_ -> {
             saveCurrentFileContent();
             actualOutputArea.setText("Executing code...\n");
             expectedOutputArea.setText("Expected output will appear here");
