@@ -193,84 +193,29 @@ public class FileExplorer extends JPanel {
 //        setPreferredSize(new Dimension(250, 0));
 //    }
 
-//    private void setupLayout() {
-//        setLayout(new BorderLayout());
-//        JScrollPane treeScroll = new JScrollPane(fe_tree);
-//
-//        // Create border with white title
-//        TitledBorder border = BorderFactory.createTitledBorder(
-//                BorderFactory.createLineBorder(Color.decode("#1f2335")),
-//                "File Explorer",
-//                TitledBorder.LEFT,
-//                TitledBorder.TOP,
-//                new Font("Dialog", Font.BOLD, 12),
-//                Color.WHITE
-//        );
-//        treeScroll.setBorder(border);
-//
-//        treeScroll.getViewport().setBackground(Color.decode("#1f2335"));
-//        this.setBackground(Color.decode("#1f2335"));  // ADD THIS LINE
-//        add(treeScroll, BorderLayout.CENTER);
-//        setPreferredSize(new Dimension(250, 0));
-//    }
-
     private void setupLayout() {
         setLayout(new BorderLayout());
         JScrollPane treeScroll = new JScrollPane(fe_tree);
 
-        // ---- DARK COLORS ----
-        Color BG = Color.decode("#1f2335");
-        Color TITLE = Color.decode("#ffffff");
-        Color SCROLL_TRACK = Color.decode("#2a2f45");
-        Color SCROLL_THUMB = Color.decode("#3b425c");
-
-        // ---- BORDER WITH DARK THEME ----
+        // Create border with white title
         TitledBorder border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BG),
+                BorderFactory.createLineBorder(Color.decode("#1f2335")),
                 "File Explorer",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
-                new Font("JetBrains Mono", Font.PLAIN, 12),
-                TITLE
+                new Font("Dialog", Font.BOLD, 12),
+                Color.WHITE
         );
         treeScroll.setBorder(border);
 
-        // ---- FIX WHITE BACKGROUNDS ----
-        treeScroll.setBackground(BG);                   // JScrollPane background
-        treeScroll.getViewport().setBackground(BG);    // Viewport background
-        this.setBackground(BG);                        // Panel background
-
-        // ---- CUSTOM DARK SCROLLBAR ----
-        JScrollBar vBar = treeScroll.getVerticalScrollBar();
-        JScrollBar hBar = treeScroll.getHorizontalScrollBar();
-
-        vBar.setBackground(SCROLL_TRACK);
-        hBar.setBackground(SCROLL_TRACK);
-
-        vBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-            @Override
-            protected void configureScrollBarColors() {
-                this.thumbColor = SCROLL_THUMB;
-                this.trackColor = SCROLL_TRACK;
-            }
-        });
-
-        hBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-            @Override
-            protected void configureScrollBarColors() {
-                this.thumbColor = SCROLL_THUMB;
-                this.trackColor = SCROLL_TRACK;
-            }
-        });
-
+        treeScroll.getViewport().setBackground(Color.decode("#1f2335"));
+        this.setBackground(Color.decode("#1f2335"));  // ADD THIS LINE
         add(treeScroll, BorderLayout.CENTER);
         setPreferredSize(new Dimension(250, 0));
     }
 
-
-
     private void setupEventListeners() {
-        fe_tree.addTreeSelectionListener(_ -> {
+        fe_tree.addTreeSelectionListener(e -> {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
             if (node == null) return;
 
