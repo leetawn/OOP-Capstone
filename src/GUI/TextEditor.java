@@ -3,6 +3,7 @@ package GUI;
 import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
@@ -54,6 +55,9 @@ public class TextEditor extends JPanel {
         openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
         dTextArea = new JTextArea();
+        dTextArea.setBackground(Color.decode("#1f2335"));
+        dTextArea.setCaretColor(Color.WHITE);
+        dTextArea.setForeground(Color.WHITE);
 
         languageSelectDropdown = new JComboBox<>(new String[]{"   C", "   C++", "   Java", "   Python"});
         languageSelectDropdown.setUI(new BasicComboBoxUI() {
@@ -165,7 +169,10 @@ public class TextEditor extends JPanel {
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
         JScrollPane editorScroll = new JScrollPane(dTextArea);
-        editorScroll.setBorder(BorderFactory.createTitledBorder("Editor"));
+        editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
+        editorScroll.setBackground(Color.decode("#1f2335"));
+        TitledBorder titledBorder = (TitledBorder) editorScroll.getBorder();
+        titledBorder.setTitleColor(Color.WHITE);
         panel.add(editorScroll, gbc);
 
         gbc.gridx = 3;
