@@ -29,26 +29,32 @@ public class FileExplorer extends JPanel {
     private JMenuItem addFileItem;
     private TextEditor textEditor;
 
+    // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
-        initializeBackend(rootDir);
+        initializeBackend(rootDir); // Calls initializeBackend without language argument
         initializeComponents();
         setupLayout();
         setupEventListeners();
         buildFileTree();
     }
 
+    // Updated updateRootDirectory to fetch language from TextEditor
     public void updateRootDirectory(String newRootDir) throws NotDirException {
-        String currentLang = textEditor.getSelectedLanguage();
+        // Fetch the CURRENT language from the TextEditor
+        String currentLang = textEditor.getCurrentSelectedLanguage();
         this.fileManager = new FileManager(newRootDir, currentLang);
         this.dTextArea.setText("");
         this.buildFileTree();
     }
 
+    // Updated initializeBackend to fetch language from TextEditor
     private void initializeBackend(String rootDir) {
         try {
-            fileManager = new FileManager(rootDir, textEditor.getSelectedLanguage());
+            // Fetch the CURRENT language from the TextEditor
+            String initialLanguage = textEditor.getCurrentSelectedLanguage();
+            fileManager = new FileManager(rootDir, initialLanguage);
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -95,7 +101,8 @@ public class FileExplorer extends JPanel {
         contextMenu.add(deleteItem);
         contextMenu.add(createFolderItem);
         contextMenu.add(addFileItem);
-    };
+    }
+
     private void setupLayout() {
         setLayout(new BorderLayout());
         JScrollPane treeScroll = new JScrollPane(fe_tree);
@@ -155,6 +162,7 @@ public class FileExplorer extends JPanel {
             }
         });
         addFileItem.addActionListener(e -> {
+            // Reuses the main handler logic in TextEditor
             textEditor.handleAddFileAction();
         });
 
@@ -172,11 +180,17 @@ public class FileExplorer extends JPanel {
 
             if (newName == null || newName.isBlank() || newName.equals(currentName)) return;
 
+            // Validation for renaming: Check if new name is allowed for current language
+            if (!isDirectory && !fileManager.isAllowedFile(newName)) {
+                JOptionPane.showMessageDialog(null,
+                        "Invalid file extension for the current project language (" + fileManager.getLanguage() + ").",
+                        "Invalid Extension", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             boolean success = fileManager.renameFile(sfile, newName);
 
             if (success) {
-
-
                 DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
                 DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
 
@@ -231,6 +245,8 @@ public class FileExplorer extends JPanel {
                         if (sfile.equals(fileManager.getCurrentFile()) || isDirectory) {
                             dTextArea.setText("");
                             fileManager.setCurrentFile(null);
+                            // If a deleted file was the entry point, reset the entry point button label
+                            textEditor.getSetEntryPointButton().setText("Set Entry Point");
                         }
                     }
 
@@ -241,6 +257,7 @@ public class FileExplorer extends JPanel {
             }
         });
     }
+
     public void handleCreateFolderAction() {
         FileManager fm = getFileManager();
         if (fm == null) return;
@@ -252,7 +269,9 @@ public class FileExplorer extends JPanel {
         if (selectedTreePathNode != null) {
             Object obj = selectedTreePathNode.getUserObject();
             if (obj instanceof SFile sfile) {
+                // If a file is selected, create folder in its parent directory
                 directoryToCreateIn = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
+                // Parent node is the directory itself, or the selected node's parent
                 parentNodeInTree = Files.isDirectory(sfile.getPath()) ? selectedTreePathNode : (DefaultMutableTreeNode) selectedTreePathNode.getParent();
             } else {
                 directoryToCreateIn = fileManager.getRootdir();
@@ -280,6 +299,7 @@ public class FileExplorer extends JPanel {
 
                 DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
 
+                // Insert into the determined parent node
                 model.insertNodeInto(newFolderTreeNode, parentNodeInTree, parentNodeInTree.getChildCount());
 
                 fe_tree.expandPath(new TreePath(parentNodeInTree.getPath()));
@@ -307,6 +327,7 @@ public class FileExplorer extends JPanel {
         recursivelyAddNodes(rootNode, rootPath);
 
         fe_tree.setModel(new DefaultTreeModel(rootNode));
+        // Expand the root node by default
         fe_tree.expandPath(new TreePath(rootNode));
     }
 
@@ -318,6 +339,7 @@ public class FileExplorer extends JPanel {
                 stream.forEach(contents::add);
             }
 
+            // Sort directories first, then files alphabetically
             contents.sort((p1, p2) -> {
                 boolean isDir1 = Files.isDirectory(p1);
                 boolean isDir2 = Files.isDirectory(p2);
@@ -333,6 +355,7 @@ public class FileExplorer extends JPanel {
             for (Path childPath : contents) {
                 String fileName = childPath.getFileName().toString();
 
+                // Skip hidden files/folders and those starting with '.'
                 if (Files.isHidden(childPath) || fileName.startsWith(".")) {
                     continue;
                 }
@@ -345,6 +368,8 @@ public class FileExplorer extends JPanel {
 
                     recursivelyAddNodes(childNode, childPath);
                 } else {
+                    // Check if the file is tracked by the FileManager
+                    // NOTE: Since FileManager tracks ALL files now, this will include them all.
                     SFile targetSFile = sFiles.stream()
                             .filter(sf -> sf.getPath().equals(childPath))
                             .findFirst()
