@@ -37,7 +37,7 @@ public class FileExplorer extends JPanel {
 
     public void updateRootDirectory(String newRootDir) throws NotDirException {
         String currentLang = fileManager != null ? fileManager.getLanguage() : null;
-        this.fileManager = new FileManager(newRootDir, currentLang);
+        this.fileManager = fileManager.setAll(newRootDir, currentLang);
         this.dTextArea.setText("");
         this.buildFileTree();
     }
@@ -45,7 +45,7 @@ public class FileExplorer extends JPanel {
 
     private void initializeBackend(String rootDir) {
         try {
-            fileManager = new FileManager(rootDir, null);
+            fileManager = FileManager.getInstance().setAll(rootDir, null);
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }

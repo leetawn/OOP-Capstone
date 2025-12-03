@@ -21,19 +21,22 @@ public class Judge {
     public static void main(String[] args) {
         String[] s = {"Ethan"};
 
-        try {
+
             // JAVA JUDGE DEMO
-            FileManager fm = new FileManager("src", "java");
+        FileManager fm = FileManager.getInstance();
+        try {
+            fm.setAll("src", "java");
             // SET Current file with fm.setCurrentFile(SFile);
             /* Ignore this line this is just so FileManager has a current file since by default it has no CurrentFile */ for (SFile f : fm.getFiles()) { if (f.getPath().getFileName().toString().contains("TestMain")) { fm.setCurrentFile(f); break; } }
             judge(fm, null);
 
             // CPP, C, PYTHON JUDGE DEMO
-            judge(new FileManager("COMPILER_TEST/CPP", "cpp"), s);
-            judge(new FileManager("COMPILER_TEST/PYTHON", "python"), s);
-            judge(new FileManager("COMPILER_TEST/C", "c"), s);
+            judge(fm.setAll("COMPILER_TEST/CPP", "cpp"), s);
+            judge(fm.setAll("COMPILER_TEST/PYTHON", "python"), s);
+            judge(fm.setAll("COMPILER_TEST/C", "c"), s);
+        } catch (NotDirException e) {
 
-        } catch (NotDirException e) {}
+        }
     }
 
     public static SubmissionRecord judge(FileManager fm, String[] test_inputs) {
