@@ -46,6 +46,7 @@ public class SFile {
     // when editing in JTextArea in GUI use this to set the content to write */
     // TODO: @GODSPRO magamit ni nimo nga function para sa Ctrl + S
     public void setContent(String content) { this.content = content; }
+    public void setPath(Path newPath) { this.path = newPath; }
 
     /****************** INPUT/OUTPUT ******************/
 
