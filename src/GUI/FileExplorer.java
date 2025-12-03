@@ -23,15 +23,25 @@ public class FileExplorer extends JPanel {
     private JPopupMenu contextMenu;
     private JMenuItem renameItem;
     private JMenuItem deleteItem;
+    private TextEditor textEditor;
 
-    public FileExplorer(String rootDir, JTextArea editorTextArea) {
+    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
         this.dTextArea = editorTextArea;
+        this.textEditor = textEditor;
         initializeBackend(rootDir);
         initializeComponents();
         setupLayout();
         setupEventListeners();
         buildFileTree();
     }
+
+    public void updateRootDirectory(String newRootDir) throws NotDirException {
+        String currentLang = fileManager != null ? fileManager.getLanguage() : null;
+        this.fileManager = new FileManager(newRootDir, currentLang);
+        this.dTextArea.setText("");
+        this.buildFileTree();
+    }
+
 
     private void initializeBackend(String rootDir) {
         try {
@@ -95,7 +105,10 @@ public class FileExplorer extends JPanel {
             if (obj instanceof SFile sfile) {
                 if (!Files.isDirectory(sfile.getPath())) {
                     try {
+                        textEditor.saveCurrentFileContent();
+
                         fileManager.setCurrentFile(sfile);
+
                         Path filePath = sfile.getPath();
                         String content = Files.readString(filePath);
                         dTextArea.setText(content);
