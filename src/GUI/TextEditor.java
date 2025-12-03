@@ -17,7 +17,10 @@ import java.util.*;
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
+    private JButton createButton;
     private JButton openFolderButton;
+    private JButton createFolderButton;
+    private JButton setEntryPointButton;
     private JTextArea dTextArea;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
@@ -41,6 +44,7 @@ public class TextEditor extends JPanel {
         runCodeButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         addFileButton = new JButton("Add File");
+        createButton = new JButton("Add Folder"); // RENAMED: Initialize the folder button
         addFileButton.setBackground(Color.decode("#568afc"));
         addFileButton.setForeground(Color.WHITE);
         addFileButton.setOpaque(true);
@@ -48,12 +52,17 @@ public class TextEditor extends JPanel {
         addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
         openFolderButton = new JButton("Open Folder");
+        createFolderButton = new JButton("Create Folder");
+        setEntryPointButton = new JButton("Set Entry Point");
+        setEntryPointButton.setVisible(false); // Hidden by default
+
         openFolderButton.setBackground(Color.decode("#568afc"));
         openFolderButton.setForeground(Color.WHITE);
         openFolderButton.setOpaque(true);
         openFolderButton.setBorderPainted(false);
         openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
+        createFolderButton = new JButton("Create Folder");
         dTextArea = new JTextArea();
         dTextArea.setBackground(Color.decode("#1f2335"));
         dTextArea.setCaretColor(Color.WHITE);
@@ -140,14 +149,25 @@ public class TextEditor extends JPanel {
         fileButtonsPanel.setBackground(Color.decode("#28313b"));
         fileButtonsPanel.add(openFolderButton);
         fileButtonsPanel.add(addFileButton);
+        fileButtonsPanel.add(createFolderButton);
         panel.add(fileButtonsPanel, gbc);
 
+        // Spacer
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel.add(Box.createHorizontalGlue(), gbc);
 
+        // Entry Point Button
+        // FIXME: I THINK I FUCKED UP YOUR ENTRY BUTTON ETHAN
         gbc.gridx = 2;
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(setEntryPointButton, gbc);
+
+        // Language Label
+        gbc.gridx = 3;
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
@@ -156,12 +176,15 @@ public class TextEditor extends JPanel {
         languageLabel.setForeground(Color.WHITE);
         languageLabel.setOpaque(true);
         panel.add(languageLabel, gbc);
+//        panel.add(new JLabel("Language:"), gbc);
 
-        gbc.gridx = 3;
+        // Language Dropdown
+        gbc.gridx = 4;
         gbc.weightx = 0.0;
         languageSelectDropdown.setPreferredSize(new Dimension(120, 25));
         panel.add(languageSelectDropdown, gbc);
 
+        // ROW 1: File Explorer and Editor
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
@@ -172,7 +195,7 @@ public class TextEditor extends JPanel {
 
         gbc.gridx = 1;
         gbc.gridy = 1;
-        gbc.gridwidth = 3;
+        gbc.gridwidth = 4; // Spans the remaining columns
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
         JScrollPane editorScroll = new JScrollPane(dTextArea);
@@ -182,8 +205,10 @@ public class TextEditor extends JPanel {
         titledBorder.setTitleColor(Color.WHITE);
         panel.add(editorScroll, gbc);
 
+        // ROW 2: Run Code Button
         gbc.gridx = 3;
         gbc.gridy = 2;
+        gbc.gridwidth = 2; // Spans to the end
         gbc.weightx = 0.0;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.NONE;
@@ -302,17 +327,39 @@ public class TextEditor extends JPanel {
             }
         });
 
-        languageSelectDropdown.addActionListener(_ -> {
-            String selectedLang = (String) languageSelectDropdown.getSelectedItem();
+        languageSelectDropdown.addActionListener(e -> {
             FileManager fileManager = fileExplorerPanel.getFileManager();
-            if (selectedLang != null && fileManager != null) {
-                fileManager.setLanguage(selectedLang.toLowerCase());
-                fileExplorerPanel.buildFileTree();
-                System.out.println("Language changed to: " + selectedLang);
+            // 1. Get the newly selected language
+            String newLanguage = (String) languageSelectDropdown.getSelectedItem();
+
+            if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
+                setEntryPointButton.setVisible(true);
             }
+            // 2. Update the FileManager's language state
+            fileManager.setLanguage(newLanguage);
+
+            // 3. --- CRITICAL RESET FIXES ---
+
+            // a) Reset the entry point/current file
+            fileManager.setCurrentFile(null);
+
+            // b) Clear the editor content
+            dTextArea.setText("");
+
+            // c) Reset the button label
+            setEntryPointButton.setText("Set Entry Point");
+
+            // d) Reset output areas (Optional, but good practice)
+            actualOutputArea.setText("");
+            expectedOutputArea.setText("");
+
+            // Optional: Refresh the file tree if you decide to re-filter the displayed files later
+            // fileExplorerPanel.buildFileTree();
+
+            System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
         });
 
-        addFileButton.addActionListener(_ -> {
+        addFileButton.addActionListener(e -> {
             FileManager fileManager = fileExplorerPanel.getFileManager();
             if (fileManager == null) return;
 
@@ -383,13 +430,96 @@ public class TextEditor extends JPanel {
             }
         });
 
-        runCodeButton.addActionListener(_ -> {
+        runCodeButton.addActionListener(e -> {
             saveCurrentFileContent();
             actualOutputArea.setText("Executing code...\n");
             expectedOutputArea.setText("Expected output will appear here");
         });
+        createFolderButton.addActionListener(e -> {
+            fileExplorerPanel.handleCreateFolderAction();
+        });
     }
 
+    public String getCurrentSelectedLanguage() {
+        return (String) languageSelectDropdown.getSelectedItem();
+    }
+
+    public void handleAddFileAction() {
+        FileManager fm = fileExplorerPanel.getFileManager();
+        if (fm == null) return;
+
+        DefaultMutableTreeNode selectedNode = fileExplorerPanel.getSelectedNode();
+        Path targetDir = fm.getRootdir();
+        DefaultMutableTreeNode parentNodeInTree;
+
+        // Logic to determine target directory and parent node (for insertion in JTree)
+        if (selectedNode != null) {
+            Object obj = selectedNode.getUserObject();
+
+            if (obj instanceof SFile sfile) {
+                if (Files.isDirectory(sfile.getPath())) {
+                    targetDir = sfile.getPath();
+                    parentNodeInTree = selectedNode;
+                } else {
+                    targetDir = sfile.getPath().getParent();
+                    parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
+                }
+            } else {
+                targetDir = fileExplorerPanel.resolveNodeToPath(selectedNode);
+                parentNodeInTree = selectedNode;
+            }
+        } else {
+            parentNodeInTree = (DefaultMutableTreeNode) fileExplorerPanel.getFeTree().getModel().getRoot();
+        }
+
+        String fileName = JOptionPane.showInputDialog(this, "Enter new file name (with extension):");
+        if (fileName == null || fileName.isBlank()) return;
+
+        // Use the FileManager's language-based validation for new files
+        if (!fm.isAllowedFile(fileName)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid file extension for the current project language (" + fm.getLanguage() + ").",
+                    "Invalid Extension",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            Path newFilePath = targetDir.resolve(fileName);
+
+            if (Files.exists(newFilePath)) {
+                JOptionPane.showMessageDialog(this, "File already exists in " + targetDir);
+                return;
+            }
+
+            saveCurrentFileContent();
+
+            SFile newSFile = new SFile(newFilePath);
+            newSFile.writeOut();
+
+            fm.getFiles().add(newSFile);
+            fm.setCurrentFile(newSFile);
+            dTextArea.setText(newSFile.getContent());
+
+            DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
+            DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
+
+            model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+            fileExplorerPanel.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
+            fileExplorerPanel.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
+
+            JOptionPane.showMessageDialog(this, "File created: " + newFilePath.getFileName());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error creating file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public JButton getSetEntryPointButton() {
+        return setEntryPointButton;
+    }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Text Editor with File Explorer");
