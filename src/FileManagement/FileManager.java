@@ -45,6 +45,69 @@ public class FileManager {
         };
     }
 
+    // Check if file is allowed
+    public boolean isAllowedFile(String filename) {
+        if (filename == null) return false;
+        return ALL_ALLOWED_EXTENSIONS.stream().anyMatch(filename::endsWith);
+    }
+
+    // file renaming and deleting forgot to fking add these xD
+    public boolean renameFile(SFile sfile, String newName) {
+        try {
+            Path oldPath = sfile.getPath();
+            Path newPath = oldPath.resolveSibling(newName);
+
+            if (Files.exists(newPath)) {
+                System.err.println("File already exists: " + newPath);
+                return false;
+            }
+
+            Files.move(oldPath, newPath);
+            s_files.remove(sfile);
+            SFile renamed = new SFile(newPath);
+            s_files.add(renamed);
+
+            if (currentFile != null && currentFile.equals(sfile)) {
+                currentFile = renamed;
+            }
+
+            return true;
+        } catch (IOException e) {
+            System.err.println("Failed to rename file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean deleteFile(SFile sfile) {
+        if (sfile == null) return false;
+
+        try {
+            Path filePath = sfile.getPath();
+
+            if (!Files.exists(filePath)) {
+                System.err.println("File not found: " + filePath);
+                return false;
+            }
+
+            Files.delete(filePath);
+
+            s_files.remove(sfile);
+
+            if (currentFile != null && currentFile.equals(sfile)) {
+                currentFile = null;
+            }
+
+            System.out.println("[DELETED] " + filePath);
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Failed to delete file: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+
     /****************** GETTERS ******************/
     public Path getRootdir() { return rootdir; }
     public String getLanguage() { return language; }
