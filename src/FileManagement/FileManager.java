@@ -34,8 +34,6 @@ public class FileManager {
     }
 
 
-
-    // FIXME: WARNING I WILL BE REMOVING THIS (deleteFile, renameFile), Please use addFile, removeFile, removeDir
     // NOTE: for RENAMING files just use Files.move(), the fileWatcher will do its job
     // file renaming and deleting forgot to fking add these xD
     public boolean renameFile(SFile sfile, String newName) {
@@ -102,6 +100,39 @@ public class FileManager {
             System.err.println("Failed to create directory: " + newDirPath + ". Error: " + e.getMessage());
             return false;
         }
+    }
+    public boolean deleteFolder(Path directoryPath) {
+        if (!Files.exists(directoryPath)) {
+            System.out.println("Directory does not exist: " + directoryPath);
+            return false;
+        }
+        try {
+            Files.walkFileTree(directoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (exc != null) {
+                        throw exc;
+                    }
+                    Files.delete(dir);
+                    System.out.println("Deleted directory: " + dir.getFileName());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    System.out.println("Deleted file: " + file.getFileName());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    System.err.println("Failed to delete/access: " + file + " Error: " + exc.getMessage());
+                    throw exc; // Propagate the error
+                }
+            });
+        } catch (IOException e) { return false; }
+        return true;
     }
 
     /****************** File Manager ******************/

@@ -17,6 +17,7 @@ import java.util.*;
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
+    private JButton createButton;
     private JButton openFolderButton;
     private JButton createFolderButton;
     private JButton setEntryPointButton;
