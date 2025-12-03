@@ -49,7 +49,7 @@ public class FileExplorer extends JPanel {
         this.buildFileTree();
     }
 
-
+    // Updated initializeBackend to fetch language from TextEditor
     private void initializeBackend(String rootDir) {
         try {
             fileManager = FileManager.getInstance().setAll(rootDir, null);
@@ -251,8 +251,6 @@ public class FileExplorer extends JPanel {
             boolean success = fileManager.renameFile(sfile, newName);
 
             if (success) {
-
-
                 DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
                 DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
 

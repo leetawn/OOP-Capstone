@@ -52,6 +52,7 @@ public class TextEditor extends JPanel {
         addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
         openFolderButton = new JButton("Open Folder");
+        createFolderButton = new JButton("Create Folder");
         setEntryPointButton = new JButton("Set Entry Point");
         setEntryPointButton.setVisible(false); // Hidden by default
 
@@ -327,7 +328,6 @@ public class TextEditor extends JPanel {
         });
 
         languageSelectDropdown.addActionListener(e -> {
-            String selectedLang = (String) languageSelectDropdown.getSelectedItem();
             FileManager fileManager = fileExplorerPanel.getFileManager();
             // 1. Get the newly selected language
             String newLanguage = (String) languageSelectDropdown.getSelectedItem();
