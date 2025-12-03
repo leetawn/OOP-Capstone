@@ -27,24 +27,21 @@ public class FileExplorer extends JPanel {
     private JMenuItem renameItem;
     private JMenuItem createFolderItem;
     private JMenuItem deleteItem;
-    private JMenuItem addFileItem;
     private TextEditor textEditor;
 
-    // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
-        initializeBackend(rootDir); // Calls initializeBackend without language argument
+        initializeBackend(rootDir);
         initializeComponents();
         setupLayout();
         setupEventListeners();
         buildFileTree();
     }
 
-    // Updated updateRootDirectory to fetch language from TextEditor
     public void updateRootDirectory(String newRootDir) throws NotDirException {
         String currentLang = fileManager != null ? fileManager.getLanguage() : null;
-        this.fileManager = fileManager.setAll(newRootDir, currentLang);
+        this.fileManager = new FileManager(newRootDir, currentLang);
         this.dTextArea.setText("");
         this.buildFileTree();
     }
@@ -52,11 +49,64 @@ public class FileExplorer extends JPanel {
 
     private void initializeBackend(String rootDir) {
         try {
-            fileManager = FileManager.getInstance().setAll(rootDir, null);
+            fileManager = new FileManager(rootDir, null);
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
     }
+
+//    private void initializeComponents() {
+//        fe_tree = new JTree();
+//
+//        // ADD THESE 2 LINES:
+//        fe_tree.setBackground(Color.decode("#1f2335"));
+//        fe_tree.setForeground(Color.WHITE);
+//
+//        // Instead of setSelectionBackground, use UIManager:
+//        UIManager.put("Tree.selectionBackground", Color.decode("#568afc"));
+//        UIManager.put("Tree.selectionForeground", Color.WHITE);
+//
+//        fe_tree.setCellRenderer(new DefaultTreeCellRenderer() {
+//            @Override
+//            public Component getTreeCellRendererComponent(
+//                    JTree tree, Object value, boolean sel, boolean expanded,
+//                    boolean leaf, int row, boolean hasFocus) {
+//
+//                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+//
+//                // ADD THIS LINE to make text white:
+//                setForeground(Color.WHITE);
+//
+//                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+//                Object userObj = node.getUserObject();
+//
+//                if (userObj instanceof SFile sfile) {
+//                    setText(sfile.getPath().getFileName().toString());
+//                    if (Files.isDirectory(sfile.getPath())) {
+//                        setIcon(UIManager.getIcon("FileView.directoryIcon"));
+//                    } else {
+//                        setIcon(UIManager.getIcon("FileView.fileIcon"));
+//                    }
+//
+//                } else {
+//                    setText(userObj.toString());
+//                    setIcon(UIManager.getIcon("FileView.directoryIcon"));
+//                }
+//
+//                return this;
+//            }
+//        });
+//
+//        contextMenu = new JPopupMenu();
+//        renameItem =  new JMenuItem("Rename");
+//        deleteItem = new JMenuItem("Delete");
+//        createFolderItem = new JMenuItem("Create folder");
+//
+//        contextMenu.addSeparator();
+//        contextMenu.add(renameItem);
+//        contextMenu.add(deleteItem);
+//        contextMenu.add(createFolderItem);
+//    }
 
     private void initializeComponents() {
         fe_tree = new JTree();
@@ -95,7 +145,6 @@ public class FileExplorer extends JPanel {
                     } else {
                         setIcon(UIManager.getIcon("FileView.fileIcon"));
                     }
-
                 } else {
                     setText(userObj.toString());
                     setIcon(UIManager.getIcon("FileView.directoryIcon"));
@@ -106,67 +155,61 @@ public class FileExplorer extends JPanel {
         });
 
         contextMenu = new JPopupMenu();
-        renameItem =  new JMenuItem("Rename");
+        renameItem = new JMenuItem("Rename");
         deleteItem = new JMenuItem("Delete");
         createFolderItem = new JMenuItem("Create folder");
-        addFileItem = new JMenuItem("Add file");
 
         contextMenu.addSeparator();
         contextMenu.add(renameItem);
         contextMenu.add(deleteItem);
         contextMenu.add(createFolderItem);
-        contextMenu.add(addFileItem);
     }
+
+//    private void setupLayout() {
+//        setLayout(new BorderLayout());
+//        JScrollPane treeScroll = new JScrollPane(fe_tree);
+//        treeScroll.setBorder(BorderFactory.createTitledBorder("File Explorer"));
+//        add(treeScroll, BorderLayout.CENTER);
+//        setPreferredSize(new Dimension(250, 0));
+//    }
+
+//    private void setupLayout() {
+//        setLayout(new BorderLayout());
+//        JScrollPane treeScroll = new JScrollPane(fe_tree);
+//
+//        // Create border with white title
+//        TitledBorder border = BorderFactory.createTitledBorder(
+//                BorderFactory.createLineBorder(Color.GRAY),
+//                "File Explorer",
+//                TitledBorder.LEFT,
+//                TitledBorder.TOP,
+//                new Font("Dialog", Font.BOLD, 12),
+//                Color.WHITE  // White title text
+//        );
+//        treeScroll.setBorder(border);
+//
+//        treeScroll.getViewport().setBackground(Color.decode("#1f2335"));
+//        add(treeScroll, BorderLayout.CENTER);
+//        setPreferredSize(new Dimension(250, 0));
+//    }
 
     private void setupLayout() {
         setLayout(new BorderLayout());
         JScrollPane treeScroll = new JScrollPane(fe_tree);
 
-        // ---- DARK COLORS ----
-        Color BG = Color.decode("#1f2335");
-        Color TITLE = Color.decode("#ffffff");
-        Color SCROLL_TRACK = Color.decode("#2a2f45");
-        Color SCROLL_THUMB = Color.decode("#3b425c");
-
-        // ---- BORDER WITH DARK THEME ----
+        // Create border with white title
         TitledBorder border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BG),
+                BorderFactory.createLineBorder(Color.decode("#1f2335")),
                 "File Explorer",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
-                new Font("JetBrains Mono", Font.PLAIN, 12),
-                TITLE
+                new Font("Dialog", Font.BOLD, 12),
+                Color.WHITE
         );
         treeScroll.setBorder(border);
 
-        // ---- FIX WHITE BACKGROUNDS ----
-        treeScroll.setBackground(BG);                   // JScrollPane background
-        treeScroll.getViewport().setBackground(BG);    // Viewport background
-        this.setBackground(BG);                        // Panel background
-
-        // ---- CUSTOM DARK SCROLLBAR ----
-        JScrollBar vBar = treeScroll.getVerticalScrollBar();
-        JScrollBar hBar = treeScroll.getHorizontalScrollBar();
-
-        vBar.setBackground(SCROLL_TRACK);
-        hBar.setBackground(SCROLL_TRACK);
-
-        vBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-            @Override
-            protected void configureScrollBarColors() {
-                this.thumbColor = SCROLL_THUMB;
-                this.trackColor = SCROLL_TRACK;
-            }
-        });
-
-        hBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-            @Override
-            protected void configureScrollBarColors() {
-                this.thumbColor = SCROLL_THUMB;
-                this.trackColor = SCROLL_TRACK;
-            }
-        });
-
+        treeScroll.getViewport().setBackground(Color.decode("#1f2335"));
+        this.setBackground(Color.decode("#1f2335"));  // ADD THIS LINE
         add(treeScroll, BorderLayout.CENTER);
         setPreferredSize(new Dimension(250, 0));
     }
@@ -203,175 +246,151 @@ public class FileExplorer extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    // ... selection logic ...
+                    int selRow = fe_tree.getRowForLocation(e.getX(), e.getY());
+                    TreePath selPath = fe_tree.getPathForLocation(e.getX(), e.getY());
+
+                    if (selRow != -1) {
+                        fe_tree.setSelectionPath(selPath);
+                    } else {
+                        fe_tree.setSelectionRow(0);
+                    }
 
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
 
                     if (node != null && node.getUserObject() instanceof SFile) {
                         renameItem.setVisible(true);
                         deleteItem.setVisible(true);
-                        addFileItem.setVisible(true);
                     } else {
                         renameItem.setVisible(false);
                         deleteItem.setVisible(false);
-                        addFileItem.setVisible(true);
                     }
 
                     contextMenu.show(fe_tree, e.getX(), e.getY());
                 }
             }
         });
-        addFileItem.addActionListener(e -> {
-            // Reuses the main handler logic in TextEditor
-            textEditor.handleAddFileAction();
-        });
 
-        renameItem.addActionListener(e -> {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
-            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
+        createFolderItem.addActionListener(e -> {
+            FileManager fm = getFileManager();
+            if (fm == null) return;
 
-            boolean isDirectory = Files.isDirectory(sfile.getPath());
-            String itemType = isDirectory ? "folder" : "file";
+            DefaultMutableTreeNode selectedTreePathNode = getSelectedNode();
+            Path directoryToCreateIn = fileManager.getRootdir();
+            DefaultMutableTreeNode parentNodeInTree;
 
-
-            String currentName = sfile.getPath().getFileName().toString();
-            String newName = JOptionPane.showInputDialog(null,
-                    "Enter new name for " + itemType + ":", currentName);
-
-            if (newName == null || newName.isBlank() || newName.equals(currentName)) return;
-
-            // Validation for renaming: Check if new name is allowed for current language
-            if (!isDirectory && !fileManager.isAllowedFile(newName)) {
-                JOptionPane.showMessageDialog(null,
-                        "Invalid file extension for the current project language (" + fileManager.getLanguage() + ").",
-                        "Invalid Extension", JOptionPane.WARNING_MESSAGE);
-                return;
+            if (selectedTreePathNode != null) {
+                Object obj = selectedTreePathNode.getUserObject();
+                if (obj instanceof SFile sfile) {
+                    directoryToCreateIn = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
+                    parentNodeInTree = Files.isDirectory(sfile.getPath()) ? selectedTreePathNode : (DefaultMutableTreeNode) selectedTreePathNode.getParent();
+                } else {
+                    directoryToCreateIn = fileManager.getRootdir();
+                    parentNodeInTree = selectedTreePathNode;
+                }
+            } else {
+                parentNodeInTree = (DefaultMutableTreeNode) fe_tree.getModel().getRoot();
             }
 
-            boolean success = fileManager.renameFile(sfile, newName);
+            String newFolderName = JOptionPane.showInputDialog(null, "Enter new folder name:");
 
-            if (success) {
-
-
-                DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
-                DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
-
-                model.nodeChanged(node);
-
-                if (parentNode != null) {
-                    model.reload(parentNode);
-                } else {
-                    model.reload();
+            if (newFolderName != null && !newFolderName.isBlank()) {
+                if (newFolderName.contains(File.separator) || newFolderName.startsWith(".")) {
+                    JOptionPane.showMessageDialog(null, "Invalid folder name. Cannot contain path separators or start with '.'", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
 
-                fe_tree.setSelectionPath(new TreePath(node.getPath()));
-                fe_tree.repaint();
+                boolean success = fm.createFolder(directoryToCreateIn, newFolderName);
 
-                JOptionPane.showMessageDialog(null, itemType + " renamed successfully to " + newName);
-            } else {
-                JOptionPane.showMessageDialog(null, "Failed to rename " + itemType + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                if (success) {
+                    Path newFolderPath = directoryToCreateIn.resolve(newFolderName);
+                    SFile newDirSFile = new SFile(newFolderPath);
+
+                    DefaultMutableTreeNode newFolderTreeNode = new DefaultMutableTreeNode(newDirSFile);
+
+                    DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
+
+                    model.insertNodeInto(newFolderTreeNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+                    fe_tree.expandPath(new TreePath(parentNodeInTree.getPath()));
+
+                    JOptionPane.showMessageDialog(null, "Folder created successfully in " + directoryToCreateIn.getFileName());
+                } else {
+                    JOptionPane.showMessageDialog(null, "Failed to create folder.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
-        createFolderItem.addActionListener(e -> {
-            handleCreateFolderAction();
-        });
+
         deleteItem.addActionListener(e -> {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
 
             if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
 
-            boolean isDirectory = Files.isDirectory(sfile.getPath());
-            String itemType = isDirectory ? "folder" : "file";
+            if (Files.isDirectory(sfile.getPath())) {
+                JOptionPane.showMessageDialog(null, "Cannot delete a folder.");
+                return;
+            }
 
             int confirm = JOptionPane.showConfirmDialog(null,
-                    "Delete the " + itemType + ": " + sfile.getPath().getFileName() + "?\n(This action cannot be undone.)",
+                    "Delete file: " + sfile.getPath().getFileName() + "?",
                     "Confirm Delete", JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {
-
-                boolean success;
-
-                if (isDirectory) {
-                    success = fileManager.deleteFolder(sfile.getPath());
-                } else {
-                    success = fileManager.deleteFile(sfile);
-                }
+                boolean success = fileManager.deleteFile(sfile);
 
                 if (success) {
+
                     DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
                     DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
 
                     if (parentNode != null) {
                         model.removeNodeFromParent(node);
 
-                        if (sfile.equals(fileManager.getCurrentFile()) || isDirectory) {
+                        if (sfile.equals(fileManager.getCurrentFile())) {
                             dTextArea.setText("");
                             fileManager.setCurrentFile(null);
-                            // If a deleted file was the entry point, reset the entry point button label
-                            textEditor.getSetEntryPointButton().setText("Set Entry Point");
                         }
+                    } else {
+                        buildFileTree();
                     }
 
-                    JOptionPane.showMessageDialog(null, itemType + " deleted successfully.");
+
+                    JOptionPane.showMessageDialog(null, "File deleted successfully.");
                 } else {
-                    JOptionPane.showMessageDialog(null, "Failed to delete " + itemType + ". Check permissions or if the folder is in use.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Failed to delete file.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-    }
 
-    public void handleCreateFolderAction() {
-        FileManager fm = getFileManager();
-        if (fm == null) return;
+        renameItem.addActionListener(e -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
 
-        DefaultMutableTreeNode selectedTreePathNode = getSelectedNode();
-        Path directoryToCreateIn = fileManager.getRootdir();
-        DefaultMutableTreeNode parentNodeInTree;
-
-        if (selectedTreePathNode != null) {
-            Object obj = selectedTreePathNode.getUserObject();
-            if (obj instanceof SFile sfile) {
-                // If a file is selected, create folder in its parent directory
-                directoryToCreateIn = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
-                // Parent node is the directory itself, or the selected node's parent
-                parentNodeInTree = Files.isDirectory(sfile.getPath()) ? selectedTreePathNode : (DefaultMutableTreeNode) selectedTreePathNode.getParent();
-            } else {
-                directoryToCreateIn = fileManager.getRootdir();
-                parentNodeInTree = selectedTreePathNode;
-            }
-        } else {
-            parentNodeInTree = (DefaultMutableTreeNode) fe_tree.getModel().getRoot();
-        }
-
-        String newFolderName = JOptionPane.showInputDialog(null, "Enter new folder name:");
-
-        if (newFolderName != null && !newFolderName.isBlank()) {
-            if (newFolderName.contains(File.separator) || newFolderName.startsWith(".")) {
-                JOptionPane.showMessageDialog(null, "Invalid folder name. Cannot contain path separators or start with '.'", "Error", JOptionPane.ERROR_MESSAGE);
+            if (Files.isDirectory(sfile.getPath())) {
+                JOptionPane.showMessageDialog(null, "Cannot rename a folder.");
                 return;
             }
 
-            boolean success = fm.createFolder(directoryToCreateIn, newFolderName);
+            String newName = JOptionPane.showInputDialog(null,
+                    "Enter new name for file:", sfile.getPath().getFileName().toString());
 
-            if (success) {
-                Path newFolderPath = directoryToCreateIn.resolve(newFolderName);
-                SFile newDirSFile = new SFile(newFolderPath);
+            if (newName == null || newName.isBlank()) return;
 
-                DefaultMutableTreeNode newFolderTreeNode = new DefaultMutableTreeNode(newDirSFile);
-
-                DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
-
-                // Insert into the determined parent node
-                model.insertNodeInto(newFolderTreeNode, parentNodeInTree, parentNodeInTree.getChildCount());
-
-                fe_tree.expandPath(new TreePath(parentNodeInTree.getPath()));
-
-                JOptionPane.showMessageDialog(null, "Folder created successfully in " + directoryToCreateIn.getFileName());
-            } else {
-                JOptionPane.showMessageDialog(null, "Failed to create folder.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (!fileManager.isAllowedFile(newName)) {
+                JOptionPane.showMessageDialog(null,
+                        "Invalid file extension.\nAllowed: .c, .cpp, .h, .hpp, .java, .py",
+                        "Invalid Extension",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
             }
-        }
 
+            boolean success = fileManager.renameFile(sfile, newName);
+            if (success) {
+                buildFileTree();
+                JOptionPane.showMessageDialog(null, "File renamed successfully.");
+            } else {
+                JOptionPane.showMessageDialog(null, "Failed to rename file.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 
     public void buildFileTree() {
@@ -389,7 +408,6 @@ public class FileExplorer extends JPanel {
         recursivelyAddNodes(rootNode, rootPath);
 
         fe_tree.setModel(new DefaultTreeModel(rootNode));
-        // Expand the root node by default
         fe_tree.expandPath(new TreePath(rootNode));
     }
 
@@ -401,7 +419,6 @@ public class FileExplorer extends JPanel {
                 stream.forEach(contents::add);
             }
 
-            // Sort directories first, then files alphabetically
             contents.sort((p1, p2) -> {
                 boolean isDir1 = Files.isDirectory(p1);
                 boolean isDir2 = Files.isDirectory(p2);
@@ -417,7 +434,6 @@ public class FileExplorer extends JPanel {
             for (Path childPath : contents) {
                 String fileName = childPath.getFileName().toString();
 
-                // Skip hidden files/folders and those starting with '.'
                 if (Files.isHidden(childPath) || fileName.startsWith(".")) {
                     continue;
                 }
@@ -429,9 +445,8 @@ public class FileExplorer extends JPanel {
                     parentNode.add(childNode);
 
                     recursivelyAddNodes(childNode, childPath);
-                } else {
-                    // Check if the file is tracked by the FileManager
-                    // NOTE: Since FileManager tracks ALL files now, this will include them all.
+                }
+                else {
                     SFile targetSFile = sFiles.stream()
                             .filter(sf -> sf.getPath().equals(childPath))
                             .findFirst()
@@ -442,6 +457,7 @@ public class FileExplorer extends JPanel {
                         parentNode.add(childNode);
                     }
                 }
+
             }
         } catch (IOException e) {
             System.err.println("Error reading directory for tree build: " + e.getMessage());
@@ -472,4 +488,8 @@ public class FileExplorer extends JPanel {
     public JTree getFeTree() {
         return fe_tree;
     }
+
+
+
+
 }
