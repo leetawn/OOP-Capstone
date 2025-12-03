@@ -48,8 +48,6 @@ public class FileManager {
     /****************** GETTERS ******************/
     public Path getRootdir() { return rootdir; }
     public String getLanguage() { return language; }
-
-    // @ TODO ETHAN, USE THIS FOR FILE TREE
     public ArrayList<SFile> getFiles() { return s_files; }
     public SFile getCurrentFile() { return currentFile; }
     public String getCurrentFileStringPath() {
@@ -72,9 +70,14 @@ public class FileManager {
     }
 
     /****************** INPUT/OUTPUT ******************/
-    public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
     public Path getRelativePath(SFile sfile) {
         return rootdir.relativize(sfile.getPath());
+    }
+    public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
+    public void delete(SFile sfile) {
+        if (s_files.remove(sfile)) {
+            sfile.delete();
+        };
     }
 
     // @ TODO: REMOVE sout WHEN DEBUGGING IS DONE
