@@ -35,6 +35,26 @@ public class TextEditor extends JPanel {
         setupEventListeners();
         setupTabToSpaces();
     }
+
+    public TextEditor(String folderPath, MainMenu mainMenu) {
+        this(); // call the original no-arg constructor that builds your UI
+
+        // Close the MainMenu immediately when TextEditor starts
+        if (mainMenu != null) {
+            mainMenu.setVisible(false);
+        }
+
+        try {
+            fileExplorerPanel.updateRootDirectory(folderPath);
+            setTextArea(false); // disable editing since no file is selected yet
+        } catch (NotDirException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to load project folder:\n" + ex.getMessage(),
+                    "Invalid Folder",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void setupTabToSpaces() {
         final String fourSpaces = "    ";
 
