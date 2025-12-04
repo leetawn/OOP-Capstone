@@ -36,6 +36,7 @@ public class FileManager {
 
     // NOTE: for RENAMING files just use Files.move(), the fileWatcher will do its job
     // file renaming and deleting forgot to fking add these xD
+    /****************** File Explorer Helper ******************/
     public boolean renameFile(SFile sfile, String newName) {
         try {
             Path oldPath = sfile.getPath();
@@ -151,7 +152,7 @@ public class FileManager {
         all_files.removeIf(p -> p.getPath().startsWith(dir));
     }
 
-    /****************** INITIALIZERS ******************/
+    /****************** INITIALIZERS/BUILDERS ******************/
     public static FileManager getInstance() {
         if (instance == null) {
             instance = new FileManager();
@@ -199,7 +200,18 @@ public class FileManager {
     public Path getRootdir() { return rootdir; }
     public String getLanguage() { return language; }
     public ArrayList<SFile> getFiles() { return all_files; }
-    public ArrayList<SFile> getLanguageFiles() { return s_files; }
+    public ArrayList<SFile> getLanguageFiles() {
+        return new ArrayList<>(
+                all_files.stream()
+                        .filter(a -> {
+                            String filename = a.getPath().getFileName().toString().toLowerCase();
+                            int dot = filename.lastIndexOf('.');
+                            if (dot == -1) return false;
+                            return getAllowedExtensions(language).contains(filename.substring(dot));
+                        })
+                        .toList()
+        );
+    }
     public SFile getCurrentFile() { return currentFile; }
     public String getCurrentFileStringPath() {
         if (currentFile == null) return null;
@@ -212,7 +224,7 @@ public class FileManager {
     private Set<String> getAllowedExtensions(String lang) {
         if (lang == null) return ALL_ALLOWED_EXTENSIONS;
 
-        return switch (lang.toLowerCase()) {
+        return switch (lang.trim().toLowerCase()) {
             case "java" -> JAVA_ALLOWED_EXTENSIONS;
             case "cpp", "c++" -> CPP_ALLOWED_EXTENSIONS;
             case "c" -> C_ALLOWED_EXTENSIONS;
@@ -306,7 +318,6 @@ public class FileManager {
         this.watcherThread.setDaemon(true);
         this.watcherThread.start();
     }
-    // 3. --- START THE NEW WATCHER ---
 
     public static void main(String[] args) {
 

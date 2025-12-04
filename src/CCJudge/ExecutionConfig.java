@@ -1,17 +1,19 @@
 package CCJudge;
 
 
+import Common.Helpers;
 import FileManagement.FileManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 
 public class ExecutionConfig {
 
     public static String[] getCompileCommand(FileManager fm) {
-        String[] sourceFilenames = fm.getFiles().stream().map(fm::getRelativePath).map(Path::toString).toArray(String[]::new);
+        String[] sourceFilenames = fm.getLanguageFiles().stream().map(fm::getRelativePath).map(Path::toString).toArray(String[]::new);
         return getCompileCommand(fm.getLanguage(), sourceFilenames);
     }
 
@@ -20,6 +22,7 @@ public class ExecutionConfig {
         String[] command;
         switch (language) {
             case "java":
+//                return new String[] {"where","javac"};
                 command = new String[1 + sourceFilenames.length];
                 command[0] = "javac";
                 System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
@@ -63,5 +66,10 @@ public class ExecutionConfig {
             case "python" -> new String[]{"python3", "main.py"};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
+    }
+
+    // for running code
+    public static String getRunCodeCommand(FileManager fm) {
+        return Helpers.joinArrays(getCompileCommand(fm), getExecuteCommand(fm), " ", "&&");
     }
 }

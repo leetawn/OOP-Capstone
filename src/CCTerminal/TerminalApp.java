@@ -1,9 +1,18 @@
+package CCTerminal;
+
+import CCJudge.ExecutionConfig;
+import CCJudge.Judge;
+import Common.Helpers;
+import CustomExceptions.NotDirException;
+import FileManagement.FileManager;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.Arrays;
+import java.util.SimpleTimeZone;
 
 /**
  * A Java Swing application that acts as a console for an external command-line process (e.g., cmd.exe or bash).
@@ -20,18 +29,20 @@ public class TerminalApp extends JFrame {
     // --- Configuration ---
     // Switched to powershell.exe as the default for better modern Windows compatibility.
     // Uncomment the other options to switch shells (remember to recompile).
-    private static final String[] COMMAND = {
-            // Example for Windows PowerShell (Default)
-            "powershell.exe",
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    private static final String[] TERMINAL_START_COMMAND;
 
-            // Example for Windows Command Prompt
-            // "cmd.exe",
+    static {
+        if (OS_NAME.contains("nix") || OS_NAME.contains("mac")) {
+            // Linux/macOS-specific path
+            TERMINAL_START_COMMAND = new String[]{"bash", "-c"};
+        } else {
+            // Fallback (WIN)
+            TERMINAL_START_COMMAND = new String[]{"cmd.exe", "/k"};;
+        }
+    }
 
-            // Example for Linux/macOS Bash
-            // "/bin/bash",
-    };
-
-    public TerminalApp() {
+    public TerminalApp(FileManager fm) {
         super("Java Swing Command Console");
 
         // Setup GUI Components
@@ -56,13 +67,15 @@ public class TerminalApp extends JFrame {
         setVisible(true);
 
         // Start the external process
-        startTerminalProcess();
+        startTerminalProcess(fm);
     }
 
-    private void startTerminalProcess() {
+    private void startTerminalProcess(FileManager fm) {
         try {
             // Use ProcessBuilder for better control over the process environment
-            ProcessBuilder builder = new ProcessBuilder(COMMAND);
+            String[] cmd = Helpers.concatStringArrays(TERMINAL_START_COMMAND, new String[]{ExecutionConfig.getRunCodeCommand(fm)});
+            ProcessBuilder builder = new ProcessBuilder(cmd);
+            builder.directory(fm.getRootdir().toFile());
 
             // Redirect stderr to stdout so we only need one thread for reading output.
             builder.redirectErrorStream(true);
@@ -76,7 +89,7 @@ public class TerminalApp extends JFrame {
             new Thread(new ConsoleOutputReader(terminalProcess.getInputStream())).start();
 
             // Print the initial message
-            outputArea.append("--- Starting External Process: " + Arrays.toString(COMMAND) + " ---\n");
+            outputArea.append("--- Starting External Process: " + Arrays.toString(cmd) + " ---\n");
             outputArea.append("Type commands below and press Enter.\n\n");
 
         } catch (IOException e) {
@@ -94,7 +107,7 @@ public class TerminalApp extends JFrame {
             String command = inputField.getText();
             inputField.setText(""); // Clear the input field
 
-            String commandString = COMMAND[0].toLowerCase();
+            String commandString = TERMINAL_START_COMMAND[0].toLowerCase();
             boolean isWindowsShell = commandString.contains("cmd") || commandString.contains("powershell");
 
             // Display the command entered by the user in the output area with a recognizable prompt
@@ -174,6 +187,14 @@ public class TerminalApp extends JFrame {
 
     public static void main(String[] args) {
         // Start the GUI on the Event Dispatch Thread (EDT)
-        SwingUtilities.invokeLater(TerminalApp::new);
+        SwingUtilities.invokeLater(() -> {
+            try {
+                FileManager fm = FileManager.getInstance().setAll("COMPILER_TEST/JAVA","java");
+                fm.setCurrentFile(fm.getFiles().getLast());
+                new TerminalApp(fm);
+            } catch (NotDirException e) {
+                System.err.println("ERR: fm.setAll()");
+            }
+        });
     }
 }

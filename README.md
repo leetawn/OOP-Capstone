@@ -19,3 +19,17 @@ Designed for students, programmers, and competitive coders, **CodeChum++** provi
 ---
 
 Whether you’re preparing for coding challenges or simply experimenting with Java, **CodeChum++** offers a powerful and dependable environment that works anywhere—anytime.
+
+---
+### C and CPP windows compiler
+
+Place this on root file  
+File tree should look like this:
+```
+> OOP-Capstone
+    > vendor    // unzipped
+    > src
+    > COMPILER_TEST
+```
+
+https://drive.google.com/drive/u/2/folders/1Xeok7OgjCj1MlfNQ-NsJKhT42w2pgOKu
