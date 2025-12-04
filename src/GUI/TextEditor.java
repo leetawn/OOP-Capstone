@@ -274,7 +274,8 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setTabSize(1);
+        dTextArea.setTabSize(4);
+        dTextArea.setEditable(false);
 
         actualOutputArea.setEditable(false);
         actualOutputArea.setCaretColor(Color.decode("#1f2335"));
@@ -345,8 +346,6 @@ public class TextEditor extends JPanel {
             fileManager.setLanguage(newLanguage);
 
             fileManager.setCurrentFile(null);
-
-            dTextArea.setText("");
 
             setEntryPointButton.setText("Set Entry Point");
 
@@ -469,6 +468,7 @@ public class TextEditor extends JPanel {
                     return;
                 }
             }
+            setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
             // DEBUG SHIT
             // System.out.println("Language: " + fileManager.getLanguage());
             // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
@@ -477,6 +477,10 @@ public class TextEditor extends JPanel {
 
     public String getCurrentSelectedLanguage() {
         return (String) languageSelectDropdown.getSelectedItem();
+    }
+
+    public void setTextArea(boolean ok) {
+        this.dTextArea.setEditable(ok);
     }
 
     public void handleAddFileAction() {

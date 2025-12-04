@@ -29,6 +29,7 @@ public class FileExplorer extends JPanel {
     private JMenuItem deleteItem;
     private JMenuItem addFileItem;
     private TextEditor textEditor;
+    private SFile selectedFile;
 
     // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
@@ -53,6 +54,7 @@ public class FileExplorer extends JPanel {
     private void initializeBackend(String rootDir) {
         try {
             fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
+            selectedFile = null;
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -186,13 +188,15 @@ public class FileExplorer extends JPanel {
                 try {
                     textEditor.saveCurrentFileContent();
 
-                    // fileManager.setCurrentFile(sfile);
+                    setSelectedFile(sfile);
+                    textEditor.setTextArea(true);
 
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
+                    System.out.println("Current file: ");
                 } catch (Exception ex) {
-                    dTextArea.setText("// Error loading file: " + ex.getMessage());
+                    // some error here
                 }
             }
         });
@@ -458,6 +462,9 @@ public class FileExplorer extends JPanel {
 
     public FileManager getFileManager() {
         return fileManager;
+    }
+    public void setSelectedFile(SFile newFile) {
+        this.selectedFile = newFile;
     }
 
     public DefaultMutableTreeNode getSelectedNode() {
