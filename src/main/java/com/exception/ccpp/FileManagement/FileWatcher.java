@@ -140,7 +140,7 @@ public class FileWatcher implements Runnable {
 
         try {
             FileManager.getInstance().setRootdir(root).update();
-            System.out.println("Main application running... Create/Delete files in " + root.toAbsolutePath().normalize());
+            System.out.println("com.exception.ccpp.Main application running... Create/Delete files in " + root.toAbsolutePath().normalize());
         } catch (NotDirException e) {
 
         }

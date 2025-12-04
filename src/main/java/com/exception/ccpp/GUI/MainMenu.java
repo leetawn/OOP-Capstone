@@ -89,7 +89,7 @@ public class MainMenu extends JPanel {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Main Menu");
+            JFrame frame = new JFrame("com.exception.ccpp.Main Menu");
             frame.setContentPane(new MainMenu());
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1400, 800);

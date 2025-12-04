@@ -88,7 +88,7 @@ public class Judge {
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
-            // Main interaction loop
+            // com.exception.ccpp.Main interaction loop
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
