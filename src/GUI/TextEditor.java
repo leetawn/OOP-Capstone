@@ -4,12 +4,15 @@ import CCJudge.Judge;
 import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
+import javax.imageio.ImageIO;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -29,6 +32,8 @@ public class TextEditor extends JPanel {
     private JButton exportTestcaseButton;
 
     public TextEditor() {
+
+
         initializeComponents();
         initializeBackend();
         setupLayout();
@@ -68,7 +73,7 @@ public class TextEditor extends JPanel {
         createButton = new JButton("Add Folder");
         addFileButton.setBackground(Color.decode("#568afc"));
         addFileButton.setForeground(Color.WHITE);
-        addFileButton.setOpaque(true);
+//        addFileButton.setOpaque(true);
         addFileButton.setBorderPainted(false);
         addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
@@ -645,6 +650,30 @@ public class TextEditor extends JPanel {
             JFrame frame = new JFrame("CodeChum++");
             TextEditor editor = new TextEditor();
             frame.setContentPane(editor);
+
+            // Set window icon (for taskbar/dock)
+            URL url = TextEditor.class.getResource("/GUI/assets/logo2.png");
+            if (url != null) {
+                ImageIcon icon = new ImageIcon(url);
+                Image image = icon.getImage();
+                frame.setIconImage(image);
+
+                // For macOS Dock icon specifically
+                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                    try {
+                        // Use Apple's Taskbar API
+                        Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
+                        java.lang.reflect.Method getTaskbar = taskbarClass.getMethod("getTaskbar");
+                        Object taskbar = getTaskbar.invoke(null);
+                        java.lang.reflect.Method setIconImage = taskbarClass.getMethod("setIconImage", Image.class);
+                        setIconImage.invoke(taskbar, image);
+                    } catch (Exception e) {
+                        // Fallback to window icon
+                        frame.setIconImage(image);
+                    }
+                }
+            }
+
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1400, 800);
             frame.setLocationRelativeTo(null);
