@@ -53,7 +53,8 @@ public class Judge {
 
         } catch (Exception e) {
             String fmsg = "Judge System Failure: " + e.getMessage();
-            logger.logln(fmsg);
+            logger.logf("%s:\n%s",fmsg);
+            e.printStackTrace();
             judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg);
         } finally {
             logger.logln("\n--- Program Output ---");

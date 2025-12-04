@@ -8,7 +8,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public class FileManager {
-    public static final Set<String> IGNORED_FOLDERS = Set.of(".git", ".svn", ".vscode", "target", "out", "bin", "vendor");
+    public static final Set<String> IGNORED_FOLDERS = Set.of(".git", ".svn", ".vscode", "target", "out", "bin", "vendor", "System32", "Windows");
     public static final Set<String> ALL_ALLOWED_EXTENSIONS = Set.of(".c", ".cpp", ".h", ".hpp",".java",".py");
     public static final Set<String> JAVA_ALLOWED_EXTENSIONS = Set.of(".java");
     public static final Set<String> CPP_ALLOWED_EXTENSIONS  = Set.of(".cpp", ".h", ".hpp");
@@ -237,58 +237,67 @@ public class FileManager {
     // @ TODO: REMOVE sout WHEN DEBUGGING IS DONE
     private void listAllContents(Path rootDir, Set<String> allowed_extensions) throws IOException {
         Path absoluteRootDir = rootDir.toAbsolutePath().normalize();
+        final int MAX_DEPTH = 7;
+        final int FILE_LIMIT = 512;
 
-         System.out.println("--- Listing files: " + ALL_ALLOWED_EXTENSIONS + " inside: " + absoluteRootDir + " ---");
+        System.out.println("--- Listing files: " + ALL_ALLOWED_EXTENSIONS + " inside: " + absoluteRootDir + " ---");
+        try {
+            Files.walkFileTree(rootDir, java.util.Collections.emptySet(), MAX_DEPTH, new SimpleFileVisitor<Path>() {
+                // DIR FILTER
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
 
-        Files.walkFileTree(rootDir, new SimpleFileVisitor<Path>() {
+                    if (all_files.size() >= FILE_LIMIT) {
+                        System.out.println("File limit of " + FILE_LIMIT + " reached. Terminating traversal.");
+                        return FileVisitResult.TERMINATE;
+                    }
 
-            // DIR FILTER
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    // ROOT DIR KEEP ON GETTING SKIPPED SO THIS CODE EXIST
+                    if (dir.toAbsolutePath().normalize().equals(absoluteRootDir)) {
+                        // System.out.println("[ROOT DIR] " + dir);
+                        return FileVisitResult.CONTINUE;
+                    }
 
-                // ROOT DIR KEEP ON GETTING SKIPPED SO THIS CODE EXIST
-                if (dir.toAbsolutePath().normalize().equals(absoluteRootDir)) {
-                    // System.out.println("[ROOT DIR] " + dir);
+                    String name = dir.getFileName() != null ? dir.getFileName().toString() : "";
+
+                    // SKIP HIDDEN FOLDERS
+                    if (IGNORED_FOLDERS.contains(name.toLowerCase()) || name.startsWith(".") || name.startsWith("$")) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+
+                    // System.out.println("[DIR]  " + dir);
                     return FileVisitResult.CONTINUE;
                 }
 
-                String name = dir.getFileName() != null ? dir.getFileName().toString() : "";
+                // FILE FILTER
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
 
-                // SKIP HIDDEN FOLDERS
-                if (IGNORED_FOLDERS.contains(name.toLowerCase()) || name.startsWith(".")) {
-                    return FileVisitResult.SKIP_SUBTREE;
+                    String fileName = file.getFileName().toString().toLowerCase();
+
+                    // NO JEWS ALLOWED
+                    boolean isAllowed = ALL_ALLOWED_EXTENSIONS.stream()
+                            .anyMatch(fileName::endsWith);
+
+                    if (isAllowed) {
+                        SFile sfile = new SFile(file);
+                        all_files.add(sfile);
+                        System.out.println("[FILE] " + file);
+                    }
+
+                    return FileVisitResult.CONTINUE;
                 }
 
-                // System.out.println("[DIR]  " + dir);
-                return FileVisitResult.CONTINUE;
-            }
-
-            // FILE FILTER
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-
-                String fileName = file.getFileName().toString().toLowerCase();
-
-                // NO JEWS ALLOWED
-                boolean isAllowed = ALL_ALLOWED_EXTENSIONS.stream()
-                        .anyMatch(fileName::endsWith);
-
-                if (isAllowed) {
-                    SFile sfile = new SFile(file);
-                    all_files.add(sfile);
-                    System.out.println("[FILE] " + file);
+                // MAGIC CODE THAT PREVENTS CRASH WHEN ACCESS DENIED
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    System.err.println("Failed to access: " + file + " because " + exc.getMessage());
+                    return FileVisitResult.CONTINUE;
                 }
-
-                return FileVisitResult.CONTINUE;
-            }
-
-            // MAGIC CODE THAT PREVENTS CRASH WHEN ACCESS DENIED
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                System.err.println("Failed to access: " + file + " because " + exc.getMessage());
-                return FileVisitResult.CONTINUE;
-            }
-        });
+            });
+        } catch (Exception e) {
+            System.err.println("Failed to open new folder: " + e.getMessage());
+        }
     }
     public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
 
