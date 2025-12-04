@@ -52,7 +52,7 @@ public class FileExplorer extends JPanel {
     // Updated initializeBackend to fetch language from TextEditor
     private void initializeBackend(String rootDir) {
         try {
-            fileManager = FileManager.getInstance().setAll(rootDir, null);
+            fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -74,7 +74,6 @@ public class FileExplorer extends JPanel {
 
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 
-                // FIX: Set background for both selected and non-selected
                 if (sel) {
                     setBackground(Color.decode("#568afc"));
                     setForeground(Color.WHITE);
@@ -187,12 +186,11 @@ public class FileExplorer extends JPanel {
                 try {
                     textEditor.saveCurrentFileContent();
 
-                    fileManager.setCurrentFile(sfile);
+                    // fileManager.setCurrentFile(sfile);
 
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
-                    System.out.println("Current file set to: " + fileManager.getCurrentFileStringPath());
                 } catch (Exception ex) {
                     dTextArea.setText("// Error loading file: " + ex.getMessage());
                 }
@@ -203,7 +201,6 @@ public class FileExplorer extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    // ... selection logic ...
 
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
 

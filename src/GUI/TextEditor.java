@@ -74,7 +74,7 @@ public class TextEditor extends JPanel {
         dTextArea.setCaretColor(Color.WHITE);
         dTextArea.setForeground(Color.WHITE);
 
-        languageSelectDropdown = new JComboBox<>(new String[]{"   C", "   C++", "   Java", "   Python"});
+        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
         languageSelectDropdown.setUI(new BasicComboBoxUI() {
             @Override
             protected JButton createArrowButton() {
@@ -311,7 +311,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        openFolderButton.addActionListener(_ -> {
+        openFolderButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
@@ -335,34 +335,24 @@ public class TextEditor extends JPanel {
 
         languageSelectDropdown.addActionListener(e -> {
             FileManager fileManager = fileExplorerPanel.getFileManager();
-            // 1. Get the newly selected language
             String newLanguage = (String) languageSelectDropdown.getSelectedItem();
 
             if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
                 setEntryPointButton.setVisible(true);
             }
-            // 2. Update the FileManager's language state
             fileManager.setLanguage(newLanguage);
 
-            // 3. --- CRITICAL RESET FIXES ---
-
-            // a) Reset the entry point/current file
             fileManager.setCurrentFile(null);
 
-            // b) Clear the editor content
             dTextArea.setText("");
 
-            // c) Reset the button label
             setEntryPointButton.setText("Set Entry Point");
 
-            // d) Reset output areas (Optional, but good practice)
             actualOutputArea.setText("");
             expectedOutputArea.setText("");
 
-            // Optional: Refresh the file tree if you decide to re-filter the displayed files later
-            // fileExplorerPanel.buildFileTree();
-
             System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
+
         });
 
         addFileButton.addActionListener(e -> {
@@ -443,6 +433,43 @@ public class TextEditor extends JPanel {
         });
         createFolderButton.addActionListener(e -> {
             fileExplorerPanel.handleCreateFolderAction();
+        });
+        setEntryPointButton.addActionListener(e -> {
+            FileManager fileManager = fileExplorerPanel.getFileManager();
+            JTree fe_tree = fileExplorerPanel.getFeTree();
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
+
+            if (Files.isDirectory(sfile.getPath())) {
+                JOptionPane.showMessageDialog(null,
+                        "yo this is a folder gang you can't set folders as entry points",
+                        "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
+                if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED JABAI ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+            }
+
+            if (getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
+                if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED PYTHON ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            // DEBUG SHIT
+            // System.out.println("Language: " + fileManager.getLanguage());
+            // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
         });
     }
 
