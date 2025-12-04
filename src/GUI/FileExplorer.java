@@ -194,7 +194,7 @@ public class FileExplorer extends JPanel {
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
-                    System.out.println("Current file: ");
+                    System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
                     // some error here
                 }

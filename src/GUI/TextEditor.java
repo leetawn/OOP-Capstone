@@ -74,7 +74,7 @@ public class TextEditor extends JPanel {
 
         dTextArea.getActionMap().put(actionKey, insertSpacesAction);
     }
-        private void initializeComponents() {
+    private void initializeComponents() {
         runCodeButton = new JButton("Run Code");
         runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         runCodeButton.setBackground(Color.decode("#568afc"));
@@ -314,6 +314,7 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        dTextArea.setText("No selected file. Select a file to start editing.");
         dTextArea.setEditable(false);
 
         actualOutputArea.setEditable(false);
@@ -327,7 +328,7 @@ public class TextEditor extends JPanel {
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
-        String placeholderText = "No file selected. Please open a project or select a file to begin editing.";
+        String placeholderText = "No file selected. Select a file to start editing.";
         String content = dTextArea.getText();
 
         if (currentFile != null && !content.equals(placeholderText)) {
