@@ -5,7 +5,6 @@ import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -13,7 +12,6 @@ import java.awt.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -27,6 +25,8 @@ public class TextEditor extends JPanel {
     private FileExplorer fileExplorerPanel;
     private JTextArea actualOutputArea;
     private JTextArea expectedOutputArea;
+    private JButton importTestcaseButton;
+    private JButton exportTestcaseButton;
 
     public TextEditor() {
         initializeComponents();
@@ -54,67 +54,99 @@ public class TextEditor extends JPanel {
 
         dTextArea.getActionMap().put(actionKey, insertSpacesAction);
     }
-        private void initializeComponents() {
-        runCodeButton = new JButton("Run Code");
+
+    private void initializeComponents() {
+        runCodeButton = new RoundedButton("Run Code", 30);
         runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         runCodeButton.setBackground(Color.decode("#568afc"));
         runCodeButton.setForeground(Color.WHITE);
-        runCodeButton.setOpaque(true);
+//        runCodeButton.setOpaque(true);
         runCodeButton.setBorderPainted(false);
-        runCodeButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
-        addFileButton = new JButton("Add File");
-        createButton = new JButton("Add Folder"); // RENAMED: Initialize the folder button
+        addFileButton = new RoundedButton("Add File", 15);
+        createButton = new JButton("Add Folder");
         addFileButton.setBackground(Color.decode("#568afc"));
         addFileButton.setForeground(Color.WHITE);
         addFileButton.setOpaque(true);
         addFileButton.setBorderPainted(false);
         addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
-        openFolderButton = new JButton("Open Folder");
-//        createFolderButton = new JButton("Create Folder");
-        setEntryPointButton = new JButton("Set Entry Point");
-        setEntryPointButton.setVisible(false); // Hidden by default
+        openFolderButton = new RoundedButton("Open Folder", 15);
+        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
+        setEntryPointButton.setVisible(false);
+
+        // NEW: Set Entry Point button styling to match Run Code
+        setEntryPointButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        setEntryPointButton.setBackground(Color.decode("#568afc"));
+        setEntryPointButton.setForeground(Color.WHITE);
+//        setEntryPointButton.setOpaque(true);
+        setEntryPointButton.setBorderPainted(false);
+        setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
         openFolderButton.setBackground(Color.decode("#568afc"));
         openFolderButton.setForeground(Color.WHITE);
-        openFolderButton.setOpaque(true);
         openFolderButton.setBorderPainted(false);
         openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
-        createFolderButton = new JButton("Create Folder");
+        createFolderButton = new RoundedButton("Create Folder", 15);
         createFolderButton.setBackground(Color.decode("#568afc"));
         createFolderButton.setForeground(Color.WHITE);
-        createFolderButton.setOpaque(true);
         createFolderButton.setBorderPainted(false);
         createFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+
+        // NEW: Import Testcase button
+        importTestcaseButton = new RoundedButton("Import Testcase", 15);
+        importTestcaseButton.setBackground(Color.decode("#568afc"));
+        importTestcaseButton.setForeground(Color.WHITE);
+        importTestcaseButton.setBorderPainted(false);
+        importTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+
+        // NEW: Export Testcase button
+        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
+        exportTestcaseButton.setBackground(Color.decode("#568afc"));
+        exportTestcaseButton.setForeground(Color.WHITE);
+        exportTestcaseButton.setBorderPainted(false);
+        exportTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
         dTextArea = new JTextArea();
         dTextArea.setBackground(Color.decode("#1f2335"));
         dTextArea.setCaretColor(Color.WHITE);
         dTextArea.setForeground(Color.WHITE);
 
-        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-        languageSelectDropdown.setUI(new BasicComboBoxUI() {
-            @Override
-            protected JButton createArrowButton() {
-                JButton button = new JButton("▼");
-                button.setBackground(Color.decode("#568afc"));
-                button.setForeground(Color.WHITE);
-                button.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-                return button;
-            }
-
-            @Override
-            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
-                g.setColor(Color.decode("#568afc"));
-                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-            }
-        });
+//        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+        languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+//        languageSelectDropdown.setUI(new BasicComboBoxUI() {
+//            @Override
+//            protected JButton createArrowButton() {
+//                JButton button = new JButton("▼");
+//                button.setBackground(Color.decode("#568afc"));
+//                button.setForeground(Color.WHITE);
+//                button.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+//                return button;
+//            }
+//
+//            @Override
+//            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+//                g.setColor(Color.decode("#568afc"));
+//                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+//            }
+//        });
 
         languageSelectDropdown.setBackground(Color.decode("#568afc"));
         languageSelectDropdown.setForeground(Color.WHITE);
-        languageSelectDropdown.setOpaque(true);
+//        languageSelectDropdown.setOpaque(true);
+        ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
+
+//        languageSelectDropdown.setRenderer(new DefaultListCellRenderer() {
+//            @Override
+//            public Component getListCellRendererComponent(JList<?> list, Object value,
+//                                                          int index, boolean isSelected, boolean cellHasFocus) {
+//                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+//                setHorizontalAlignment(CENTER);
+//                return this;
+//            }
+//        });
 
         actualOutputArea = new JTextArea();
         actualOutputArea.setBackground(Color.decode("#1f2335"));
@@ -138,7 +170,7 @@ public class TextEditor extends JPanel {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.6;
+        gbc.weightx = 0.3;
         gbc.weighty = 1.0;
         add(createLeftPanel(), gbc);
 
@@ -151,7 +183,7 @@ public class TextEditor extends JPanel {
         add(divider, gbc);
 
         gbc.gridx = 2;
-        gbc.weightx = 0.4;
+        gbc.weightx = 0.7;
         gbc.fill = GridBagConstraints.BOTH;
         add(createRightPanel(), gbc);
     }
@@ -163,9 +195,42 @@ public class TextEditor extends JPanel {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
 
+        // Top Panel (buttons + language)
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(createTopPanel(), gbc);
+
+        // Editors Panel (file explorer + text editor)
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(createEditorsPanel(), gbc);
+
+        // Bottom Panel (run code + set entry point)
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(createBottomPanel(), gbc);
+
+        return panel;
+    }
+
+    private JPanel createTopPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        // File buttons
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         gbc.weightx = 0.0;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.NONE;
@@ -176,6 +241,8 @@ public class TextEditor extends JPanel {
         fileButtonsPanel.add(openFolderButton);
         fileButtonsPanel.add(addFileButton);
         fileButtonsPanel.add(createFolderButton);
+        fileButtonsPanel.add(importTestcaseButton);
+        fileButtonsPanel.add(exportTestcaseButton);
         panel.add(fileButtonsPanel, gbc);
 
         // Spacer
@@ -184,44 +251,45 @@ public class TextEditor extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel.add(Box.createHorizontalGlue(), gbc);
 
-        // Entry Point Button
-        // FIXME: I THINK I FUCKED UP YOUR ENTRY BUTTON ETHAN
+        // Language Label
         gbc.gridx = 2;
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(setEntryPointButton, gbc);
-
-        // Language Label
-        gbc.gridx = 3;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel languageLabel = new JLabel("Language:");
+        JLabel languageLabel = new JLabel("Language:  ");
         languageLabel.setBackground(Color.decode("#28313b"));
         languageLabel.setForeground(Color.WHITE);
         languageLabel.setOpaque(true);
         panel.add(languageLabel, gbc);
-//        panel.add(new JLabel("Language:"), gbc);
 
         // Language Dropdown
-        gbc.gridx = 4;
+        gbc.gridx = 3;
         gbc.weightx = 0.0;
         languageSelectDropdown.setPreferredSize(new Dimension(120, 25));
         panel.add(languageSelectDropdown, gbc);
 
-        // ROW 1: File Explorer and Editor
+        return panel;
+    }
+
+    private JPanel createEditorsPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#28313b"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // File Explorer
         gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.weighty = 1.0;
         gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.BOTH;
         panel.add(fileExplorerPanel, gbc);
 
+        // Text Editor
         gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.gridwidth = 4; // Spans the remaining columns
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
         JScrollPane editorScroll = new JScrollPane(dTextArea);
@@ -231,26 +299,14 @@ public class TextEditor extends JPanel {
         titledBorder.setTitleColor(Color.WHITE);
         panel.add(editorScroll, gbc);
 
-        // ROW 2: Run Code Button
-        gbc.gridx = 3;
-        gbc.gridy = 2;
-        gbc.gridwidth = 2; // Spans to the end
-        gbc.weightx = 0.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBackground(Color.decode("#28313b"));
-        buttonPanel.add(runCodeButton);
-        panel.add(buttonPanel, gbc);
+        return panel;
+    }
 
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 3;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(Box.createHorizontalGlue(), gbc);
-
+    private JPanel createBottomPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panel.setBackground(Color.decode("#28313b"));
+        panel.add(setEntryPointButton);
+        panel.add(runCodeButton);
         return panel;
     }
 
@@ -317,7 +373,6 @@ public class TextEditor extends JPanel {
         }
     }
     private void setupEventListeners() {
-
         dTextArea.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -587,7 +642,7 @@ public class TextEditor extends JPanel {
     }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Text Editor with File Explorer");
+            JFrame frame = new JFrame("CodeChum++");
             TextEditor editor = new TextEditor();
             frame.setContentPane(editor);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

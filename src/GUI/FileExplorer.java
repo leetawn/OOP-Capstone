@@ -32,7 +32,7 @@ public class FileExplorer extends JPanel {
     private SFile selectedFile;
 
     // Updated constructor signature: No longer accepts language
-    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
+    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
         initializeBackend(rootDir); // Calls initializeBackend without language argument
@@ -123,6 +123,8 @@ public class FileExplorer extends JPanel {
         setLayout(new BorderLayout());
         JScrollPane treeScroll = new JScrollPane(fe_tree);
 
+        treeScroll.setPreferredSize(new Dimension(150, 0));
+
         // ---- DARK COLORS ----
         Color BG = Color.decode("#1f2335");
         Color TITLE = Color.decode("#ffffff");
@@ -169,7 +171,7 @@ public class FileExplorer extends JPanel {
         });
 
         add(treeScroll, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(250, 0));
+        setPreferredSize(new Dimension(150, 0));
     }
 
     private void setupEventListeners() {
