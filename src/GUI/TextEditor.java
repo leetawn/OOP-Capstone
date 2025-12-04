@@ -31,10 +31,29 @@ public class TextEditor extends JPanel {
         initializeComponents();
         initializeBackend();
         setupLayout();
-        setupEventListeners(); //
+        setupEventListeners();
+        setupTabToSpaces();
     }
+    private void setupTabToSpaces() {
+        final String fourSpaces = "    ";
 
-    private void initializeComponents() {
+        Action insertSpacesAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dTextArea.replaceSelection(fourSpaces);
+            }
+        };
+
+        KeyStroke tabKey = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+
+        Object actionKey = "insert-four-spaces";
+
+        InputMap inputMap = dTextArea.getInputMap(JComponent.WHEN_FOCUSED);
+        inputMap.put(tabKey, actionKey);
+
+        dTextArea.getActionMap().put(actionKey, insertSpacesAction);
+    }
+        private void initializeComponents() {
         runCodeButton = new JButton("Run Code");
         runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         runCodeButton.setBackground(Color.decode("#568afc"));
@@ -274,7 +293,6 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setTabSize(4);
         dTextArea.setEditable(false);
 
         actualOutputArea.setEditable(false);
@@ -286,17 +304,17 @@ public class TextEditor extends JPanel {
     }
 
     public void saveCurrentFileContent() {
-        FileManager fileManager = fileExplorerPanel.getFileManager();
-        SFile currentFile = fileManager != null ? fileManager.getCurrentFile() : null;
+        SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
-        if (currentFile != null) {
-            String content = dTextArea.getText();
+        String placeholderText = "No file selected. Please open a project or select a file to begin editing.";
+        String content = dTextArea.getText();
+
+        if (currentFile != null && !content.equals(placeholderText)) {
             currentFile.setContent(content);
             currentFile.writeOut();
             System.out.println("File saved: " + currentFile.getStringPath());
         }
     }
-
     private void setupEventListeners() {
 
         dTextArea.addKeyListener(new KeyAdapter() {
@@ -325,7 +343,7 @@ public class TextEditor extends JPanel {
                     try {
                         saveCurrentFileContent();
                         fileExplorerPanel.updateRootDirectory(selectedDir.getAbsolutePath());
-                        dTextArea.setText("");
+                        setTextArea(false);
                         actualOutputArea.setText("Successfully loaded new project: " + selectedDir.getName());
                     } catch (NotDirException ex) {
                         JOptionPane.showMessageDialog(this, "Error loading directory: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -481,6 +499,11 @@ public class TextEditor extends JPanel {
 
     public void setTextArea(boolean ok) {
         this.dTextArea.setEditable(ok);
+        if (!ok) {
+            this.dTextArea.setText("No file selected. Please open a project or select a file to begin editing.");
+
+            fileExplorerPanel.setSelectedFile(null);
+        }
     }
 
     public void handleAddFileAction() {

@@ -463,6 +463,9 @@ public class FileExplorer extends JPanel {
     public FileManager getFileManager() {
         return fileManager;
     }
+    public SFile getSelectedFile() {
+        return selectedFile;
+    }
     public void setSelectedFile(SFile newFile) {
         this.selectedFile = newFile;
     }
