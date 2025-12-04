@@ -87,7 +87,7 @@ public class Judge {
             long startTime = System.currentTimeMillis();
 
             // Main interaction loop
-            while (testInputs != null && inputIndex < testInputs.length) {
+            do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
                     return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim());
@@ -97,16 +97,17 @@ public class Judge {
                 Thread.sleep(INPUT_WAIT_MS);
 
                 // Send the next input line
-                String inputLine = testInputs[inputIndex];
-                transcript.append(inputLine).append("\n");
+                if (inputIndex < testInputs.length) {
+                    String inputLine = testInputs[inputIndex++];
+                    transcript.append(inputLine).append("\n");
+                    logger.logln("-> Judge providing input: " + inputLine);
+                    processInputWriter.write(inputLine);
+                    processInputWriter.newLine();
+                }
 
-                logger.logln("-> Judge providing input: " + inputLine);
-                processInputWriter.write(inputLine);
-                processInputWriter.newLine();
                 processInputWriter.flush();
 
-                inputIndex++;
-            }
+            } while (testInputs != null && inputIndex < testInputs.length);
 
             processInputWriter.close();
 
