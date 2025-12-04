@@ -26,9 +26,12 @@ public class MainMenu extends JPanel {
         start.setBorder(BorderFactory.createEmptyBorder(30, 0, 10, 0));
 
         openFolder.setFont(new Font("Consolas", Font.PLAIN, 20));
+        openFolder.setForeground(Color.BLACK);
+        openFolder.setBackground(Color.RED);
+        openFolder.setBorderPainted(false);
+        openFolder.setContentAreaFilled(true);
+        openFolder.setOpaque(true);
         openFolder.setFocusPainted(false);
-        openFolder.setForeground(Color.WHITE);
-        openFolder.setBackground(new Color(78, 121, 237));
         openFolder.setPreferredSize(new Dimension(200, 45));
 
         // Layout
@@ -84,7 +87,6 @@ public class MainMenu extends JPanel {
 
     }
 
-    // ---------- MAIN LAUNCHER ----------
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Main Menu");
