@@ -30,6 +30,7 @@ public class FileExplorer extends JPanel {
     private TextEditor textEditor;
     private SFile selectedFile;
     private SFile testcaseFile;
+    private SFile dummyExportFile;
 
     // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
@@ -56,6 +57,7 @@ public class FileExplorer extends JPanel {
             fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
             testcaseFile = null;
+            dummyExportFile = new SFile("C:\\Users\\Ethan\\Desktop\\OOP-Capstone\\testcase.ccpp");
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -477,6 +479,12 @@ public class FileExplorer extends JPanel {
     }
     public void setTestcaseFile(SFile newFile) {
         this.testcaseFile = newFile;
+    }
+    public SFile getDummyExportFile() {
+        return this.dummyExportFile;
+    }
+    public void setDummyExportFile(SFile newFile) {
+        this.dummyExportFile = newFile;
     }
 
     public DefaultMutableTreeNode getSelectedNode() {

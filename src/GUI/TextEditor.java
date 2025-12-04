@@ -10,9 +10,11 @@ import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 public class TextEditor extends JPanel {
@@ -57,6 +59,8 @@ public class TextEditor extends JPanel {
         }
     }
 
+    /* --------------- Setup --------------- */
+
     private void setupTabToSpaces() {
         final String fourSpaces = "    ";
 
@@ -76,7 +80,59 @@ public class TextEditor extends JPanel {
 
         dTextArea.getActionMap().put(actionKey, insertSpacesAction);
     }
+    private void setupLayout() {
+        setLayout(new GridBagLayout());
+        setBackground(Color.decode("#28313b"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(3, 3, 3, 3);
 
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.3;
+        gbc.weighty = 1.0;
+        add(createLeftPanel(), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        JSeparator divider = new JSeparator(JSeparator.VERTICAL);
+        divider.setBackground(Color.decode("#28313b"));
+        divider.setPreferredSize(new Dimension(1, 0));
+        add(divider, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.7;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(createRightPanel(), gbc);
+    }
+
+
+    private void setupEventListeners() {
+        dTextArea.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if ((e.getKeyCode() == KeyEvent.VK_S) &&
+                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
+
+                    e.consume();
+                    saveCurrentFileContent();
+                    actualOutputArea.setText("File saved successfully.");
+                }
+            }
+        });
+
+        openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
+        addFileButton.addActionListener(new AddFileButtonHandler(this));
+        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
+        runCodeButton.addActionListener(new RunButtonHandler(this));
+        createFolderButton.addActionListener(e -> {
+            fileExplorerPanel.handleCreateFolderAction();
+        });
+        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
+        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
+        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+    }
     private void initializeComponents() {
         runCodeButton = new RoundedButton("Run Code", 30);
         runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
@@ -136,39 +192,12 @@ public class TextEditor extends JPanel {
         dTextArea.setCaretColor(Color.WHITE);
         dTextArea.setForeground(Color.WHITE);
 
-//        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
         languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-//        languageSelectDropdown.setUI(new BasicComboBoxUI() {
-//            @Override
-//            protected JButton createArrowButton() {
-//                JButton button = new JButton("▼");
-//                button.setBackground(Color.decode("#568afc"));
-//                button.setForeground(Color.WHITE);
-//                button.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-//                return button;
-//            }
-//
-//            @Override
-//            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
-//                g.setColor(Color.decode("#568afc"));
-//                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-//            }
-//        });
 
         languageSelectDropdown.setBackground(Color.decode("#568afc"));
         languageSelectDropdown.setForeground(Color.WHITE);
-//        languageSelectDropdown.setOpaque(true);
         ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
 
-//        languageSelectDropdown.setRenderer(new DefaultListCellRenderer() {
-//            @Override
-//            public Component getListCellRendererComponent(JList<?> list, Object value,
-//                                                          int index, boolean isSelected, boolean cellHasFocus) {
-//                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-//                setHorizontalAlignment(CENTER);
-//                return this;
-//            }
-//        });
 
         actualOutputArea = new JTextArea();
         actualOutputArea.setBackground(Color.decode("#1f2335"));
@@ -183,32 +212,39 @@ public class TextEditor extends JPanel {
         fileExplorerPanel = new FileExplorer(".", dTextArea, this);
     }
 
-    private void setupLayout() {
-        setLayout(new GridBagLayout());
-        setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(3, 3, 3, 3);
 
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.3;
-        gbc.weighty = 1.0;
-        add(createLeftPanel(), gbc);
+    private void initializeBackend() {
 
-        gbc.gridx = 1;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.VERTICAL;
-        JSeparator divider = new JSeparator(JSeparator.VERTICAL);
-        divider.setBackground(Color.decode("#28313b"));
-        divider.setPreferredSize(new Dimension(1, 0));
-        add(divider, gbc);
+        dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        dTextArea.setText("No selected file. Select a file to start editing.");
+        dTextArea.setEditable(false);
 
-        gbc.gridx = 2;
-        gbc.weightx = 0.7;
-        gbc.fill = GridBagConstraints.BOTH;
-        add(createRightPanel(), gbc);
+        actualOutputArea.setEditable(false);
+        actualOutputArea.setCaretColor(Color.decode("#1f2335"));
+        expectedOutputArea.setEditable(false);
+        expectedOutputArea.setCaretColor(Color.decode("#1f2335"));
+        actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
     }
+
+
+    /* --------------- Setup --------------- */
+
+    /* --------------- Util --------------- */
+    public void saveCurrentFileContent() {
+        SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
+
+        String placeholderText = "No file selected. Select a file to start editing.";
+        String content = dTextArea.getText();
+
+        if (currentFile != null && !content.equals(placeholderText)) {
+            currentFile.setContent(content);
+            currentFile.writeOut();
+            System.out.println("File saved: " + currentFile.getStringPath());
+        }
+    }
+
+    /* --------------- Util --------------- */
 
     private JPanel createLeftPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -369,69 +405,7 @@ public class TextEditor extends JPanel {
         return panel;
     }
 
-    private void initializeBackend() {
 
-        dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setText("No selected file. Select a file to start editing.");
-        dTextArea.setEditable(false);
-
-        actualOutputArea.setEditable(false);
-        actualOutputArea.setCaretColor(Color.decode("#1f2335"));
-        expectedOutputArea.setEditable(false);
-        expectedOutputArea.setCaretColor(Color.decode("#1f2335"));
-        actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-    }
-
-    public void saveCurrentFileContent() {
-        SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
-
-        String placeholderText = "No file selected. Select a file to start editing.";
-        String content = dTextArea.getText();
-
-        if (currentFile != null && !content.equals(placeholderText)) {
-            currentFile.setContent(content);
-            currentFile.writeOut();
-            System.out.println("File saved: " + currentFile.getStringPath());
-        }
-    }
-    private void setupEventListeners() {
-        dTextArea.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if ((e.getKeyCode() == KeyEvent.VK_S) &&
-                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
-
-                    e.consume();
-                    saveCurrentFileContent();
-                    actualOutputArea.setText("File saved successfully.");
-                }
-            }
-        });
-
-        openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
-        addFileButton.addActionListener(new AddFileButtonHandler(this));
-        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
-        runCodeButton.addActionListener(new RunButtonHandler(this));
-        createFolderButton.addActionListener(e -> {
-            fileExplorerPanel.handleCreateFolderAction();
-        });
-        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
-        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
-    }
-
-    public String getCurrentSelectedLanguage() {
-        return (String) languageSelectDropdown.getSelectedItem();
-    }
-
-    public void setTextArea(boolean ok) {
-        this.dTextArea.setEditable(ok);
-        if (!ok) {
-            this.dTextArea.setText("No file selected. Please open a project or select a file to begin editing.");
-
-            fileExplorerPanel.setSelectedFile(null);
-        }
-    }
 
     public void handleAddFileAction() {
         FileManager fm = fileExplorerPanel.getFileManager();
@@ -505,6 +479,21 @@ public class TextEditor extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    /* --------------- Util --------------- */
+    /* --------------- Getters & Setters --------------- */
+
+    public String getCurrentSelectedLanguage() {
+        return (String) languageSelectDropdown.getSelectedItem();
+    }
+
+    public void setTextArea(boolean ok) {
+        this.dTextArea.setEditable(ok);
+        if (!ok) {
+            this.dTextArea.setText("No file selected. Please open a project or select a file to begin editing.");
+
+            fileExplorerPanel.setSelectedFile(null);
+        }
+    }
     public static void setNimbusLaf() {
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -522,6 +511,7 @@ public class TextEditor extends JPanel {
         return setEntryPointButton;
     }
 
+    /* --------------- Getters & Setters --------------- */
     /* --------------- Button Handlers --------------- */
 
     public static class OpenFolderButtonHandler extends ComponentHandler {
@@ -757,7 +747,42 @@ public class TextEditor extends JPanel {
             System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
         }
     }
+    public static class ExportTestcaseButtonHandler extends ComponentHandler {
+        public ExportTestcaseButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChooser.setDialogTitle("Export to");
+
+            int result = fileChooser.showOpenDialog(getTextEditor());
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedDirectory = fileChooser.getSelectedFile();
+                SFile toSave = fe.getDummyExportFile(); // this will be changed once testcase generation is possible
+                if (selectedDirectory != null && selectedDirectory.isDirectory()) {
+                    try {
+                        Path dest = selectedDirectory.toPath();
+                        Path fileName = toSave.getPath().getFileName();
+                        Path finalDest = dest.resolve(fileName);
+
+                        String content = Files.readString(toSave.getPath());
+                        Files.writeString(finalDest, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                        System.out.println("Exported to: " + finalDest);
+
+                    } catch (IOException ex) { // we don't have to catch NotDir because we only display directories anyway
+                        JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }
+    }
     /* --------------- Button Handlers --------------- */
+
     public static void main(String[] args) {
         setNimbusLaf();
         SwingUtilities.invokeLater(() -> {
