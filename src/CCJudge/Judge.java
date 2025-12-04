@@ -5,8 +5,10 @@ import CustomExceptions.NotDirException;
 import FileManagement.FileManager;
 import FileManagement.SFile;
 
+import javax.tools.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -151,8 +153,15 @@ public class Judge {
     }
 
     private static SubmissionRecord compile(FileManager fm) throws Exception {
-        String[] compileCommand = ExecutionConfig.getCompileCommand(fm);
         DebugLog logger = DebugLog.getInstance();
+
+        if (fm.getLanguage().equals("java")) {
+            logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
+            return startJavaCompilation(fm);
+        }
+
+        String[] compileCommand = ExecutionConfig.getCompileCommand(fm);
+
         if (compileCommand == null) {
             logger.logln("-> No compilation required for " + fm.getLanguage());
             return new SubmissionRecord(JudgeVerdict.NONE, "No compilation required for " + fm.getLanguage());
@@ -163,6 +172,71 @@ public class Judge {
         pb.directory(fm.getRootdir().toFile());
 
         return startCompilation(pb);
+    }
+
+    private static SubmissionRecord startJavaCompilation(FileManager fm) throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            return new SubmissionRecord(JudgeVerdict.CE, "Java Compiler not found. Ensure you are running on a JDK.");
+        }
+
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        // Use try-with-resources to ensure fileManager is closed
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {
+
+            // 1. Get all Java source files to be compiled
+            Iterable<Path> sourcePaths = fm.getFiles().stream()
+                    .filter(f -> f.getPath().toString().endsWith(".java"))
+                    .map(SFile::getPath)
+                    .collect(Collectors.toList());
+
+            if (!sourcePaths.iterator().hasNext()) {
+                return new SubmissionRecord(JudgeVerdict.CE, "No Java source files (.java) found for compilation.");
+            }
+
+            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromPaths(sourcePaths);
+
+            // 2. Set compilation options: output directory (-d)
+            Path outputDir = fm.getRootdir();
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+
+            // Options: -d <output directory>
+            Iterable<String> options = Arrays.asList(
+                    "-d", outputDir.toAbsolutePath().toString()
+            );
+
+            // 3. Create and run the compilation task
+            JavaCompiler.CompilationTask task = compiler.getTask(
+                    null, // Writer for compilation output (null uses System.err/out)
+                    fileManager,
+                    diagnostics,
+                    options,
+                    null, // Classes for annotation processing
+                    compilationUnits
+            );
+
+            boolean success = task.call();
+
+            // 4. Handle results
+            if (!success) {
+                StringWriter output = new StringWriter();
+                for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                    // Format the error message to be submission record friendly
+                    output.write(String.format("Error [%s] on line %d in %s:\n%s\n",
+                            diagnostic.getKind().toString(),
+                            diagnostic.getLineNumber(),
+                            diagnostic.getSource() != null ? diagnostic.getSource().getName() : "Unknown File",
+                            diagnostic.getMessage(null)));
+                }
+                String ceMsg = "Compilation Errors (javax.tools):\n" + output.toString();
+                System.err.println(ceMsg);
+                return new SubmissionRecord(JudgeVerdict.CE, ceMsg);
+            }
+
+            return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful (javax.tools)");
+        }
     }
 
     private static SubmissionRecord startCompilation(ProcessBuilder pb) throws IOException, InterruptedException {
