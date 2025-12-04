@@ -48,7 +48,7 @@ public class FileManager {
 
             Files.move(oldPath, newPath);
             if (currentFile != null && currentFile.equals(sfile)) {
-                currentFile = all_files.getLast();
+                currentFile = all_files.get(all_files.size()-1);
             }
             return true;
         } catch (IOException e) {
@@ -159,7 +159,8 @@ public class FileManager {
         return instance;
     }
     public FileManager setLanguage(String language) {
-        this.language = language;
+        if (language != null)
+            this.language = language.toLowerCase();
         return this;
     }
     public FileManager setRootdir(Path rootPath) throws NotDirException {
