@@ -1,20 +1,19 @@
 package GUI;
 
 import CCJudge.Judge;
+import CustomExceptions.InvalidFileException;
 import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
-import javax.imageio.ImageIO;
 import javax.swing.border.TitledBorder;
-import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.*;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -32,8 +31,6 @@ public class TextEditor extends JPanel {
     private JButton exportTestcaseButton;
 
     public TextEditor() {
-
-
         initializeComponents();
         initializeBackend();
         setupLayout();
@@ -375,6 +372,7 @@ public class TextEditor extends JPanel {
     private void initializeBackend() {
 
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        dTextArea.setText("No selected file. Select a file to start editing.");
         dTextArea.setEditable(false);
 
         actualOutputArea.setEditable(false);
@@ -388,7 +386,7 @@ public class TextEditor extends JPanel {
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
-        String placeholderText = "No file selected. Please open a project or select a file to begin editing.";
+        String placeholderText = "No file selected. Select a file to start editing.";
         String content = dTextArea.getText();
 
         if (currentFile != null && !content.equals(placeholderText)) {
@@ -411,169 +409,15 @@ public class TextEditor extends JPanel {
             }
         });
 
-        openFolderButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            fileChooser.setDialogTitle("Select Project Root Folder");
-
-            int result = fileChooser.showOpenDialog(this);
-
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File selectedDir = fileChooser.getSelectedFile();
-                if (selectedDir != null && selectedDir.isDirectory()) {
-                    try {
-                        saveCurrentFileContent();
-                        fileExplorerPanel.updateRootDirectory(selectedDir.getAbsolutePath());
-                        setTextArea(false);
-                        actualOutputArea.setText("Successfully loaded new project: " + selectedDir.getName());
-                    } catch (NotDirException ex) {
-                        JOptionPane.showMessageDialog(this, "Error loading directory: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        });
-
-        languageSelectDropdown.addActionListener(e -> {
-            FileManager fileManager = fileExplorerPanel.getFileManager();
-            String newLanguage = (String) languageSelectDropdown.getSelectedItem();
-
-            if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
-                setEntryPointButton.setVisible(true);
-            } else {
-                setEntryPointButton.setVisible(false);
-            }
-            fileManager.setLanguage(newLanguage);
-
-            fileManager.setCurrentFile(null);
-
-            setEntryPointButton.setText("Set Entry Point");
-
-            actualOutputArea.setText("");
-            expectedOutputArea.setText("");
-
-            System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
-
-        });
-
-        addFileButton.addActionListener(e -> {
-            FileManager fileManager = fileExplorerPanel.getFileManager();
-            if (fileManager == null) return;
-
-            DefaultMutableTreeNode selectedNode = fileExplorerPanel.getSelectedNode();
-            Path targetDir = fileManager.getRootdir();
-            DefaultMutableTreeNode parentNodeInTree;
-
-            if (selectedNode != null) {
-                Object obj = selectedNode.getUserObject();
-
-                if (obj instanceof SFile sfile) {
-                    if (Files.isDirectory(sfile.getPath())) {
-                        targetDir = sfile.getPath();
-                        parentNodeInTree = selectedNode;
-                    } else {
-                        targetDir = sfile.getPath().getParent();
-                        parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
-                    }
-                } else {
-                    targetDir = fileExplorerPanel.resolveNodeToPath(selectedNode);
-                    parentNodeInTree = selectedNode;
-                }
-            } else {
-                parentNodeInTree = (DefaultMutableTreeNode) fileExplorerPanel.getFeTree().getModel().getRoot();
-            }
-
-
-            String fileName = JOptionPane.showInputDialog(this, "Enter new file name (with extension):");
-            if (fileName == null || fileName.isBlank()) return;
-
-            if (!fileManager.isAllowedFile(fileName)) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid file extension.\nAllowed: .c, .cpp, .h, .hpp, .java, .py",
-                        "Invalid Extension",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            try {
-                Path newFilePath = targetDir.resolve(fileName);
-
-                if (Files.exists(newFilePath)) {
-                    JOptionPane.showMessageDialog(this, "File already exists in " + targetDir);
-                    return;
-                }
-
-                saveCurrentFileContent();
-
-                SFile newSFile = new SFile(newFilePath);
-                newSFile.writeOut();
-                fileManager.getFiles().add(newSFile);
-                fileManager.setCurrentFile(newSFile);
-                dTextArea.setText(newSFile.getContent());
-
-                DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
-                DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
-
-                model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
-
-                fileExplorerPanel.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
-                fileExplorerPanel.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
-
-                JOptionPane.showMessageDialog(this, "File created: " + newFilePath);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Error creating file: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        runCodeButton.addActionListener(e -> {
-            saveCurrentFileContent();
-            FileManager fm = fileExplorerPanel.getFileManager();
-            String out = Judge.judge(fm, new String[]{}).output();
-            actualOutputArea.setText(out);
-            expectedOutputArea.setText("Expected output will appear here");
-        });
+        openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
+        addFileButton.addActionListener(new AddFileButtonHandler(this));
+        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
+        runCodeButton.addActionListener(new RunButtonHandler(this));
         createFolderButton.addActionListener(e -> {
             fileExplorerPanel.handleCreateFolderAction();
         });
-        setEntryPointButton.addActionListener(e -> {
-            FileManager fileManager = fileExplorerPanel.getFileManager();
-            JTree fe_tree = fileExplorerPanel.getFeTree();
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
-            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
-
-            if (Files.isDirectory(sfile.getPath())) {
-                JOptionPane.showMessageDialog(null,
-                        "yo this is a folder gang you can't set folders as entry points",
-                        "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
-                if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
-                else {
-                    JOptionPane.showMessageDialog(null,
-                            "i NEED JABAI ENTRY POINT",
-                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-            }
-
-            if (getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
-                if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
-                else {
-                    JOptionPane.showMessageDialog(null,
-                            "i NEED PYTHON ENTRY POINT",
-                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-            }
-            setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
-            // DEBUG SHIT
-            // System.out.println("Language: " + fileManager.getLanguage());
-            // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
-        });
+        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
+        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
     }
 
     public String getCurrentSelectedLanguage() {
@@ -661,11 +505,261 @@ public class TextEditor extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    public static void setNimbusLaf() {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("nooooooo garbage ui for now");
+        }
+    }
 
     public JButton getSetEntryPointButton() {
         return setEntryPointButton;
     }
+
+    /* --------------- Button Handlers --------------- */
+
+    public static class OpenFolderButtonHandler extends ComponentHandler {
+
+        public OpenFolderButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChooser.setDialogTitle("Select Project Root Folder");
+
+            int result = fileChooser.showOpenDialog(getTextEditor());
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedDir = fileChooser.getSelectedFile();
+                if (selectedDir != null && selectedDir.isDirectory()) {
+                    try {
+                        getTextEditor().saveCurrentFileContent();
+                        getTextEditor().fileExplorerPanel.updateRootDirectory(selectedDir.getAbsolutePath());
+                        getTextEditor().setTextArea(false);
+                        getTextEditor().actualOutputArea.setText("Successfully loaded new project: " + selectedDir.getName());
+                    } catch (NotDirException ex) {
+                        JOptionPane.showMessageDialog(getTextEditor(), "Error loading directory: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }
+    };
+
+    public static class AddFileButtonHandler extends ComponentHandler {
+        public AddFileButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fileManager = fe.getFileManager();
+            if (fileManager == null) return;
+
+            DefaultMutableTreeNode selectedNode = fe.getSelectedNode();
+            Path targetDir = fileManager.getRootdir();
+            DefaultMutableTreeNode parentNodeInTree;
+
+            if (selectedNode != null) {
+                Object obj = selectedNode.getUserObject();
+
+                if (obj instanceof SFile sfile) {
+                    if (Files.isDirectory(sfile.getPath())) {
+                        targetDir = sfile.getPath();
+                        parentNodeInTree = selectedNode;
+                    } else {
+                        targetDir = sfile.getPath().getParent();
+                        parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
+                    }
+                } else {
+                    targetDir = fe.resolveNodeToPath(selectedNode);
+                    parentNodeInTree = selectedNode;
+                }
+            } else {
+                parentNodeInTree = (DefaultMutableTreeNode) fe.getFeTree().getModel().getRoot();
+            }
+
+
+            String fileName = JOptionPane.showInputDialog(getTextEditor(), "Enter new file name (with extension):");
+            if (fileName == null || fileName.isBlank()) return;
+
+            if (!fileManager.isAllowedFile(fileName)) {
+                JOptionPane.showMessageDialog(getTextEditor(),
+                        "Invalid file extension.\nAllowed: .c, .cpp, .h, .hpp, .java, .py",
+                        "Invalid Extension",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            try {
+                Path newFilePath = targetDir.resolve(fileName);
+
+                if (Files.exists(newFilePath)) {
+                    JOptionPane.showMessageDialog(getTextEditor(), "File already exists in " + targetDir);
+                    return;
+                }
+
+                getTextEditor().saveCurrentFileContent();
+
+                SFile newSFile = new SFile(newFilePath);
+                newSFile.writeOut();
+                fileManager.getFiles().add(newSFile);
+                fileManager.setCurrentFile(newSFile);
+                getTextEditor().dTextArea.setText(newSFile.getContent());
+
+                DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
+                DefaultTreeModel model = (DefaultTreeModel) fe.getFeTree().getModel();
+
+                model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
+
+                fe.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
+                fe.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
+
+                JOptionPane.showMessageDialog(getTextEditor(), "File created: " + newFilePath);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(getTextEditor(),
+                        "Error creating file: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    public static class LanguageSelectHandler extends ComponentHandler {
+        public LanguageSelectHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fileManager = fe.getFileManager();
+            String newLanguage = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
+
+            if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
+                getTextEditor().setEntryPointButton.setVisible(true);
+            } else {
+                getTextEditor().setEntryPointButton.setVisible(false);
+            }
+            fileManager.setLanguage(newLanguage);
+
+            fileManager.setCurrentFile(null);
+
+            getTextEditor().setEntryPointButton.setText("Set Entry Point");
+
+            getTextEditor().actualOutputArea.setText("");
+            getTextEditor().expectedOutputArea.setText("");
+
+            System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
+        }
+    }
+
+    public static class RunButtonHandler extends ComponentHandler {
+        public RunButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            getTextEditor().saveCurrentFileContent();
+            FileManager fm = fe.getFileManager();
+            String out = Judge.judge(fm, new String[]{}).output();
+            getTextEditor().actualOutputArea.setText(out);
+            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
+        }
+    }
+
+    public static class SetEntryPointButtonHandler extends ComponentHandler {
+        public SetEntryPointButtonHandler(TextEditor editor) {
+           super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fileManager = fe.getFileManager();
+            JTree fe_tree = fe.getFeTree();
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
+
+            if (Files.isDirectory(sfile.getPath())) {
+                JOptionPane.showMessageDialog(null,
+                        "yo this is a folder gang you can't set folders as entry points",
+                        "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
+                if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED JABAI ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+            }
+
+            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
+                if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED PYTHON ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            getTextEditor().setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
+            // DEBUG SHIT
+            // System.out.println("Language: " + fileManager.getLanguage());
+            // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
+        }
+    }
+
+    public static class ImportTestcaseButtonHandler extends ComponentHandler {
+        public ImportTestcaseButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setDialogTitle("Select Testcase File");
+
+            int result = fileChooser.showOpenDialog(getTextEditor());
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                if (selectedFile != null && selectedFile.isFile()) {
+                    try {
+                        if (selectedFile.getPath().endsWith(".ccpp")) {
+                            fe.setTestcaseFile(new SFile(selectedFile.getPath()));
+                        } else {
+                            throw new InvalidFileException("Invalid file! Please select .ccpp files for testcases.");
+                        }
+
+                   } catch (InvalidFileException ex) {
+                        JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+            System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+        }
+    }
+    /* --------------- Button Handlers --------------- */
     public static void main(String[] args) {
+        setNimbusLaf();
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("CodeChum++");
             TextEditor editor = new TextEditor();
@@ -701,3 +795,4 @@ public class TextEditor extends JPanel {
         });
     }
 }
+
