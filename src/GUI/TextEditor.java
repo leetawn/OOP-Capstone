@@ -1,5 +1,6 @@
 package GUI;
 
+import CCJudge.Judge;
 import CustomExceptions.NotDirException;
 import FileManagement.*;
 import java.awt.event.*;
@@ -428,7 +429,9 @@ public class TextEditor extends JPanel {
 
         runCodeButton.addActionListener(e -> {
             saveCurrentFileContent();
-            actualOutputArea.setText("Executing code...\n");
+            FileManager fm = fileExplorerPanel.getFileManager();
+            String out = Judge.judge(fm, new String[]{}).output();
+            actualOutputArea.setText(out);
             expectedOutputArea.setText("Expected output will appear here");
         });
         createFolderButton.addActionListener(e -> {
