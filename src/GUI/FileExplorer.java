@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,9 +29,10 @@ public class FileExplorer extends JPanel {
     private JMenuItem addFileItem;
     private TextEditor textEditor;
     private SFile selectedFile;
+    private SFile testcaseFile;
 
     // Updated constructor signature: No longer accepts language
-    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor) {
+    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
         initializeBackend(rootDir); // Calls initializeBackend without language argument
@@ -55,6 +55,7 @@ public class FileExplorer extends JPanel {
         try {
             fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
+            testcaseFile = null;
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -123,6 +124,8 @@ public class FileExplorer extends JPanel {
         setLayout(new BorderLayout());
         JScrollPane treeScroll = new JScrollPane(fe_tree);
 
+        treeScroll.setPreferredSize(new Dimension(150, 0));
+
         // ---- DARK COLORS ----
         Color BG = Color.decode("#1f2335");
         Color TITLE = Color.decode("#ffffff");
@@ -169,7 +172,7 @@ public class FileExplorer extends JPanel {
         });
 
         add(treeScroll, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(250, 0));
+        setPreferredSize(new Dimension(150, 0));
     }
 
     private void setupEventListeners() {
@@ -468,6 +471,12 @@ public class FileExplorer extends JPanel {
     }
     public void setSelectedFile(SFile newFile) {
         this.selectedFile = newFile;
+    }
+    public SFile getTestcaseFile() {
+        return this.testcaseFile;
+    }
+    public void setTestcaseFile(SFile newFile) {
+        this.testcaseFile = newFile;
     }
 
     public DefaultMutableTreeNode getSelectedNode() {
