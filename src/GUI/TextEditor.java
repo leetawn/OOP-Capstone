@@ -602,11 +602,24 @@ public class TextEditor extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    public static void setNimbusLaf() {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("nooooooo garbage ui for now");
+        }
+    }
 
     public JButton getSetEntryPointButton() {
         return setEntryPointButton;
     }
     public static void main(String[] args) {
+        setNimbusLaf();
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Text Editor with File Explorer");
             TextEditor editor = new TextEditor();
