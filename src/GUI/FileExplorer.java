@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,6 +29,7 @@ public class FileExplorer extends JPanel {
     private JMenuItem addFileItem;
     private TextEditor textEditor;
     private SFile selectedFile;
+    private SFile testcaseFile;
 
     // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
@@ -55,6 +55,7 @@ public class FileExplorer extends JPanel {
         try {
             fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
+            testcaseFile = null;
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -196,7 +197,7 @@ public class FileExplorer extends JPanel {
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
-                    System.out.println("Current file: ");
+                    System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
                     // some error here
                 }
@@ -470,6 +471,12 @@ public class FileExplorer extends JPanel {
     }
     public void setSelectedFile(SFile newFile) {
         this.selectedFile = newFile;
+    }
+    public SFile getTestcaseFile() {
+        return this.testcaseFile;
+    }
+    public void setTestcaseFile(SFile newFile) {
+        this.testcaseFile = newFile;
     }
 
     public DefaultMutableTreeNode getSelectedNode() {
