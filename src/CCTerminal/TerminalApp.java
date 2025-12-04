@@ -1,5 +1,3 @@
-package CCTerminal;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -100,7 +98,7 @@ public class TerminalApp extends JFrame {
             boolean isWindowsShell = commandString.contains("cmd") || commandString.contains("powershell");
 
             // Display the command entered by the user in the output area with a recognizable prompt
-            outputArea.append(isWindowsShell ? "\n> " + command + "\n" : "\n$ " + command + "\n");
+            outputArea.append(isWindowsShell ? command + "\n" : "\n$ " + command + "\n");
 
             try {
                 // IMPORTANT FIX: Write the command using \r\n (Carriage Return + Newline)
@@ -130,22 +128,41 @@ public class TerminalApp extends JFrame {
 
         @Override
         public void run() {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // Update the JTextArea on the Event Dispatch Thread (EDT)
-                    String finalLine = line;
-                    SwingUtilities.invokeLater(() -> {
-                        outputArea.append(finalLine + "\n");
-                        // Auto-scroll to the bottom
-                        outputArea.setCaretPosition(outputArea.getDocument().getLength());
-                    });
+            // Use InputStreamReader and a character buffer for real-time output reading.
+            // This is better for catching interactive prompts that might not end in a newline.
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+
+                char[] buffer = new char[1024];
+                int readChars;
+
+                // Loop as long as the process is alive or we can still read from the stream
+                while (terminalProcess.isAlive() || inputStream.available() > 0) {
+                    if (reader.ready()) {
+                        readChars = reader.read(buffer);
+                        if (readChars > 0) {
+                            final String output = new String(buffer, 0, readChars);
+
+                            // Update the JTextArea on the Event Dispatch Thread (EDT)
+                            SwingUtilities.invokeLater(() -> {
+                                // IMPORTANT: Append the raw output directly (including any partial lines or prompts)
+                                outputArea.append(output);
+                                // Auto-scroll to the bottom
+                                outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                            });
+                        }
+                    }
+                    // Wait briefly to prevent the thread from consuming excessive CPU
+                    Thread.sleep(50);
                 }
             } catch (IOException e) {
                 SwingUtilities.invokeLater(() -> {
-                    outputArea.append("\n--- External process terminated or connection lost. ---\n");
+                    outputArea.append("\n--- External process terminated or connection lost (IOException). ---\n");
                     outputArea.append("Error: " + e.getMessage() + "\n");
                 });
+            } catch (InterruptedException e) {
+                // The thread was interrupted while sleeping
+                Thread.currentThread().interrupt();
+                SwingUtilities.invokeLater(() -> outputArea.append("\n--- Console output reader interrupted. ---\n"));
             } finally {
                 // Ensure resources are cleaned up
                 if (terminalProcess != null) {
