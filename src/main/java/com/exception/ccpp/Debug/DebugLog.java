@@ -1,4 +1,4 @@
-package Debug;
+package com.exception.ccpp.Debug;
 
 // temporarily just prints to sout
 // soon it will write to a single log file

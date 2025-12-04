@@ -1,6 +1,6 @@
 package com.exception.ccpp;
 
-import GUI.TextEditor;
+import com.exception.ccpp.GUI.TextEditor;
 
 // TODO: DO NOT REMOVE THIS CLASS THIS WILL BE OUR ENTRY POINT FOR THE APP
 public class Main {

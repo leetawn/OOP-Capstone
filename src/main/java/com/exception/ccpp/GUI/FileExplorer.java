@@ -1,8 +1,8 @@
-package GUI;
+package com.exception.ccpp.GUI;
 
-import CustomExceptions.NotDirException;
-import FileManagement.FileManager;
-import FileManagement.SFile;
+import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.FileManagement.FileManager;
+import com.exception.ccpp.FileManagement.SFile;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

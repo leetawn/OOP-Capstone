@@ -1,4 +1,4 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
 public class TestMain {
     public static void main(String[] args) {

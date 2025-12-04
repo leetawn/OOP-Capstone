@@ -1,9 +1,9 @@
-package GUI;
+package com.exception.ccpp.GUI;
 
-import CCJudge.Judge;
-import CustomExceptions.InvalidFileException;
-import CustomExceptions.NotDirException;
-import FileManagement.*;
+import com.exception.ccpp.CCJudge.Judge;
+import com.exception.ccpp.CustomExceptions.InvalidFileException;
+import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.FileManagement.*;
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.tree.*;
@@ -15,7 +15,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;

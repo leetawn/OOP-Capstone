@@ -1,4 +1,4 @@
-package Common;
+package com.exception.ccpp.Common;
 
 public class Helpers {
     public static String[] concatStringArrays(String[]... arrays) {

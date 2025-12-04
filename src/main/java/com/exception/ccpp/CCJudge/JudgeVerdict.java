@@ -1,4 +1,4 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
 public enum JudgeVerdict {
     AC, // Accepted

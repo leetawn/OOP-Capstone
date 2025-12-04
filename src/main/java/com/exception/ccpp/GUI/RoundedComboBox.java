@@ -1,4 +1,4 @@
-package GUI;
+package com.exception.ccpp.GUI;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,13 +1,12 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
 
-import Common.Helpers;
-import FileManagement.FileManager;
+import com.exception.ccpp.Common.Helpers;
+import com.exception.ccpp.FileManagement.FileManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Stream;
 
 
 public class ExecutionConfig {

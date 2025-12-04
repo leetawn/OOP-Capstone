@@ -1,10 +1,9 @@
-package CCTerminal;
+package com.exception.ccpp.CCTerminal;
 
-import CCJudge.ExecutionConfig;
-import CCJudge.Judge;
-import Common.Helpers;
-import CustomExceptions.NotDirException;
-import FileManagement.FileManager;
+import com.exception.ccpp.CCJudge.ExecutionConfig;
+import com.exception.ccpp.Common.Helpers;
+import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.Arrays;
-import java.util.SimpleTimeZone;
 
 /**
  * A Java Swing application that acts as a console for an external command-line process (e.g., cmd.exe or bash).

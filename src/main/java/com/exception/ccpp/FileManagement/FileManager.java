@@ -1,6 +1,6 @@
-package FileManagement;
+package com.exception.ccpp.FileManagement;
 
-import CustomExceptions.NotDirException;
+import com.exception.ccpp.CustomExceptions.NotDirException;
 
 import java.io.IOException;
 import java.nio.file.*;

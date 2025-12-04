@@ -1,6 +1,6 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
-import FileManagement.SFile;
+import com.exception.ccpp.FileManagement.SFile;
 
 public class TestManager {
     public TestManager (SFile testcaseFile) {

@@ -1,4 +1,4 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
 import java.io.BufferedReader;
 import java.io.IOException;

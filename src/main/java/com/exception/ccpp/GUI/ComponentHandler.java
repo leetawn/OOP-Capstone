@@ -1,4 +1,4 @@
-package GUI;
+package com.exception.ccpp.GUI;
 
 import java.awt.event.*;
 import java.io.File;

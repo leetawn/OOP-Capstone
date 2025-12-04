@@ -1,9 +1,9 @@
-package CCJudge;
+package com.exception.ccpp.CCJudge;
 
-import Debug.DebugLog;
-import CustomExceptions.NotDirException;
-import FileManagement.FileManager;
-import FileManagement.SFile;
+import com.exception.ccpp.Debug.DebugLog;
+import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.FileManagement.FileManager;
+import com.exception.ccpp.FileManagement.SFile;
 
 import javax.tools.*;
 import java.io.*;

@@ -1,4 +1,4 @@
-package CustomExceptions;
+package com.exception.ccpp.CustomExceptions;
 
 public class NotDirException extends Exception {
     public NotDirException() {
