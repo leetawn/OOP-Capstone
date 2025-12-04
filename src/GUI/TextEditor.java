@@ -339,6 +339,8 @@ public class TextEditor extends JPanel {
 
             if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
                 setEntryPointButton.setVisible(true);
+            } else {
+                setEntryPointButton.setVisible(false);
             }
             fileManager.setLanguage(newLanguage);
 
