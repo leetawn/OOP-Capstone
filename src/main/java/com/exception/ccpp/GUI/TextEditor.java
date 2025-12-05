@@ -132,45 +132,83 @@ public class TextEditor extends JPanel {
         importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
         exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
     }
+
     private void initializeComponents() {
         runCodeButton = new RoundedButton("Run Code", 30);
         runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         runCodeButton.setBackground(Color.decode("#568afc"));
         runCodeButton.setForeground(Color.WHITE);
-//        runCodeButton.setOpaque(true);
         runCodeButton.setBorderPainted(false);
         runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
-        addFileButton = new RoundedButton("Add File", 15);
         createButton = new JButton("Add Folder");
-        addFileButton.setBackground(Color.decode("#568afc"));
-        addFileButton.setForeground(Color.WHITE);
-//        addFileButton.setOpaque(true);
-        addFileButton.setBorderPainted(false);
-        addFileButton.setBorder(BorderFactory.createEmptyBorder(5, 7, 5, 7));
 
-        openFolderButton = new RoundedButton("Open Folder", 15);
+        addFileButton = new RoundedButton("", 15);
+        URL urlAddFileButton = TextEditor.class.getResource("/GUI/assets/add_file.png");
+        if (urlAddFileButton != null) {
+            ImageIcon iconAddFileButton = new ImageIcon(urlAddFileButton);
+            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
+            Image originalImage = iconAddFileButton.getImage();
+            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+
+            // Set the scaled image using the new setIconImage method
+            ((RoundedButton)addFileButton).setIconImage(scaledImage);
+        } else {
+            System.err.println("Resource not found: /GUI/assets/add_file.png");
+        }
+        addFileButton.setBackground(Color.decode("#28313b"));
+        addFileButton.setBorderPainted(false);
+        addFileButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        addFileButton.setToolTipText("Add File");
+        ToolTipManager.sharedInstance().setInitialDelay(800);
+
         setEntryPointButton = new RoundedButton("Set Entry Point", 30);
         setEntryPointButton.setVisible(false);
 
-        // NEW: Set Entry Point button styling to match Run Code
+        // Set Entry Point button styling to match Run Code
         setEntryPointButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         setEntryPointButton.setBackground(Color.decode("#568afc"));
         setEntryPointButton.setForeground(Color.WHITE);
-//        setEntryPointButton.setOpaque(true);
         setEntryPointButton.setBorderPainted(false);
         setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
-        openFolderButton.setBackground(Color.decode("#568afc"));
-        openFolderButton.setForeground(Color.WHITE);
-        openFolderButton.setBorderPainted(false);
-        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+        openFolderButton = new RoundedButton("", 15);
+        URL urlOpenFolderButton = TextEditor.class.getResource("/GUI/assets/open_folder.png");
+        if (urlOpenFolderButton != null) {
+            ImageIcon iconOpenFolderButton = new ImageIcon(urlOpenFolderButton);
+            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
+            Image originalImage = iconOpenFolderButton.getImage();
+            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
 
-        createFolderButton = new RoundedButton("Create Folder", 15);
-        createFolderButton.setBackground(Color.decode("#568afc"));
-        createFolderButton.setForeground(Color.WHITE);
+            // Set the scaled image using the new setIconImage method
+            ((RoundedButton)openFolderButton).setIconImage(scaledImage);
+        } else {
+            System.err.println("Resource not found: /GUI/assets/open_folder.png");
+        }
+        openFolderButton.setBackground(Color.decode("#28313b"));
+        openFolderButton.setBorderPainted(false);
+        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        openFolderButton.setToolTipText("Open Folder");
+        ToolTipManager.sharedInstance().setInitialDelay(800);
+
+        createFolderButton = new RoundedButton("", 15);
+        URL urlCreateFolderButton = TextEditor.class.getResource("/GUI/assets/create_folder.png");
+        if (urlOpenFolderButton != null) {
+            ImageIcon iconCreateFolderButton = new ImageIcon(urlCreateFolderButton);
+            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
+            Image originalImage = iconCreateFolderButton.getImage();
+            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+
+            // Set the scaled image using the new setIconImage method
+            ((RoundedButton)createFolderButton).setIconImage(scaledImage);
+        } else {
+            System.err.println("Resource not found: /GUI/assets/create_folder.png");
+        }
+        createFolderButton.setBackground(Color.decode("#28313b"));
         createFolderButton.setBorderPainted(false);
         createFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+        createFolderButton.setToolTipText("Create Folder");
+        ToolTipManager.sharedInstance().setInitialDelay(800);
 
         // NEW: Import Testcase button
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
@@ -295,8 +333,11 @@ public class TextEditor extends JPanel {
 
         JPanel fileButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         fileButtonsPanel.setBackground(Color.decode("#28313b"));
+        openFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
         fileButtonsPanel.add(openFolderButton);
+        addFileButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
         fileButtonsPanel.add(addFileButton);
+        createFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
         fileButtonsPanel.add(createFolderButton);
         fileButtonsPanel.add(importTestcaseButton);
         fileButtonsPanel.add(exportTestcaseButton);
@@ -333,7 +374,7 @@ public class TextEditor extends JPanel {
         panel.setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(5, 5, 5, 0);
 
         // File Explorer
         gbc.gridx = 0;
@@ -341,6 +382,7 @@ public class TextEditor extends JPanel {
         gbc.gridwidth = 1;
         gbc.weighty = 1.0;
         gbc.weightx = 0.0;
+        fileExplorerPanel.setPreferredSize(new Dimension(175, Integer.MAX_VALUE));
         panel.add(fileExplorerPanel, gbc);
 
         // Text Editor
@@ -349,6 +391,7 @@ public class TextEditor extends JPanel {
         gbc.gridwidth = 1;
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
+        gbc.insets = new Insets(5, 1, 5, 0);
         JScrollPane editorScroll = new JScrollPane(dTextArea);
         editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
         editorScroll.setBackground(Color.decode("#1f2335"));
@@ -477,6 +520,51 @@ public class TextEditor extends JPanel {
                     "Error creating file: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+
+        runCodeButton.addActionListener(e -> {
+            saveCurrentFileContent();
+            String out = Judge.judge(fm, new String[]{}).output();
+            actualOutputArea.setText(out);
+            expectedOutputArea.setText("Expected output will appear here");
+        });
+        createFolderButton.addActionListener(e -> {
+            fileExplorerPanel.handleCreateFolderAction();
+        });
+        setEntryPointButton.addActionListener(e -> {
+            FileManager fileManager = fileExplorerPanel.getFileManager();
+            JTree fe_tree = fileExplorerPanel.getFeTree();
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
+
+            if (Files.isDirectory(sfile.getPath())) {
+                JOptionPane.showMessageDialog(null,
+                        "yo this is a folder gang you can't set folders as entry points",
+                        "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
+                if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED JABAI ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+            }
+
+            if (getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
+                if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
+                else {
+                    JOptionPane.showMessageDialog(null,
+                            "i NEED PYTHON ENTRY POINT",
+                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
+        });
     }
     /* --------------- Util --------------- */
     /* --------------- Getters & Setters --------------- */
