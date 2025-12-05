@@ -94,6 +94,7 @@ public class ExecutionConfig {
     }
 
 
+    static String NO_JDK_ERROR = "Java Compiler not found.\nEnsure you are running on a JDK.\n";
     static String NO_C_COMPILER_ERROR =
 """
 No C/C++ compiler found.
