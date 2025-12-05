@@ -166,14 +166,14 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.0125;
+        gbc.weighty = 0.0325;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.975;
+        gbc.weighty = 0.955;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_3_panel(), gbc);
 
@@ -213,21 +213,21 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.0361;
+        gbc.weighty = 0.02;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_1_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.8754512;
+        gbc.weighty = 0.92;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.0902527;
+        gbc.weighty = 0.06;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_3_panel(), gbc);
 
