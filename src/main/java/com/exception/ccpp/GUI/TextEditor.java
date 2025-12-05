@@ -6,6 +6,7 @@ import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.*;
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
@@ -26,17 +27,24 @@ public class TextEditor extends JPanel {
     private JTextArea dTextArea;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
-    private JTextArea actualOutputArea;
-    private JTextArea expectedOutputArea;
+    private JTextPane actualOutputArea;
+    private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
     private JButton exportTestcaseButton;
+
+    private SimpleAttributeSet matchStyle;
+    private SimpleAttributeSet mismatchStyle;
+    private SimpleAttributeSet excessStyle;
+    private SimpleAttributeSet defaultStyle;
 
     public TextEditor() {
         initializeComponents();
         initializeBackend();
+        initializeStyles();
         setupLayout();
         setupEventListeners();
         setupTabToSpaces();
+
     }
 
     public TextEditor(String folderPath, MainMenu mainMenu) {
@@ -78,6 +86,23 @@ public class TextEditor extends JPanel {
         inputMap.put(tabKey, actionKey);
 
         dTextArea.getActionMap().put(actionKey, insertSpacesAction);
+    }
+    private void initializeStyles() {
+        defaultStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(defaultStyle, Color.BLACK);
+        StyleConstants.setBackground(defaultStyle, Color.decode("#1f2335"));
+
+        matchStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(matchStyle, Color.BLACK);
+        StyleConstants.setBackground(matchStyle, new Color(176, 237, 184)); // Light Green (Match)
+
+        mismatchStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(mismatchStyle, Color.BLACK);
+        StyleConstants.setBackground(mismatchStyle, new Color(228, 163, 159)); // Lacking
+
+        excessStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(excessStyle, Color.BLACK); // Use Black FG for visibility on Yellow
+        StyleConstants.setBackground(excessStyle, new Color(245, 224, 59)); // Yellow (Excess)
     }
     private void setupLayout() {
         setLayout(new GridBagLayout());
@@ -236,12 +261,12 @@ public class TextEditor extends JPanel {
         ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
 
 
-        actualOutputArea = new JTextArea();
+        actualOutputArea = new JTextPane();
         actualOutputArea.setBackground(Color.decode("#1f2335"));
         actualOutputArea.setCaretColor(Color.WHITE);
         actualOutputArea.setForeground(Color.WHITE);
 
-        expectedOutputArea = new JTextArea();
+        expectedOutputArea = new JTextPane();
         expectedOutputArea.setBackground(Color.decode("#1f2335"));
         expectedOutputArea.setCaretColor(Color.WHITE);
         expectedOutputArea.setForeground(Color.WHITE);
@@ -268,6 +293,144 @@ public class TextEditor extends JPanel {
     /* --------------- Setup --------------- */
 
     /* --------------- Util --------------- */
+    private void displayActualDiff(String actualText, String expectedText) {
+        StyledDocument doc = actualOutputArea.getStyledDocument();
+
+        try {
+            doc.remove(0, doc.getLength());
+        } catch (BadLocationException ignored) {}
+
+        String[] actualLines = actualText.split("\\R", -1);
+        String[] expectedLines = expectedText.split("\\R", -1);
+
+        int maxLines = Math.max(actualLines.length, expectedLines.length);
+
+        for (int i = 0; i < maxLines; i++) {
+            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
+            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
+
+            int maxLength = Math.max(actualLine.length(), expectedLine.length());
+
+            for (int j = 0; j < maxLength; j++) {
+                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
+                char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
+
+                AttributeSet styleToApply;
+                char charToProcess = actualChar; // Start with the actual character
+
+                // --- 1. Comparison Logic (Inverted: Focus on Expected Status) ---
+
+                if (expectedChar == 0 && actualChar != 0) {
+                    // 1. EXCESS (Yellow): Actual output continues beyond Expected length
+                    styleToApply = excessStyle; // Yellow
+
+                } else if (expectedChar != 0 && actualChar == expectedChar) {
+                    // 2. MATCH (Green): Expected character was found exactly
+                    styleToApply = matchStyle; // Green
+
+                } else {
+                    // 3. LACKING / MISMATCH (Red):
+                    //    - Expected char exists, but Actual is different, OR
+                    //    - Expected char exists, but Actual is missing (actualChar == 0).
+                    styleToApply = mismatchStyle; // Red
+
+                    // If Actual is missing, insert a space placeholder to show the red box
+                    if (actualChar == 0) {
+                        charToProcess = ' ';
+                    }
+                }
+
+                // --- 2. Visualization Logic (Based on the character being displayed) ---
+                String charToDisplay;
+
+                if (charToProcess == '\t') {
+                    charToDisplay = "    "; // 4 spaces for Tab
+                } else if (charToProcess == '\r' || charToProcess == '\n') {
+                    charToDisplay = "\u2424"; // Symbol for Newline
+                } else if (charToProcess == 0 || charToProcess == ' ') {
+                    // Handles the space placeholder for LACKING or actual space characters
+                    charToDisplay = " ";
+                } else {
+                    charToDisplay = String.valueOf(charToProcess);
+                }
+
+                try {
+                    // Insert the visual representation of the character with the determined style
+                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+                } catch (BadLocationException ignored) {}
+            }
+
+            // Add a literal newline to advance the cursor in the JTextPane
+            if (i < maxLines - 1) {
+                try {
+                    doc.insertString(doc.getLength(), "\n", defaultStyle);
+                } catch (BadLocationException ignored) {}
+            }
+        }
+    }
+    private void displayExpectedDiff(String actualText, String expectedText) {
+        // Note: We are using expectedOutputArea for this.
+        StyledDocument doc = expectedOutputArea.getStyledDocument();
+
+        try {
+            doc.remove(0, doc.getLength());
+        } catch (BadLocationException ignored) {}
+
+        String[] actualLines = actualText.split("\\R", -1);
+        String[] expectedLines = expectedText.split("\\R", -1);
+
+        int maxLines = Math.max(actualLines.length, expectedLines.length);
+
+        for (int i = 0; i < maxLines; i++) {
+            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
+            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
+
+            int maxLength = Math.max(actualLine.length(), expectedLine.length());
+
+            for (int j = 0; j < maxLength; j++) {
+                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
+                char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
+
+                AttributeSet styleToApply;
+                char charToProcess = expectedChar; // Focus on the expected character
+
+                // If Expected output ran out, stop processing this line in the Expected pane
+                if (expectedChar == 0) {
+                    continue;
+                }
+
+                // --- Comparison Logic (Focus on Expected) ---
+                if (actualChar == expectedChar) {
+                    // Match
+                    styleToApply = matchStyle; // Green
+                } else {
+                    // Lacking or Mismatched Character
+                    styleToApply = mismatchStyle; // Red
+                }
+
+                // --- Visualization Logic for Expected ---
+                String charToDisplay;
+                if (charToProcess == '\t') {
+                    charToDisplay = "    "; // 4 spaces for Tab
+                } else if (charToProcess == '\r' || charToProcess == '\n') {
+                    charToDisplay = "\u2424"; // Symbol for Newline
+                } else {
+                    charToDisplay = String.valueOf(charToProcess);
+                }
+
+                try {
+                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+                } catch (BadLocationException ignored) {}
+            }
+
+            // Add a literal newline to advance the cursor in the JTextPane
+            if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
+                try {
+                    doc.insertString(doc.getLength(), "\n", defaultStyle);
+                } catch (BadLocationException ignored) {}
+            }
+        }
+    }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
@@ -521,50 +684,6 @@ public class TextEditor extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
 
-        runCodeButton.addActionListener(e -> {
-            saveCurrentFileContent();
-            String out = Judge.judge(fm, new String[]{}).output();
-            actualOutputArea.setText(out);
-            expectedOutputArea.setText("Expected output will appear here");
-        });
-        createFolderButton.addActionListener(e -> {
-            fileExplorerPanel.handleCreateFolderAction();
-        });
-        setEntryPointButton.addActionListener(e -> {
-            FileManager fileManager = fileExplorerPanel.getFileManager();
-            JTree fe_tree = fileExplorerPanel.getFeTree();
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
-            if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
-
-            if (Files.isDirectory(sfile.getPath())) {
-                JOptionPane.showMessageDialog(null,
-                        "yo this is a folder gang you can't set folders as entry points",
-                        "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
-                if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
-                else {
-                    JOptionPane.showMessageDialog(null,
-                            "i NEED JABAI ENTRY POINT",
-                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-            }
-
-            if (getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
-                if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
-                else {
-                    JOptionPane.showMessageDialog(null,
-                            "i NEED PYTHON ENTRY POINT",
-                            "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-            }
-            setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
-        });
     }
     /* --------------- Util --------------- */
     /* --------------- Getters & Setters --------------- */
@@ -752,8 +871,23 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
             String out = Judge.judge(fm, new String[]{}).output();
-            getTextEditor().actualOutputArea.setText(out);
-            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
+            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
+            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
+
+            // Call the diff checker method
+            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
+            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
+
+            // Display raw expected output for reference
+//            getTextEditor().expectedOutputArea.setText(dummyExpected);
+////            getTextEditor().actualOutputArea.setText(out);
+////            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
+//            JTextPane expectedPane = getTextEditor().expectedOutputArea;
+//            StyledDocument doc = expectedPane.getStyledDocument();
+//            try {
+//                doc.remove(0, doc.getLength()); // Clear previous content
+//                doc.insertString(0, dummyExpected, getTextEditor().defaultStyle);
+//            } catch (BadLocationException ignored) {}
         }
     }
 
