@@ -877,8 +877,28 @@ public class TextEditor extends JPanel {
         }
         @Override
         public void actionPerformed(ActionEvent e) {
-            // TODO: INTEGRATE TERMINAL HERE
-       }
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            getTextEditor().saveCurrentFileContent();
+            FileManager fm = fe.getFileManager();
+//            String out = Judge.judge(fm, new String[]{}).output(); // DEPRECIATED
+            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
+            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
+
+            // Call the diff checker method
+            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
+            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
+
+            // Display raw expected output for reference
+//            getTextEditor().expectedOutputArea.setText(dummyExpected);
+////            getTextEditor().actualOutputArea.setText(out);
+////            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
+//            JTextPane expectedPane = getTextEditor().expectedOutputArea;
+//            StyledDocument doc = expectedPane.getStyledDocument();
+//            try {
+//                doc.remove(0, doc.getLength()); // Clear previous content
+//                doc.insertString(0, dummyExpected, getTextEditor().defaultStyle);
+//            } catch (BadLocationException ignored) {}
+        }
     }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
