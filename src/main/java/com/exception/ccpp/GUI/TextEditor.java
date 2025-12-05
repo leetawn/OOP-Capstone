@@ -328,9 +328,25 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new FixedSizePanel(1, 20);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
+
+        JLabel label1 = new JLabel();
+        label1.setText("Text Editor");
+        label1.setForeground(Color.WHITE);
+        label1.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+
+        JLabel label2 = new JLabel();
+        label2.setText("Language: ");
+        label2.setForeground(Color.WHITE);
+        label2.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+
+        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+
+        panel.add(label1);
+        panel.add(label2);
+        panel.add(languageSelectDropdown);
 
         return panel;
     }
@@ -368,14 +384,25 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_3_panel(){
-        // 1. USE FixedSizePanel and specify the exact size (e.g., 600 wide, 40 high)
-        // You MUST choose the correct width and height for your layout.
+        // --- 1. Outer Panel (Fixed Size, Uses BorderLayout for Centering) ---
+        // You MUST choose the correct width and height. (1, 1 will be too small)
         JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 0));
 
-        importTestcaseButton = new JButton("ImportTestcase");
+        // Set the OUTER panel to BorderLayout
+        panel.setLayout(new BorderLayout());
+
+        // --- 2. Inner Panel (FlowLayout for Button Arrangement) ---
+        // Use a separate panel to hold the buttons with the desired gaps (hgap=20, vgap=0)
+        JPanel buttonContainer = new JPanel();
+        buttonContainer.setBackground(Color.decode("#1f2335")); // Match parent background
+        buttonContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 40, 6));
+
+        // ... (Your button initializations and font settings go here, as they were) ...
+        // Note: I'm omitting button code for brevity, but you put it here.
+
+        importTestcaseButton = new JButton("Import Testcase");
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
@@ -400,11 +427,16 @@ public class TextEditor extends JPanel {
         submitCodeButton.setForeground(Color.WHITE);
         submitCodeButton.setBackground(Color.decode("#0cf500"));
 
-        panel.add(importTestcaseButton);
-        panel.add(exportTestcaseButton);
-        panel.add(setEntryPointButton);
-        panel.add(runCodeButton);
-        panel.add(submitCodeButton);
+        // 3. Add JButtons to the INNER container
+        buttonContainer.add(importTestcaseButton);
+        buttonContainer.add(exportTestcaseButton);
+        buttonContainer.add(setEntryPointButton);
+        buttonContainer.add(runCodeButton);
+        buttonContainer.add(submitCodeButton);
+
+        // 4. Add the INNER container to the CENTER of the OUTER panel
+        // BorderLayout.CENTER automatically centers the component within the available space.
+        panel.add(buttonContainer, BorderLayout.CENTER);
 
         return panel;
     }
