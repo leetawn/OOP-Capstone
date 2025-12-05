@@ -1,23 +1,29 @@
 package com.exception.ccpp.CCJudge;
 
+import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.Debug.DebugLog;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
+import com.pty4j.PtyProcessBuilder;
 
 import javax.tools.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.exception.ccpp.CCJudge.ExecutionConfig.NO_C_COMPILER_ERROR;
+
 public class Judge {
 
     private static final long TIME_LIMIT_MS = 2000;
-    private static final long INPUT_WAIT_MS = 80; // shits slow but still faster than codecum
+    private static final long INPUT_WAIT_MS = 0; // shits slow but still faster than codecum
     private static final String[] TEST_INPUTS = {"Alice", "Bob"};
 
     public static void main(String[] args) {
@@ -66,43 +72,43 @@ public class Judge {
         return judge_res;
     }
 
-    private static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs) {
+    public static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs) {
         Process process = null;
         DebugLog logger = DebugLog.getInstance();
         try {
             String[] executeCommand = ExecutionConfig.getExecuteCommand(fm);
-            ProcessBuilder pb = new ProcessBuilder(executeCommand);
-
-            // Set working directory to '.' (current directory) for execution
-            pb.directory(fm.getRootdir().toFile());
-
             logger.logln("-> Executing: " + String.join(" ", executeCommand));
-            process = pb.start();
+            Map<String, String> env = new HashMap<>(System.getenv());
+            if (!env.containsKey("TERM")) env.put("TERM", "xterm");
+            process = new PtyProcessBuilder(executeCommand)
+                    .setEnvironment(env)
+                    .setRedirectErrorStream(true) // Redirects stderr to stdout stream
+                    .setDirectory(fm.getRootdir().toString())
+                    .setConsole(false)
+                    .start();
+
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
             StringBuilder transcript = new StringBuilder();
 
-            // Start the asynchronous output reader
             executor.submit(new OutputReader(process.getInputStream(), transcript));
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
-            // com.exception.ccpp.Main interaction loop
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
                     return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim());
                 }
 
-                // Polling Heuristic: Wait for output to complete
-                Thread.sleep(INPUT_WAIT_MS);
+//                Thread.sleep(INPUT_WAIT_MS);
 
                 // Send the next input line
                 if (inputIndex < testInputs.length) {
                     String inputLine = testInputs[inputIndex++];
-                    transcript.append(inputLine).append("\n");
+//                    transcript.append(inputLine).append("\n");
                     logger.logln("-> Judge providing input: " + inputLine);
                     processInputWriter.write(inputLine);
                     processInputWriter.newLine();
@@ -140,7 +146,7 @@ public class Judge {
                 );
             } else {
                 process.destroy();
-                return new SubmissionRecord(JudgeVerdict.NONE, transcript.toString().trim());
+                return new SubmissionRecord(JudgeVerdict.NONE, Helpers.stripAnsi(transcript.toString()).trim());
             }
 
         } catch (Exception e) {
@@ -153,21 +159,25 @@ public class Judge {
         }
     }
 
-    private static SubmissionRecord compile(FileManager fm) throws Exception {
+    public static SubmissionRecord compile(FileManager fm) throws IOException, InterruptedException {
         DebugLog logger = DebugLog.getInstance();
 
-        if (fm.getLanguage().equals("java")) {
-            logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
-            return startJavaCompilation(fm);
+        String[] compileCommand = null;
+        switch (fm.getLanguage().toLowerCase()) {
+            case "java": {
+                logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
+                return startJavaCompilation(fm);
+            }
+            case "c","cpp", "c++": {
+                compileCommand = ExecutionConfig.getCompileCommand(fm);
+                if (compileCommand == null) return new SubmissionRecord(JudgeVerdict.CE, NO_C_COMPILER_ERROR);
+                break;
+            }
+            default: {
+                logger.logln("-> No compilation required for " + fm.getLanguage());
+                return new SubmissionRecord(JudgeVerdict.NONE, "No compilation required for " + fm.getLanguage());
+            }
         }
-
-        String[] compileCommand = ExecutionConfig.getCompileCommand(fm);
-
-        if (compileCommand == null) {
-            logger.logln("-> No compilation required for " + fm.getLanguage());
-            return new SubmissionRecord(JudgeVerdict.NONE, "No compilation required for " + fm.getLanguage());
-        }
-
         logger.logln("-> Compiling: " + String.join(" ", compileCommand));
         ProcessBuilder pb = new ProcessBuilder(compileCommand);
         pb.directory(fm.getRootdir().toFile());
@@ -259,7 +269,7 @@ public class Judge {
         }
     }
 
-    private static void cleanup(FileManager fm) {
+    public static void cleanup(FileManager fm) {
         String language = fm.getLanguage();
         DebugLog logger = DebugLog.getInstance();
         try {
@@ -276,4 +286,5 @@ public class Judge {
             }
         } catch (IOException ignored) {}
     }
+
 }

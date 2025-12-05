@@ -21,10 +21,16 @@ public class Helpers {
         return result;
     }
 
-    public static String joinArrays(String[] a, String[] b, String elemSep, String arraySep) {
+    public static String joinStringArrays(String[] a, String[] b, String elemSep, String arraySep) {
         String joinedA = String.join(elemSep, a);
         String joinedB = String.join(elemSep, b);
         return joinedA + arraySep + joinedB;
     }
+
+    public static String stripAnsi(String input) {
+        // Regex to remove ANSI escape codes (color/control sequences)
+        return input.replaceAll("\u001B\\[[;\\d?]*[A-Za-z]", "");
+    }
+
 
 }
