@@ -1,15 +1,10 @@
-    package com.exception.ccpp.CCTerminal;
+    package com.exception.ccpp.CCJudge;
 
-    import com.exception.ccpp.CCJudge.ExecutionConfig;
-    import com.exception.ccpp.CCJudge.Judge;
-    import com.exception.ccpp.CCJudge.JudgeVerdict;
-    import com.exception.ccpp.CCJudge.SubmissionRecord;
+    import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
     import com.exception.ccpp.Common.Helpers;
     import com.exception.ccpp.CustomExceptions.NotDirException;
     import com.exception.ccpp.FileManagement.FileManager;
-    import com.pty4j.PtyProcess;
     import com.pty4j.PtyProcessBuilder;
-    import com.pty4j.PtyProcessOptions;
 
     import javax.swing.*;
     import java.awt.*;
@@ -17,7 +12,6 @@
     import java.awt.event.ActionListener;
     import java.io.*;
     import java.util.ArrayList;
-    import java.util.Arrays;
     import java.util.HashMap;
     import java.util.Map;
 

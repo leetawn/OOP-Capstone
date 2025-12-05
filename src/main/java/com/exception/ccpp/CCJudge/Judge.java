@@ -13,6 +13,7 @@ import java.nio.file.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,9 +23,7 @@ import static com.exception.ccpp.CCJudge.ExecutionConfig.NO_C_COMPILER_ERROR;
 
 public class Judge {
 
-    private static final long TIME_LIMIT_MS = 2000;
-    private static final long INPUT_WAIT_MS = 0; // shits slow but still faster than codecum
-    private static final String[] TEST_INPUTS = {"Alice", "Bob"};
+    private static final long TIME_LIMIT_MS = 2000; // TLE
 
     public static void main(String[] args) {
         String[] s = {"Ethan"};
@@ -36,7 +35,7 @@ public class Judge {
             fm.setAll("src", "java");
             // SET Current file with fm.setCurrentFile(SFile);
             /* Ignore this line this is just so FileManager has a current file since by default it has no CurrentFile */ for (SFile f : fm.getFiles()) { if (f.getPath().getFileName().toString().contains("TestMain")) { fm.setCurrentFile(f); break; } }
-            judge(fm, null);
+            judge(fm, (String[])null);
 
             // CPP, C, PYTHON JUDGE DEMO
             judge(fm.setAll("COMPILER_TEST/CPP", "cpp"), s);
@@ -47,6 +46,13 @@ public class Judge {
         }
     }
 
+    // TODO: this will be the real judge
+    // will output an Array of SubmissionRecord, check the Submission Record definition
+    public static SubmissionRecord[] judge(FileManager fm, TestcaseFile tf) {
+        return new SubmissionRecord[]{new SubmissionRecord(JudgeVerdict.UE, "Unknown Error")};
+    }
+
+    // FIXME: THIS IS DEPRECIATED, PLEASE REMOVE CALLS FROM THIS
     public static SubmissionRecord judge(FileManager fm, String[] test_inputs) {
 
         SubmissionRecord judge_res = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error");
@@ -72,7 +78,25 @@ public class Judge {
         return judge_res;
     }
 
-    public static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs) {
+    static void cleanup(FileManager fm) {
+        String language = fm.getLanguage();
+        DebugLog logger = DebugLog.getInstance();
+        try {
+            if (language.equals("java")) {
+                for (SFile file : fm.getFiles()) {
+                    String className = file.getPath().toAbsolutePath().toString().replace(".java", ".class");
+                    Files.deleteIfExists(Paths.get(className));
+                }
+            } else if (language.equals("cpp") || language.equals("c")) {
+                Path p = Paths.get(fm.getRootdir().toAbsolutePath().toString(),"Submission.exe");
+                logger.logln("Deleting " + p);
+                if (Files.exists(p)) { Files.delete(p); }
+                logger.logln("Deleted " + p);
+            }
+        } catch (IOException ignored) {}
+    }
+
+    static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs) {
         Process process = null;
         DebugLog logger = DebugLog.getInstance();
         try {
@@ -159,7 +183,7 @@ public class Judge {
         }
     }
 
-    public static SubmissionRecord compile(FileManager fm) throws IOException, InterruptedException {
+    static SubmissionRecord compile(FileManager fm) throws IOException, InterruptedException {
         DebugLog logger = DebugLog.getInstance();
 
         String[] compileCommand = null;
@@ -188,7 +212,7 @@ public class Judge {
     private static SubmissionRecord startJavaCompilation(FileManager fm) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
-            return new SubmissionRecord(JudgeVerdict.CE, "Java Compiler not found. Ensure you are running on a JDK.");
+            return new SubmissionRecord(JudgeVerdict.CE, ExecutionConfig.NO_JDK_ERROR);
         }
 
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -269,22 +293,42 @@ public class Judge {
         }
     }
 
-    public static void cleanup(FileManager fm) {
-        String language = fm.getLanguage();
-        DebugLog logger = DebugLog.getInstance();
-        try {
-            if (language.equals("java")) {
-                for (SFile file : fm.getFiles()) {
-                    String className = file.getPath().toAbsolutePath().toString().replace(".java", ".class");
-                    Files.deleteIfExists(Paths.get(className));
+
+    /*********************** STATIC CLASSES, ENUMS OR WHATEVER **********************/
+
+    private static class OutputReader implements Callable<Void> {
+        private final BufferedReader reader;
+        private final StringBuilder transcript;
+
+        public OutputReader(InputStream is, StringBuilder transcript) {
+            this.reader = new BufferedReader(new InputStreamReader(is));
+            this.transcript = transcript;
+        }
+
+        @Override
+        public Void call() {
+            try {
+                int data;
+                while ((data = reader.read()) != -1) {
+                    transcript.append((char) data);
                 }
-            } else if (language.equals("cpp") || language.equals("c")) {
-                Path p = Paths.get(fm.getRootdir().toAbsolutePath().toString(),"Submission.exe");
-                logger.logln("Deleting " + p);
-                if (Files.exists(p)) { Files.delete(p); }
-                logger.logln("Deleted " + p);
-            }
-        } catch (IOException ignored) {}
+            } catch (IOException e) {}
+            return null;
+        }
+    }
+
+    public enum JudgeVerdict {
+        AC, // Accepted
+        WA, // Wrong Answer
+        CE, // Compile Error
+        RE, // Runtime Error
+        TLE, // Time Limit Exceeded
+        MLE, // Memory Limit Exceeded
+
+        UE, // Unknown Error. We the devs, idk and idc what the fuck you are facing rn
+        ESF, // Execution System Failure, Not the Users Fault!
+        JSF, // Judge System Failure
+        NONE // USED FOR CREATION ONLY
     }
 
 }
