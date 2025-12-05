@@ -2,7 +2,6 @@ package com.exception.ccpp.CCJudge;
 
 import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.Debug.DebugLog;
-import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
 import com.pty4j.PtyProcessBuilder;
@@ -10,9 +9,7 @@ import com.pty4j.PtyProcessBuilder;
 import javax.tools.*;
 import java.io.*;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,34 +29,44 @@ public class Judge {
     // TODO: this will be the real judge
     // will output an Array of SubmissionRecord, check the Submission Record definition
     public static SubmissionRecord[] judge(FileManager fm, TestcaseFile tf) {
-        SubmissionRecord judge_res = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error");
         DebugLog logger = DebugLog.getInstance();
+        SubmissionRecord judge_res;
 
-        SubmissionRecord[] verdicts = new SubmissionRecord[tf.getExpectedOutputs().length];
+        List<String[]> inputs = tf.getInputs();
+        List<String> ex_out = tf.getExpectedOutputs();
+        SubmissionRecord[] verdicts = new SubmissionRecord[ex_out.size()];
+        for (int i = 0; i < verdicts.length; i++) {
+            verdicts[i] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", ex_out.get(i));
+        }
 
         try {
             judge_res = compile(fm);
             if (judge_res.verdict() == JudgeVerdict.CE) {
-                for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
-                    verdicts[i] = judge_res;
-                }
+                recordCopy(verdicts, judge_res, ex_out.size());
                 return verdicts;
             };
 
-            String[][] inputs = tf.getInputs();
-            for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
-                verdicts[i] = judgeInteractively(fm, inputs[i]);
+            for (int i = 0; i < ex_out.size(); i++) {
+                judge_res = judgeInteractively(fm, inputs.get(i), ex_out.get(i));
+                verdicts[i]
+                        .setVerdict(judge_res.verdict())
+                        .setOutput(judge_res.output());
             }
 
         } catch (Exception e) {
             String fmsg = "Judge System Failure: " + e.getMessage();
             logger.logf("%s:\n%s",fmsg);
             e.printStackTrace();
-            judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg);
+            judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg, null);
+            recordCopy(verdicts, judge_res, ex_out.size());
         } finally {
-            logger.logln("\n--- Program Output ---");
-            logger.logln(judge_res.output());
-            logger.logf("\n--- Program Exit Code: **%s** ---", judge_res.verdict().name());
+            logger.logln("\n--- FINISHED RUNNING TESTCASES ---");
+            if (DebugLog.DEBUG_ENABLED)
+            {
+                for (int i = 0; i < verdicts.length; i++) {
+                    logger.logf("Testcase %d exit code: %s\n", i, verdicts[i].verdict().name());
+                }
+            }
             logger.logln("\n--- Cleanup ---\n");
             cleanup(fm);
         }
@@ -85,7 +92,7 @@ public class Judge {
         } catch (IOException ignored) {}
     }
 
-    static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs) {
+    static SubmissionRecord judgeInteractively(FileManager fm, String[] testInputs, String expected_output) {
         Process process = null;
         DebugLog logger = DebugLog.getInstance();
         try {
@@ -113,7 +120,7 @@ public class Judge {
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
-                    return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim());
+                    return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim(), expected_output);
                 }
 
 //                Thread.sleep(INPUT_WAIT_MS);
@@ -141,30 +148,34 @@ public class Judge {
 
             if (process.isAlive()) {
                 process.destroyForcibly();
-                return new SubmissionRecord(JudgeVerdict.RE,
+                return new SubmissionRecord(
+                        JudgeVerdict.RE,
                         transcript
                                 .append("\nTLE (Time Limit Exceeded)\n")
-                                .toString().trim()
+                                .toString().trim(),
+                        expected_output
                 );
             } else if (process.exitValue() != 0) {
                 String errorOutput = readStream(process.getErrorStream());
                 System.err.println("Runtime Error Details:\n" + errorOutput);
                 process.destroy();
-                return new SubmissionRecord(JudgeVerdict.RE,
+                return new SubmissionRecord(
+                        JudgeVerdict.RE,
                         transcript
                                 .append("RTE (Runtime Error) - Exit Code: ")
                                 .append(process.exitValue())
                                 .append("\n")
-                                .toString().trim()
+                                .toString().trim(),
+                        expected_output
                 );
             } else {
                 process.destroy();
-                return new SubmissionRecord(JudgeVerdict.NONE, Helpers.stripAnsi(transcript.toString()).trim());
+                return new SubmissionRecord(JudgeVerdict.NONE, Helpers.stripAnsi(transcript.toString()).trim(), expected_output);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            return new SubmissionRecord(JudgeVerdict.ESF, "Execution System Failure\n");
+            return new SubmissionRecord(JudgeVerdict.ESF, "Execution System Failure\n", expected_output);
         } finally {
             if (process != null && process.isAlive()) {
                 process.destroyForcibly();
@@ -183,12 +194,12 @@ public class Judge {
             }
             case "c","cpp", "c++": {
                 compileCommand = ExecutionConfig.getCompileCommand(fm);
-                if (compileCommand == null) return new SubmissionRecord(JudgeVerdict.CE, NO_C_COMPILER_ERROR);
+                if (compileCommand == null) return new SubmissionRecord(JudgeVerdict.CE, NO_C_COMPILER_ERROR, null);
                 break;
             }
             default: {
                 logger.logln("-> No compilation required for " + fm.getLanguage());
-                return new SubmissionRecord(JudgeVerdict.NONE, "No compilation required for " + fm.getLanguage());
+                return new SubmissionRecord(JudgeVerdict.NONE, "No compilation required for " + fm.getLanguage(), null);
             }
         }
         logger.logln("-> Compiling: " + String.join(" ", compileCommand));
@@ -201,7 +212,7 @@ public class Judge {
     private static SubmissionRecord startJavaCompilation(FileManager fm) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
-            return new SubmissionRecord(JudgeVerdict.CE, ExecutionConfig.NO_JDK_ERROR);
+            return new SubmissionRecord(JudgeVerdict.CE, ExecutionConfig.NO_JDK_ERROR, null);
         }
 
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -215,7 +226,7 @@ public class Judge {
                     .collect(Collectors.toList());
 
             if (!sourcePaths.iterator().hasNext()) {
-                return new SubmissionRecord(JudgeVerdict.CE, "No Java source files (.java) found for compilation.");
+                return new SubmissionRecord(JudgeVerdict.CE, "No Java source files (.java) found for compilation.", null);
             }
 
             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromPaths(sourcePaths);
@@ -256,10 +267,10 @@ public class Judge {
                 }
                 String ceMsg = "Compilation Errors (javax.tools):\n" + output.toString();
                 System.err.println(ceMsg);
-                return new SubmissionRecord(JudgeVerdict.CE, ceMsg);
+                return new SubmissionRecord(JudgeVerdict.CE, ceMsg, null);
             }
 
-            return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful (javax.tools)");
+            return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful (javax.tools)", null);
         }
     }
 
@@ -271,9 +282,9 @@ public class Judge {
         if (compileProcess.waitFor(10, TimeUnit.SECONDS) && compileProcess.exitValue() != 0) {
             String ceMsg = "Compiler Errors:\n" + errorOutput;
             System.err.println(ceMsg);
-            return new SubmissionRecord(JudgeVerdict.CE, ceMsg);
+            return new SubmissionRecord(JudgeVerdict.CE, ceMsg, null);
         }
-        return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful");
+        return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful", null);
     }
 
     private static String readStream(InputStream is) throws IOException {
@@ -282,6 +293,14 @@ public class Judge {
         }
     }
 
+    private static void recordCopy(SubmissionRecord[] dest, SubmissionRecord src, int ex_out_size)
+    {
+        for (int i = 0; i < ex_out_size; i++) {
+            dest[i]
+                    .setVerdict(src.verdict())
+                    .setOutput(src.output());
+        }
+    }
 
     /*********************** STATIC CLASSES, ENUMS OR WHATEVER **********************/
 
