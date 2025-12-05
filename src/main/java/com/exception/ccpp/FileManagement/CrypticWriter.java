@@ -23,7 +23,7 @@ public class CrypticWriter {
     private static final int MIN_FILE_SIZE = FILE_HEADER.length + IV_SIZE + 1; // Header + IV + minimum 1 byte of data
 
     // --- Key Derivation Logic ---
-    private static final String APP_UNIQUE_SECRET = "MyApp-Data-Storage-Identifier-v1.0::StableSalt123XYZ";
+    private static final String APP_UNIQUE_SECRET = "pleasetaluninnatinangfeutechpleaselang-G0dzPro1sG@Y";
 
     public static SecretKey getDerivedSecretKey() throws Exception {
         MessageDigest sha = MessageDigest.getInstance("SHA-256");
