@@ -12,6 +12,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -35,20 +36,20 @@ public class Judge {
         SubmissionRecord judge_res = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error");
         DebugLog logger = DebugLog.getInstance();
 
-        SubmissionRecord[] verdicts = new SubmissionRecord[tf.getExpectedOutputs().length];
+        SubmissionRecord[] verdicts = new SubmissionRecord[tf.getExpectedOutputs().size()];
 
         try {
             judge_res = compile(fm);
             if (judge_res.verdict() == JudgeVerdict.CE) {
-                for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
+                for (int i = 0; i < tf.getExpectedOutputs().size(); i++) {
                     verdicts[i] = judge_res;
                 }
                 return verdicts;
             };
 
-            String[][] inputs = tf.getInputs();
-            for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
-                verdicts[i] = judgeInteractively(fm, inputs[i]);
+            List<String[]> inputs = tf.getInputs();
+            for (int i = 0; i < tf.getExpectedOutputs().size(); i++) {
+                verdicts[i] = judgeInteractively(fm, inputs.get(i));
             }
 
         } catch (Exception e) {

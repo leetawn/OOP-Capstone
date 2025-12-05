@@ -126,14 +126,32 @@
          * Listener for the input field. Sends the command to the external process.
          */
         private class CommandListener implements ActionListener {
+            private final static String PROMPT_ENDERS = ":?>";
+
+            // only someone autistic would do a printf("Enter x:                 "); with 100 whitespaces
+            private final static int MAX_WHITESPACE = 10; // limit amount of whitespaces to append
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 String command = inputField.getText();
                 inputField.setText(""); // Clear the input field
 
                 System.out.printf("Entered: [%s]\n",command);
+                String text = outputArea.getText();
+                // lil hack to get the whitespace at the end
+                if (!text.isEmpty()) {
+                    char lastChar = text.charAt(text.length() - 1);
+
+                    if (lastChar != ' ' && PROMPT_ENDERS.contains(String.valueOf(lastChar))) {
+
+                        for (int i = 0; i < MAX_WHITESPACE; i++) {
+                            outputArea.append(" ");
+                        }
+                    }
+                }
                 inputs.add(command);
                 outputArea.append(command);
+                outputArea.setCaretPosition(outputArea.getDocument().getLength());
 
                 // SEND TO TERMINAL
                 try {

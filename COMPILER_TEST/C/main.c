@@ -3,9 +3,10 @@
 int main(void)
 {
     int x,y;
-    printf("Enter a nigger: ");
+    printf("Enter a number:          ");
     scanf("%d", &x);
     printf("Enter a number y: ");
     scanf("%d", &y);
-    printf("You entered num: %d, %d", x,y);
+    printf("Sum: %d\n", x+y);
+    printf("DIDDY!!!");
 }
