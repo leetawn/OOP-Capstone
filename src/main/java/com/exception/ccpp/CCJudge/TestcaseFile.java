@@ -9,8 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TestcaseFile extends CCFile {
-    private String[][] inputs;
-    private String[] expected_outputs;
+    private List<String[]> inputs;
+    private List<String> expected_outputs;
 
     public TestcaseFile(String filepath) {
         super(filepath);
@@ -20,17 +20,17 @@ public class TestcaseFile extends CCFile {
         super(path);
     }
 
-    public TestcaseFile(String filepath, String[][] inputs, String[] expected_outputs) {
+    public TestcaseFile(String filepath, List<String[]> inputs, List<String> expected_outputs) {
         super(filepath);
         this.inputs = inputs;
         this.expected_outputs = expected_outputs;
         writeOut();
     }
 
-    String[][] getInputs() {
+    List<String[]> getInputs() {
         return inputs;
     }
-    public String[] getExpectedOutputs() {
+    public List<String> getExpectedOutputs() {
         return expected_outputs;
     }
 
@@ -40,8 +40,8 @@ public class TestcaseFile extends CCFile {
         try {
             List<Object> retrievedData = CrypticWriter.readEncryptedData(path);
             if (retrievedData.size() > 0) {
-                inputs = (String[][]) retrievedData.get(1);
-                expected_outputs = (String[]) retrievedData.get(0);
+                inputs = (List<String[]>) retrievedData.get(1);
+                expected_outputs = (List<String>) retrievedData.get(0);
             }
         } catch (Exception e) {
             System.err.println("TestcaseFile.load() error loading " + path);

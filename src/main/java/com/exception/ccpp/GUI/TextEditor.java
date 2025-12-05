@@ -1,6 +1,8 @@
 package com.exception.ccpp.GUI;
 
 import com.exception.ccpp.CCJudge.Judge;
+import com.exception.ccpp.CCJudge.SubmissionRecord;
+import com.exception.ccpp.CCJudge.TestcaseFile;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.*;
@@ -1030,12 +1032,17 @@ public class TextEditor extends JPanel {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm = fe.getFileManager();
             getTextEditor().saveCurrentFileContent();
-            // String out = Judge.judge(fm, new String[]{}).output();
-            String actual = "Hello\nThis is some text.\tdiddyballs";
-            String expected = "Hello\nThis is some text.\tglenshaynebelarmino";
+            SubmissionRecord[] results = Judge.judge(fm, new TestcaseFile("testcase.ccpp"));
 
-            getTextEditor().displayActualDiff(actual, expected);
-            getTextEditor().displayExpectedDiff(actual, expected);
+            if (results.length > 0) {
+                SubmissionRecord rec = results[0];
+                String actual = rec.output();
+                String expected = rec.expected_output();
+                getTextEditor().displayActualDiff(actual, expected);
+                getTextEditor().displayExpectedDiff(actual, expected);
+
+            }
+
 
 
         }
