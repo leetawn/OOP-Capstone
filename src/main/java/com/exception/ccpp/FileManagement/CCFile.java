@@ -12,13 +12,11 @@ public abstract class CCFile {
     /****************** LOADS ******************/
     public CCFile(String filepath) {
         path = Paths.get(filepath);
-        load();
     }
 
 
     public CCFile(Path path) {
         this.path = path;
-        load();
     }
 
     /****************** INPUT/OUTPUT ******************/

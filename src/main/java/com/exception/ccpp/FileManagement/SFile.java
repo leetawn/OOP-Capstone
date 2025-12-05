@@ -8,8 +8,14 @@ import java.nio.file.Paths;
 public final class SFile extends CCFile {
     private String content = "";
 
-    public SFile(String filepath) { super(filepath); }
-    public SFile(Path path) { super(path); }
+    public SFile(String filepath) {
+        super(filepath);
+        load();
+    }
+    public SFile(Path path) {
+        super(path);
+        load();
+    }
 
     /****************** INPUT/OUTPUT ******************/
     protected void load() {

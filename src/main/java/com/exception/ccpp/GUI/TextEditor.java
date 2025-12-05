@@ -884,7 +884,7 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
             SwingUtilities.invokeLater(() -> {
-                new TerminalApp(fm);
+                new TerminalApp(fm, null);
             });
         }
     }

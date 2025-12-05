@@ -210,13 +210,13 @@
                     }
                 } catch (IOException e) {
                     SwingUtilities.invokeLater(() -> {
-                        System.out.println("\n--- External process terminated or connection lost (IOException). ---\n");
-                        System.out.println("Error: " + e.getMessage() + "\n");
+                        System.out.println("External process terminated or connection lost (IOException).");
+                        System.out.println("Error: " + e.getMessage());
                     });
                 } catch (InterruptedException e) {
                     // The thread was interrupted while sleeping
                     Thread.currentThread().interrupt();
-                    SwingUtilities.invokeLater(() -> System.out.println("\n--- Console output reader interrupted. ---\n"));
+                    SwingUtilities.invokeLater(() -> System.out.println("Console output reader interrupted."));
                 } finally {
                     outputArea.append("\n");
                     // Ensure resources are cleaned up
@@ -231,7 +231,7 @@
         public static void main(String[] args) {
             // Start the GUI on the Event Dispatch Thread (EDT)
             String directoryPath = "W:\\sysdev\\OOP-Capstone\\COMPILER_TEST\\C";
-            TestcaseFile tf = new TestcaseFile("datafile.ccpp");
+            TestcaseFile tf = new TestcaseFile("datafile2.ccpp");
             FileManager fm = null;
             try {
                 fm = FileManager.getInstance().setAll(directoryPath, "c");
@@ -263,7 +263,7 @@
             for (SubmissionRecord sr : sr_arr) {
                 System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
                 System.out.println(sr.output()); // actual output
-                System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", ++i);
+                System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", i);
                 System.out.println(sr.expected_output()); // expected output
                 System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
             }
