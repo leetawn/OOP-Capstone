@@ -144,7 +144,7 @@ public class TextEditor extends JPanel {
         createButton = new JButton("Add Folder");
 
         addFileButton = new RoundedButton("", 15);
-        URL urlAddFileButton = TextEditor.class.getResource("/GUI/assets/add_file.png");
+        URL urlAddFileButton = TextEditor.class.getResource("/assets/add_file.png");
         if (urlAddFileButton != null) {
             ImageIcon iconAddFileButton = new ImageIcon(urlAddFileButton);
             // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
@@ -154,7 +154,7 @@ public class TextEditor extends JPanel {
             // Set the scaled image using the new setIconImage method
             ((RoundedButton)addFileButton).setIconImage(scaledImage);
         } else {
-            System.err.println("Resource not found: /GUI/assets/add_file.png");
+            System.err.println("Resource not found: /assets/add_file.png");
         }
         addFileButton.setBackground(Color.decode("#28313b"));
         addFileButton.setBorderPainted(false);
@@ -173,7 +173,7 @@ public class TextEditor extends JPanel {
         setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
         openFolderButton = new RoundedButton("", 15);
-        URL urlOpenFolderButton = TextEditor.class.getResource("/GUI/assets/open_folder.png");
+        URL urlOpenFolderButton = TextEditor.class.getResource("/assets/open_folder.png");
         if (urlOpenFolderButton != null) {
             ImageIcon iconOpenFolderButton = new ImageIcon(urlOpenFolderButton);
             // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
@@ -183,7 +183,7 @@ public class TextEditor extends JPanel {
             // Set the scaled image using the new setIconImage method
             ((RoundedButton)openFolderButton).setIconImage(scaledImage);
         } else {
-            System.err.println("Resource not found: /GUI/assets/open_folder.png");
+            System.err.println("Resource not found: /assets/open_folder.png");
         }
         openFolderButton.setBackground(Color.decode("#28313b"));
         openFolderButton.setBorderPainted(false);
@@ -192,7 +192,7 @@ public class TextEditor extends JPanel {
         ToolTipManager.sharedInstance().setInitialDelay(800);
 
         createFolderButton = new RoundedButton("", 15);
-        URL urlCreateFolderButton = TextEditor.class.getResource("/GUI/assets/create_folder.png");
+        URL urlCreateFolderButton = TextEditor.class.getResource("/assets/create_folder.png");
         if (urlOpenFolderButton != null) {
             ImageIcon iconCreateFolderButton = new ImageIcon(urlCreateFolderButton);
             // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
@@ -202,7 +202,7 @@ public class TextEditor extends JPanel {
             // Set the scaled image using the new setIconImage method
             ((RoundedButton)createFolderButton).setIconImage(scaledImage);
         } else {
-            System.err.println("Resource not found: /GUI/assets/create_folder.png");
+            System.err.println("Resource not found: /assets/create_folder.png");
         }
         createFolderButton.setBackground(Color.decode("#28313b"));
         createFolderButton.setBorderPainted(false);
@@ -878,7 +878,7 @@ public class TextEditor extends JPanel {
             frame.setContentPane(editor);
 
             // Set window icon (for taskbar/dock)
-            URL url = TextEditor.class.getResource("/GUI/assets/logo2.png");
+            URL url = TextEditor.class.getResource("/assets/logo2.png");
             if (url != null) {
                 ImageIcon icon = new ImageIcon(url);
                 Image image = icon.getImage();
