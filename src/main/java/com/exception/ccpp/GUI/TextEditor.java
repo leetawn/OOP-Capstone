@@ -610,9 +610,11 @@ public class TextEditor extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fm = fe.getFileManager();
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
+            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -810,9 +812,11 @@ public class TextEditor extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fm =  fe.getFileManager();
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Select Testcase File");
+            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -842,9 +846,11 @@ public class TextEditor extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fm =  fe.getFileManager();
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Export to");
+            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
