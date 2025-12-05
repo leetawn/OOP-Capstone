@@ -5,4 +5,5 @@ module com.exception.ccpp {
     requires java.desktop;
     requires pty4j;
     exports com.exception.ccpp;
+    exports com.exception.ccpp.FileManagement;
 }

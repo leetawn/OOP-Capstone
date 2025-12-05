@@ -26,42 +26,30 @@ public class Judge {
     private static final long TIME_LIMIT_MS = 2000; // TLE
 
     public static void main(String[] args) {
-        String[] s = {"Ethan"};
 
-
-            // JAVA JUDGE DEMO
-        FileManager fm = FileManager.getInstance();
-        try {
-            fm.setAll("src", "java");
-            // SET Current file with fm.setCurrentFile(SFile);
-            /* Ignore this line this is just so FileManager has a current file since by default it has no CurrentFile */ for (SFile f : fm.getFiles()) { if (f.getPath().getFileName().toString().contains("TestMain")) { fm.setCurrentFile(f); break; } }
-            judge(fm, (String[])null);
-
-            // CPP, C, PYTHON JUDGE DEMO
-            judge(fm.setAll("COMPILER_TEST/CPP", "cpp"), s);
-            judge(fm.setAll("COMPILER_TEST/PYTHON", "python"), s);
-            judge(fm.setAll("COMPILER_TEST/C", "c"), s);
-        } catch (NotDirException e) {
-
-        }
     }
 
     // TODO: this will be the real judge
     // will output an Array of SubmissionRecord, check the Submission Record definition
     public static SubmissionRecord[] judge(FileManager fm, TestcaseFile tf) {
-        return new SubmissionRecord[]{new SubmissionRecord(JudgeVerdict.UE, "Unknown Error")};
-    }
-
-    // FIXME: THIS IS DEPRECIATED, PLEASE REMOVE CALLS FROM THIS
-    public static SubmissionRecord judge(FileManager fm, String[] test_inputs) {
-
         SubmissionRecord judge_res = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error");
         DebugLog logger = DebugLog.getInstance();
+
+        SubmissionRecord[] verdicts = new SubmissionRecord[tf.getExpectedOutputs().length];
+
         try {
             judge_res = compile(fm);
-            if (judge_res.verdict() == JudgeVerdict.CE) return judge_res;
+            if (judge_res.verdict() == JudgeVerdict.CE) {
+                for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
+                    verdicts[i] = judge_res;
+                }
+                return verdicts;
+            };
 
-            judge_res = judgeInteractively(fm, test_inputs);
+            String[][] inputs = tf.getInputs();
+            for (int i = 0; i < tf.getExpectedOutputs().length; i++) {
+                verdicts[i] = judgeInteractively(fm, inputs[i]);
+            }
 
         } catch (Exception e) {
             String fmsg = "Judge System Failure: " + e.getMessage();
@@ -75,7 +63,8 @@ public class Judge {
             logger.logln("\n--- Cleanup ---\n");
             cleanup(fm);
         }
-        return judge_res;
+
+        return verdicts;
     }
 
     static void cleanup(FileManager fm) {
