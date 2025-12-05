@@ -34,8 +34,6 @@ import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 import java.nio.file.StandardOpenOption;
 import com.exception.ccpp.GUI.RoundedButton; // Assuming this class is available
 import com.exception.ccpp.GUI.RoundedComboBox; // Assuming this class is available
-import java.net.URL;
-import java.awt.Cursor;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -255,7 +253,7 @@ public class TextEditor extends JPanel {
 
     // Helper method definition (place this as a private method in your class)
     private JPanel create_1_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
         // Keep FlowLayout.LEFT and hgap/vgap settings
@@ -300,7 +298,7 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_1_3_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
 
@@ -369,7 +367,7 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
 
@@ -377,33 +375,69 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
 
         return panel;
     }
 
+    public class FixedSizePanel extends JPanel {
+        private final Dimension fixedSize;
+
+        public FixedSizePanel(int width, int height) {
+            this.fixedSize = new Dimension(width, height);
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return fixedSize;
+        }
+
+        // It's good practice to also fix minimum and maximum sizes
+        @Override
+        public Dimension getMinimumSize() {
+            return fixedSize;
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return fixedSize;
+        }
+    }
+
     private JPanel create_2_3_panel(){
-        JPanel panel = new JPanel();
+        // 1. USE FixedSizePanel and specify the exact size (e.g., 600 wide, 40 high)
+        // You MUST choose the correct width and height for your layout.
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 0));
+        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 0));
 
         importTestcaseButton = new JButton("ImportTestcase");
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        importTestcaseButton.setForeground(Color.WHITE);
+        importTestcaseButton.setBackground(Color.decode("#568afc"));
 
         exportTestcaseButton = new JButton("Export Testcase");
         exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        exportTestcaseButton.setForeground(Color.WHITE);
+        exportTestcaseButton.setBackground(Color.decode("#568afc"));
 
-        setEntryPointButton = new JButton("Set Entry Point");
+        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
         setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        setEntryPointButton.setForeground(Color.WHITE);
+        setEntryPointButton.setBackground(Color.decode("#568afc"));
 
-        runCodeButton = new JButton("Run Code");
+        runCodeButton = new RoundedButton("Run Code", 30);
         runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        runCodeButton.setForeground(Color.WHITE);
+        runCodeButton.setBackground(Color.decode("#568afc"));
 
-        submitCodeButton = new JButton("Submit Code");
+        submitCodeButton = new RoundedButton("Submit Code", 30);
         submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        submitCodeButton.setForeground(Color.WHITE);
+        submitCodeButton.setBackground(Color.decode("#0cf500"));
 
         panel.add(importTestcaseButton);
         panel.add(exportTestcaseButton);
@@ -441,31 +475,51 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_3_1_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
+
+        // 1. Set the panel to use BorderLayout for anchoring
+        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Actual Output");
         label.setForeground(Color.WHITE);
         label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
 
-        panel.add(label);
+        // Optional: Add a small margin/padding around the text
+        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
+
+        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
+        label.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // 2. Add the label to the top (NORTH) region
+        panel.add(label, BorderLayout.NORTH);
 
         return panel;
     }
 
     private JPanel create_3_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
+
+        // 1. Set the panel to use BorderLayout for anchoring
+        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Expected Output");
         label.setForeground(Color.WHITE);
         label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
 
-        panel.add(label);
+        // Optional: Add a small margin/padding around the text
+        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
+
+        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
+        label.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // 2. Add the label to the top (NORTH) region
+        panel.add(label, BorderLayout.NORTH);
 
         return panel;
     }
