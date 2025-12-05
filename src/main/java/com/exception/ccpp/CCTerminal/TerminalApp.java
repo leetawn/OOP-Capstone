@@ -210,9 +210,10 @@
 
         public static void main(String[] args) {
             // Start the GUI on the Event Dispatch Thread (EDT)
+            String directoryPath = "C:/Users/Ethan/Desktop/OOP-Capstone/COMPILER_TEST/C/";
             SwingUtilities.invokeLater(() -> {
                 try {
-                    FileManager fm = FileManager.getInstance().setAll("W:\\sysdev\\OOP-Capstone\\COMPILER_TEST\\C","c");
+                    FileManager fm = FileManager.getInstance().setAll(directoryPath, "c");
                     fm.setCurrentFile(fm.getFiles().getLast());
                     new TerminalApp(fm);
                 } catch (NotDirException e) {

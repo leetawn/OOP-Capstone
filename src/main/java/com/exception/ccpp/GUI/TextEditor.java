@@ -23,6 +23,7 @@ public class TextEditor extends JPanel {
     private JButton createButton;
     private JButton openFolderButton;
     private JButton createFolderButton;
+    private JButton submitCodeButton;
     private JButton setEntryPointButton;
     private JTextArea dTextArea;
     private JComboBox<String> languageSelectDropdown;
@@ -44,7 +45,6 @@ public class TextEditor extends JPanel {
         setupLayout();
         setupEventListeners();
         setupTabToSpaces();
-
     }
 
     public TextEditor(String folderPath, MainMenu mainMenu) {
@@ -150,12 +150,14 @@ public class TextEditor extends JPanel {
         addFileButton.addActionListener(new AddFileButtonHandler(this));
         languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
         runCodeButton.addActionListener(new RunButtonHandler(this));
+        submitCodeButton.addActionListener(new SubmitButtonHandler(this));
         createFolderButton.addActionListener(e -> {
             fileExplorerPanel.handleCreateFolderAction();
         });
         setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
         importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
         exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+
     }
 
     private void initializeComponents() {
@@ -165,6 +167,13 @@ public class TextEditor extends JPanel {
         runCodeButton.setForeground(Color.WHITE);
         runCodeButton.setBorderPainted(false);
         runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
+        submitCodeButton = new RoundedButton("Submit Code", 15);
+        submitCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+        submitCodeButton.setBackground(Color.decode("#00FF00"));
+        submitCodeButton.setForeground(Color.WHITE);
+        submitCodeButton.setBorderPainted(false);
+        submitCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
+
 
         createButton = new JButton("Add Folder");
 
@@ -570,6 +579,7 @@ public class TextEditor extends JPanel {
         panel.setBackground(Color.decode("#28313b"));
         panel.add(setEntryPointButton);
         panel.add(runCodeButton);
+        panel.add(submitCodeButton);
         return panel;
     }
 
@@ -867,28 +877,8 @@ public class TextEditor extends JPanel {
         }
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            getTextEditor().saveCurrentFileContent();
-            FileManager fm = fe.getFileManager();
-            String out = Judge.judge(fm, new String[]{}).output();
-            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
-            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
-
-            // Call the diff checker method
-            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
-            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
-
-            // Display raw expected output for reference
-//            getTextEditor().expectedOutputArea.setText(dummyExpected);
-////            getTextEditor().actualOutputArea.setText(out);
-////            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
-//            JTextPane expectedPane = getTextEditor().expectedOutputArea;
-//            StyledDocument doc = expectedPane.getStyledDocument();
-//            try {
-//                doc.remove(0, doc.getLength()); // Clear previous content
-//                doc.insertString(0, dummyExpected, getTextEditor().defaultStyle);
-//            } catch (BadLocationException ignored) {}
-        }
+            // TODO: INTEGRATE TERMINAL HERE
+       }
     }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
@@ -1006,6 +996,28 @@ public class TextEditor extends JPanel {
                     }
                 }
             }
+        }
+    }
+
+    public static class SubmitButtonHandler extends ComponentHandler {
+        public SubmitButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            // TODO: INTEGRATE COMPILER OUTPUT HERE
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            FileManager fm = fe.getFileManager();
+            getTextEditor().saveCurrentFileContent();
+            // String out = Judge.judge(fm, new String[]{}).output();
+            String actual = "Hello\nThis is some text.\tdiddyballs";
+            String expected = "Hello\nThis is some text.\tglenshaynebelarmino";
+
+            getTextEditor().displayActualDiff(actual, expected);
+            getTextEditor().displayExpectedDiff(actual, expected);
+
+
         }
     }
     /* --------------- Button Handlers --------------- */
