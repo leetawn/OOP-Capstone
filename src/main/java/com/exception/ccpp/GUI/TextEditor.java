@@ -870,7 +870,7 @@ public class TextEditor extends JPanel {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
-            String out = Judge.judge(fm, new String[]{}).output();
+//            String out = Judge.judge(fm, new String[]{}).output(); // DEPRECIATED
             String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
             String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
 
