@@ -138,7 +138,7 @@ public class FileExplorer extends JPanel {
         // ---- BORDER WITH DARK THEME ----
         TitledBorder border = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(BG),
-                "File Explorer",
+                " ",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
                 new Font("JetBrains Mono", Font.PLAIN, 12),

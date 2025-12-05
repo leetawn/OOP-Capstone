@@ -69,8 +69,7 @@ public class RoundedButton extends JButton {
         if (getModel().isPressed()) {
             g2.setColor(getBackground().darker());
         } else if (getModel().isRollover()) {
-            // Use a slight dimmer color for rollover since brighter might clash with some colors
-            Color brighterColor = getBackground().brighter();
+            Color brighterColor = getBackground().darker();
             int r = Math.min(255, brighterColor.getRed() + 10);
             int gr = Math.min(255, brighterColor.getGreen() + 10);
             int b = Math.min(255, brighterColor.getBlue() + 10);
