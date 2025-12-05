@@ -34,6 +34,7 @@ public class TextEditor extends JPanel {
     private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
     private JButton exportTestcaseButton;
+    private JButton submitCodeButton;
 
     private SimpleAttributeSet matchStyle;
     private SimpleAttributeSet mismatchStyle;
@@ -166,14 +167,14 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.0125;
+        gbc.weighty = 0.0325;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.975;
+        gbc.weighty = 0.955;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_3_panel(), gbc);
 
@@ -183,20 +184,112 @@ public class TextEditor extends JPanel {
     private JPanel create_1_1_panel(){
         JPanel panel = new JPanel();
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#191c2a"));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel label = new JLabel();
+        label.setText("File Explorer");
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+
+        panel.add(label);
 
         return panel;
     }
 
+    private ImageIcon getScaledIcon(URL imageUrl, int width, int height) {
+        if (imageUrl == null) {
+            System.err.println("Image URL is null. Resource not found.");
+            return new ImageIcon(); // Return an empty icon to prevent null pointer exceptions
+        }
+
+        // 1. Get the original image
+        ImageIcon originalIcon = new ImageIcon(imageUrl);
+        Image originalImage = originalIcon.getImage();
+
+        // 2. Scale the image
+        // Uses SCALE_SMOOTH for better visual quality when scaling down.
+        Image scaledImage = originalImage.getScaledInstance(
+                width,
+                height,
+                Image.SCALE_SMOOTH
+        );
+
+        // 3. Create and return the new scaled icon
+        return new ImageIcon(scaledImage);
+    }
+
+    // Helper method to make the buttons look like toolbar icons
+    private void configureToolbarButton(JButton button) {
+        // 1. Remove the text, even if none is explicitly set
+        button.setText(null);
+
+        // 2. Remove the standard border and background painting
+        button.setBorder(null);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+
+        // 3. Remove the box drawn around the button when it has focus
+        button.setFocusPainted(false);
+
+        // 4. Force the button size to be exactly the icon size plus a small margin
+        // This is optional but ensures a tight fit
+        Dimension fixedSize = new Dimension(22, 22); // Slightly larger than 20 to allow for padding/hover effects
+        button.setPreferredSize(fixedSize);
+        button.setMinimumSize(fixedSize);
+        button.setMaximumSize(fixedSize);
+    }
+
+    // Helper method definition (place this as a private method in your class)
     private JPanel create_1_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#191c2a"));
+        // Keep FlowLayout.LEFT and hgap/vgap settings
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+
+        Class<?> contextClass = this.getClass();
+
+        final int ICON_SIZE = 20;
+
+        // Load URLs
+        URL openFolderUrl = contextClass.getResource("/assets/open_folder.png");
+        URL addFileUrl = contextClass.getResource("/assets/add_file.png");
+        URL createFolderUrl = contextClass.getResource("/assets/create_folder.png");
+
+        // 1. Create the JButtons using the scaled icons
+
+        // Get the scaled icons
+        ImageIcon openFolderIcon = getScaledIcon(openFolderUrl, ICON_SIZE, ICON_SIZE);
+        ImageIcon addFileIcon = getScaledIcon(addFileUrl, ICON_SIZE, ICON_SIZE);
+        ImageIcon createFolderIcon = getScaledIcon(createFolderUrl, ICON_SIZE, ICON_SIZE);
+
+        // Create JButtons and set the icon
+        openFolderButton = new JButton(openFolderIcon);
+        addFileButton = new JButton(addFileIcon);
+        createFolderButton = new JButton(createFolderIcon);
+
+        openFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        addFileButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        createFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // 2. Configure the Buttons to look like Icons (Crucial for a toolbar)
+        configureToolbarButton(openFolderButton);
+        configureToolbarButton(addFileButton);
+        configureToolbarButton(createFolderButton);
+
+        // 3. Add JButtons to the Panel
+        panel.add(openFolderButton);
+        panel.add(addFileButton);
+        panel.add(createFolderButton);
 
         return panel;
     }
 
     private JPanel create_1_3_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#191c2a"));
 
         return panel;
     }
@@ -213,21 +306,21 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.0361;
+        gbc.weighty = 0.02;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_1_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.8754512;
+        gbc.weighty = 0.92;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.0902527;
+        gbc.weighty = 0.06;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_3_panel(), gbc);
 
@@ -235,22 +328,83 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
 
         return panel;
     }
 
     private JPanel create_2_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
 
         return panel;
     }
 
+    public class FixedSizePanel extends JPanel {
+        private final Dimension fixedSize;
+
+        public FixedSizePanel(int width, int height) {
+            this.fixedSize = new Dimension(width, height);
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return fixedSize;
+        }
+
+        // It's good practice to also fix minimum and maximum sizes
+        @Override
+        public Dimension getMinimumSize() {
+            return fixedSize;
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return fixedSize;
+        }
+    }
+
     private JPanel create_2_3_panel(){
-        JPanel panel = new JPanel();
+        // 1. USE FixedSizePanel and specify the exact size (e.g., 600 wide, 40 high)
+        // You MUST choose the correct width and height for your layout.
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
+        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 0));
+
+        importTestcaseButton = new JButton("ImportTestcase");
+        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        importTestcaseButton.setForeground(Color.WHITE);
+        importTestcaseButton.setBackground(Color.decode("#568afc"));
+
+        exportTestcaseButton = new JButton("Export Testcase");
+        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        exportTestcaseButton.setForeground(Color.WHITE);
+        exportTestcaseButton.setBackground(Color.decode("#568afc"));
+
+        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
+        setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        setEntryPointButton.setForeground(Color.WHITE);
+        setEntryPointButton.setBackground(Color.decode("#568afc"));
+
+        runCodeButton = new RoundedButton("Run Code", 30);
+        runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        runCodeButton.setForeground(Color.WHITE);
+        runCodeButton.setBackground(Color.decode("#568afc"));
+
+        submitCodeButton = new RoundedButton("Submit Code", 30);
+        submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        submitCodeButton.setForeground(Color.WHITE);
+        submitCodeButton.setBackground(Color.decode("#0cf500"));
+
+        panel.add(importTestcaseButton);
+        panel.add(exportTestcaseButton);
+        panel.add(setEntryPointButton);
+        panel.add(runCodeButton);
+        panel.add(submitCodeButton);
 
         return panel;
     }
@@ -282,15 +436,51 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_3_1_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
+
+        // 1. Set the panel to use BorderLayout for anchoring
+        panel.setLayout(new BorderLayout());
+
+        JLabel label = new JLabel();
+        label.setText("Actual Output");
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+
+        // Optional: Add a small margin/padding around the text
+        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
+
+        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
+        label.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // 2. Add the label to the top (NORTH) region
+        panel.add(label, BorderLayout.NORTH);
 
         return panel;
     }
 
     private JPanel create_3_2_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
+
+        // 1. Set the panel to use BorderLayout for anchoring
+        panel.setLayout(new BorderLayout());
+
+        JLabel label = new JLabel();
+        label.setText("Expected Output");
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+
+        // Optional: Add a small margin/padding around the text
+        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
+
+        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
+        label.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // 2. Add the label to the top (NORTH) region
+        panel.add(label, BorderLayout.NORTH);
 
         return panel;
     }
@@ -974,6 +1164,7 @@ public class TextEditor extends JPanel {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1400, 800);
             frame.setLocationRelativeTo(null);
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
             frame.setVisible(true);
         });
     }
