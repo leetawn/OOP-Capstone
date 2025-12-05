@@ -65,10 +65,10 @@ public class FileExplorer extends JPanel {
 
     private void initializeComponents() {
         fe_tree = new JTree();
-        fe_tree.setBackground(Color.decode("#1f2335"));
+        fe_tree.setBackground(Color.decode("#191c2a"));
         fe_tree.setForeground(Color.WHITE);
 
-        UIManager.put("Tree.selectionBackground", Color.decode("#568afc"));
+        UIManager.put("Tree.selectionBackground", Color.decode("#191c2a"));
         UIManager.put("Tree.selectionForeground", Color.WHITE);
 
         fe_tree.setCellRenderer(new DefaultTreeCellRenderer() {
@@ -80,14 +80,14 @@ public class FileExplorer extends JPanel {
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 
                 if (sel) {
-                    setBackground(Color.decode("#568afc"));
+                    setBackground(Color.decode("#191c2a"));
                     setForeground(Color.WHITE);
                 } else {
-                    setBackground(Color.decode("#1f2335"));  // ADD THIS
+                    setBackground(Color.decode("#191c2a"));
                     setForeground(Color.WHITE);
                 }
 
-                setOpaque(true);  // ADD THIS - makes background visible
+                setOpaque(true);
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                 Object userObj = node.getUserObject();
@@ -129,7 +129,7 @@ public class FileExplorer extends JPanel {
         treeScroll.setPreferredSize(new Dimension(150, 0));
 
         // ---- DARK COLORS ----
-        Color BG = Color.decode("#1f2335");
+        Color BG = Color.decode("#191c2a");
         Color TITLE = Color.decode("#ffffff");
         Color SCROLL_TRACK = Color.decode("#2a2f45");
         Color SCROLL_THUMB = Color.decode("#3b425c");
