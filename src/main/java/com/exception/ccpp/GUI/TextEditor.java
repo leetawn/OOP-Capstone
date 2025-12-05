@@ -31,10 +31,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
+import java.nio.file.StandardOpenOption;
+import com.exception.ccpp.GUI.RoundedButton; // Assuming this class is available
+import com.exception.ccpp.GUI.RoundedComboBox; // Assuming this class is available
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
+    private JButton createButton; // Appears unused, but keeping it
     private JButton openFolderButton;
     private JButton createFolderButton;
     private JButton submitCodeButton;
@@ -67,6 +71,7 @@ public class TextEditor extends JPanel {
     public TextEditor(String folderPath, MainMenu mainMenu) {
         this();
 
+        // Close the MainMenu immediately when TextEditor starts
         if (mainMenu != null) {
             mainMenu.setVisible(false);
         }
@@ -121,33 +126,123 @@ public class TextEditor extends JPanel {
         StyleConstants.setForeground(excessStyle, Color.BLACK); // Use Black FG for visibility on Yellow
         StyleConstants.setBackground(excessStyle, new Color(245, 224, 59)); // Yellow (Excess)
     }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     private void setupLayout() {
         setLayout(new GridBagLayout());
-        setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // GLOBAL SETTINGS
+        gbc.fill = GridBagConstraints.BOTH; // STRICTLY DO NOT EDIT THIS!
+        gbc.insets = new Insets(0, 0, 0, 0); // STRICTLY DO NOT EDIT THIS!
+        gbc.gridy = 0; // STRICTLY DO NOT EDIT THIS!
+        gbc.weighty = 1.0; // STRICTLY DO NOT EDIT THIS!
+
+        // --- PANEL 1: Left Sidebar (Purple) ---
+        gbc.gridx = 0;  // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.11; // STRICTLY DO NOT EDIT THIS!
+        add(create_first_panel(), gbc);
+
+        // --- PANEL 2: Center (Green) ---
+        gbc.gridx = 1; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.59; // STRICTLY DO NOT EDIT THIS!
+        add(create_second_panel(), gbc);
+
+        // --- PANEL 3: Right Sidebar (Red) ---
+        gbc.gridx = 2; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.30; // STRICTLY DO NOT EDIT THIS!
+        add(create_third_panel(), gbc);
+    }
+
+// --- PANEL CREATION METHODS ---
+
+    private JPanel create_first_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.decode("#ffffff"));
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.3;
-        gbc.weighty = 1.0;
-        add(createLeftPanel(), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.VERTICAL;
-        JSeparator divider = new JSeparator(JSeparator.VERTICAL);
-        divider.setBackground(Color.decode("#28313b"));
-        divider.setPreferredSize(new Dimension(1, 0));
-        add(divider, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 0.7;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0125;
         gbc.fill = GridBagConstraints.BOTH;
-        add(createRightPanel(), gbc);
+        panel.add(create_1_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0125;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_1_2_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 0.975;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_1_3_panel(), gbc);
+
+        return panel;
     }
 
+    private JPanel create_1_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_1_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_1_3_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_second_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#32CD32"), 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0361;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.8754512;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_2_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0902527;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_3_panel(), gbc);
+
+        return panel;
+    }
 
     private void setupEventListeners() {
         codeArea.addKeyListener(new KeyAdapter() {
@@ -175,6 +270,67 @@ public class TextEditor extends JPanel {
         importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
         manageTestcaseButton.addActionListener(new ManageTestcaseButtonHandler(this));
 
+    }
+
+    private JPanel create_2_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_2_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_2_3_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_third_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_3_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_3_2_panel(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_3_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_3_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
     }
 
     private void initializeComponents() {
@@ -312,6 +468,7 @@ public class TextEditor extends JPanel {
 
         fileExplorerPanel = new FileExplorer(".", codeArea, this);
     }
+
 
     private void initializeBackend() {
 
@@ -937,10 +1094,28 @@ public class TextEditor extends JPanel {
             });
         }
     }
+//    public static class RunButtonHandler extends ComponentHandler {
+//        public RunButtonHandler(TextEditor editor) {
+//            super(editor);
+//        }
+//        @Override
+//        public void actionPerformed(ActionEvent e) {
+//            FileExplorer fe = getTextEditor().fileExplorerPanel;
+//            getTextEditor().saveCurrentFileContent();
+//            FileManager fm = fe.getFileManager();
+//            String out = Judge.judge(fm, new String[]{}).output();
+//            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
+//            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
+//
+//            // Call the diff checker method
+//            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
+//            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
+//        }
+//    }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
         public SetEntryPointButtonHandler(TextEditor editor) {
-           super(editor);
+            super(editor);
         }
 
         @Override
@@ -1181,4 +1356,3 @@ public class TextEditor extends JPanel {
         });
     }
 }
-
