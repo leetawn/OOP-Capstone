@@ -126,7 +126,7 @@ public class CrypticWriter {
 
     // DEMO
     public static void main(String[] args) {
-        String FILE_PATH = "app_data_with_header.dat";
+        String FILE_PATH = "app_data_with_header.ccpp";
         Path path = Path.of(FILE_PATH);
 
         // Prepare the data!
@@ -144,7 +144,7 @@ public class CrypticWriter {
             System.out.println("Data: " + Arrays.toString((String[]) retrievedData.get(0)));
 
             System.out.println("\nTest for Invalid File");
-            Path invalidPath = Path.of("fake_file.dat");
+            Path invalidPath = Path.of("fake_file.ccpp");
             try (FileOutputStream fos = new FileOutputStream(invalidPath.toFile())) {
                 fos.write("JUNK DATA".getBytes());
             }

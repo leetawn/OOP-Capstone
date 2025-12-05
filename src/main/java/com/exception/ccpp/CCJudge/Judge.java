@@ -38,7 +38,6 @@ public class Judge {
         for (int i = 0; i < verdicts.length; i++) {
             verdicts[i] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", ex_out.get(i));
         }
-
         try {
             judge_res = compile(fm);
             if (judge_res.verdict() == JudgeVerdict.CE) {
