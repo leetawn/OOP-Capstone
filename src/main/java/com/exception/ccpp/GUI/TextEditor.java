@@ -3,7 +3,8 @@ package com.exception.ccpp.GUI;
 import com.exception.ccpp.CCJudge.Judge;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
-import com.exception.ccpp.FileManagement.*;
+import com.exception.ccpp.FileManagement.SFile;
+import com.exception.ccpp.FileManagement.FileManager;
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.*;
@@ -16,17 +17,19 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import com.exception.ccpp.GUI.RoundedButton; // Assuming this class is available
+import com.exception.ccpp.GUI.RoundedComboBox; // Assuming this class is available
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
-    private JButton createButton;
+    private JButton createButton; // Appears unused, but keeping it
     private JButton openFolderButton;
     private JButton createFolderButton;
     private JButton setEntryPointButton;
     private JTextArea dTextArea;
     private JComboBox<String> languageSelectDropdown;
-    private FileExplorer fileExplorerPanel;
+    private com.exception.ccpp.GUI.FileExplorer fileExplorerPanel;
     private JTextPane actualOutputArea;
     private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
@@ -38,16 +41,25 @@ public class TextEditor extends JPanel {
     private SimpleAttributeSet defaultStyle;
 
     public TextEditor() {
-        initializeComponents();
+//        initializeComponents();
+        // Initialize the essential components that are used elsewhere
+        dTextArea = new JTextArea();
+        actualOutputArea = new JTextPane();
+        expectedOutputArea = new JTextPane();
+        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+
+        // Initialize file explorer with a dummy text area if needed
+        fileExplorerPanel = new com.exception.ccpp.GUI.FileExplorer(".", dTextArea, this);
+
         initializeBackend();
         initializeStyles();
         setupLayout();
-        setupEventListeners();
+//        setupEventListeners();
         setupTabToSpaces();
-
+        setVisible(true);
     }
 
-    public TextEditor(String folderPath, MainMenu mainMenu) {
+    public TextEditor(String folderPath, com.exception.ccpp.GUI.MainMenu mainMenu) {
         this(); // call the original no-arg constructor that builds your UI
 
         // Close the MainMenu immediately when TextEditor starts
@@ -104,176 +116,272 @@ public class TextEditor extends JPanel {
         StyleConstants.setForeground(excessStyle, Color.BLACK); // Use Black FG for visibility on Yellow
         StyleConstants.setBackground(excessStyle, new Color(245, 224, 59)); // Yellow (Excess)
     }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     private void setupLayout() {
         setLayout(new GridBagLayout());
-        setBackground(Color.decode("#28313b"));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // GLOBAL SETTINGS
+        gbc.fill = GridBagConstraints.BOTH; // STRICTLY DO NOT EDIT THIS!
+        gbc.insets = new Insets(0, 0, 0, 0); // STRICTLY DO NOT EDIT THIS!
+        gbc.gridy = 0; // STRICTLY DO NOT EDIT THIS!
+        gbc.weighty = 1.0; // STRICTLY DO NOT EDIT THIS!
+
+        // --- PANEL 1: Left Sidebar (Purple) ---
+        gbc.gridx = 0;  // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.11; // STRICTLY DO NOT EDIT THIS!
+        add(create_first_panel(), gbc);
+
+        // --- PANEL 2: Center (Green) ---
+        gbc.gridx = 1; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.59; // STRICTLY DO NOT EDIT THIS!
+        add(create_second_panel(), gbc);
+
+        // --- PANEL 3: Right Sidebar (Red) ---
+        gbc.gridx = 2; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.30; // STRICTLY DO NOT EDIT THIS!
+        add(create_third_panel(), gbc);
+    }
+
+// --- PANEL CREATION METHODS ---
+
+    private JPanel create_first_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.decode("#ffffff"));
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.3;
-        gbc.weighty = 1.0;
-        add(createLeftPanel(), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.VERTICAL;
-        JSeparator divider = new JSeparator(JSeparator.VERTICAL);
-        divider.setBackground(Color.decode("#28313b"));
-        divider.setPreferredSize(new Dimension(1, 0));
-        add(divider, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 0.7;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0125;
         gbc.fill = GridBagConstraints.BOTH;
-        add(createRightPanel(), gbc);
+        panel.add(create_1_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0125;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_1_2_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 0.975;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_1_3_panel(), gbc);
+
+        return panel;
     }
 
+    private JPanel create_1_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
 
-    private void setupEventListeners() {
-        dTextArea.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if ((e.getKeyCode() == KeyEvent.VK_S) &&
-                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
-
-                    e.consume();
-                    saveCurrentFileContent();
-                    actualOutputArea.setText("File saved successfully.");
-                }
-            }
-        });
-
-        openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
-        addFileButton.addActionListener(new AddFileButtonHandler(this));
-        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
-        runCodeButton.addActionListener(new RunButtonHandler(this));
-        createFolderButton.addActionListener(e -> {
-            fileExplorerPanel.handleCreateFolderAction();
-        });
-        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
-        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
-        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+        return panel;
     }
 
-    private void initializeComponents() {
-        runCodeButton = new RoundedButton("Run Code", 30);
-        runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        runCodeButton.setBackground(Color.decode("#568afc"));
-        runCodeButton.setForeground(Color.WHITE);
-        runCodeButton.setBorderPainted(false);
-        runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
+    private JPanel create_1_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
 
-        createButton = new JButton("Add Folder");
-
-        addFileButton = new RoundedButton("", 15);
-        URL urlAddFileButton = TextEditor.class.getResource("/assets/add_file.png");
-        if (urlAddFileButton != null) {
-            ImageIcon iconAddFileButton = new ImageIcon(urlAddFileButton);
-            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
-            Image originalImage = iconAddFileButton.getImage();
-            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-
-            // Set the scaled image using the new setIconImage method
-            ((RoundedButton)addFileButton).setIconImage(scaledImage);
-        } else {
-            System.err.println("Resource not found: /assets/add_file.png");
-        }
-        addFileButton.setBackground(Color.decode("#28313b"));
-        addFileButton.setBorderPainted(false);
-        addFileButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        addFileButton.setToolTipText("Add File");
-        ToolTipManager.sharedInstance().setInitialDelay(800);
-
-        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
-        setEntryPointButton.setVisible(false);
-
-        // Set Entry Point button styling to match Run Code
-        setEntryPointButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        setEntryPointButton.setBackground(Color.decode("#568afc"));
-        setEntryPointButton.setForeground(Color.WHITE);
-        setEntryPointButton.setBorderPainted(false);
-        setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
-
-        openFolderButton = new RoundedButton("", 15);
-        URL urlOpenFolderButton = TextEditor.class.getResource("/assets/open_folder.png");
-        if (urlOpenFolderButton != null) {
-            ImageIcon iconOpenFolderButton = new ImageIcon(urlOpenFolderButton);
-            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
-            Image originalImage = iconOpenFolderButton.getImage();
-            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-
-            // Set the scaled image using the new setIconImage method
-            ((RoundedButton)openFolderButton).setIconImage(scaledImage);
-        } else {
-            System.err.println("Resource not found: /assets/open_folder.png");
-        }
-        openFolderButton.setBackground(Color.decode("#28313b"));
-        openFolderButton.setBorderPainted(false);
-        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        openFolderButton.setToolTipText("Open Folder");
-        ToolTipManager.sharedInstance().setInitialDelay(800);
-
-        createFolderButton = new RoundedButton("", 15);
-        URL urlCreateFolderButton = TextEditor.class.getResource("/assets/create_folder.png");
-        if (urlOpenFolderButton != null) {
-            ImageIcon iconCreateFolderButton = new ImageIcon(urlCreateFolderButton);
-            // Scale the image down for a better fit inside the button (e.g., 20x20 pixels)
-            Image originalImage = iconCreateFolderButton.getImage();
-            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-
-            // Set the scaled image using the new setIconImage method
-            ((RoundedButton)createFolderButton).setIconImage(scaledImage);
-        } else {
-            System.err.println("Resource not found: /assets/create_folder.png");
-        }
-        createFolderButton.setBackground(Color.decode("#28313b"));
-        createFolderButton.setBorderPainted(false);
-        createFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
-        createFolderButton.setToolTipText("Create Folder");
-        ToolTipManager.sharedInstance().setInitialDelay(800);
-
-        // NEW: Import Testcase button
-        importTestcaseButton = new RoundedButton("Import Testcase", 15);
-        importTestcaseButton.setBackground(Color.decode("#568afc"));
-        importTestcaseButton.setForeground(Color.WHITE);
-        importTestcaseButton.setBorderPainted(false);
-        importTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
-
-        // NEW: Export Testcase button
-        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
-        exportTestcaseButton.setBackground(Color.decode("#568afc"));
-        exportTestcaseButton.setForeground(Color.WHITE);
-        exportTestcaseButton.setBorderPainted(false);
-        exportTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
-
-        dTextArea = new JTextArea();
-        dTextArea.setBackground(Color.decode("#1f2335"));
-        dTextArea.setCaretColor(Color.WHITE);
-        dTextArea.setForeground(Color.WHITE);
-
-        languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-
-        languageSelectDropdown.setBackground(Color.decode("#568afc"));
-        languageSelectDropdown.setForeground(Color.WHITE);
-        ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
-
-
-        actualOutputArea = new JTextPane();
-        actualOutputArea.setBackground(Color.decode("#1f2335"));
-        actualOutputArea.setCaretColor(Color.WHITE);
-        actualOutputArea.setForeground(Color.WHITE);
-
-        expectedOutputArea = new JTextPane();
-        expectedOutputArea.setBackground(Color.decode("#1f2335"));
-        expectedOutputArea.setCaretColor(Color.WHITE);
-        expectedOutputArea.setForeground(Color.WHITE);
-
-        fileExplorerPanel = new FileExplorer(".", dTextArea, this);
+        return panel;
     }
 
+    private JPanel create_1_3_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_second_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#32CD32"), 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0361;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.8754512;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_2_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0902527;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_2_3_panel(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_2_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_2_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_2_3_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_third_panel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_3_1_panel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_3_2_panel(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_3_1_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+    private JPanel create_3_2_panel(){
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+
+        return panel;
+    }
+
+//    private void initializeComponents() {
+//        // Initialize Buttons
+//        runCodeButton = new RoundedButton("Run Code", 30);
+//        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
+//        addFileButton = new RoundedButton("Add File", 15);
+//        openFolderButton = new RoundedButton("", 15); // Icon only
+//        createFolderButton = new RoundedButton("Create Folder", 15);
+//        importTestcaseButton = new RoundedButton("Import Testcase", 15);
+//        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
+//
+//        // Initialize Text Areas
+//        dTextArea = new JTextArea();
+//        actualOutputArea = new JTextPane();
+//        expectedOutputArea = new JTextPane();
+//
+//        // Initialize Language Dropdown
+//        languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+//        ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
+//
+//        // Initialize File Explorer
+//        fileExplorerPanel = new com.exception.ccpp.GUI.FileExplorer(".", dTextArea, this);
+//
+//        // Set up Open Folder Button Icon
+//        URL urlOpenFolderButton = TextEditor.class.getResource("/assets/open_folder.png");
+//        if (urlOpenFolderButton != null) {
+//            ImageIcon iconOpenFolderButton = new ImageIcon(urlOpenFolderButton);
+//            Image originalImage = iconOpenFolderButton.getImage();
+//            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+//            ((RoundedButton)openFolderButton).setIconImage(scaledImage);
+//        } else {
+//            System.err.println("Resource not found: /assets/open_folder.png");
+//        }
+//
+//        // Apply Styling
+//        runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+//        setEntryPointButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
+//
+//        Color buttonColor = Color.decode("#568afc");
+//        Color bgColor = Color.decode("#28313b");
+//
+//        // Shared Button Styling
+//        JButton[] buttons = {runCodeButton, setEntryPointButton, addFileButton, createFolderButton, importTestcaseButton, exportTestcaseButton};
+//        for (JButton btn : buttons) {
+//            btn.setBackground(buttonColor);
+//            btn.setForeground(Color.WHITE);
+//            btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+//        }
+//
+//        // Specific Button Styling
+//        openFolderButton.setBackground(bgColor);
+//        openFolderButton.setForeground(Color.WHITE);
+//        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+//        openFolderButton.setToolTipText("Open Project Folder");
+//
+//        setEntryPointButton.setVisible(false);
+//        setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
+//        runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
+//    }
+
+    // END OF FRONT END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // START OF BACK END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+//    private void setupEventListeners() {
+//        dTextArea.addKeyListener(new KeyAdapter() {
+//            @Override
+//            public void keyPressed(KeyEvent e) {
+//                if ((e.getKeyCode() == KeyEvent.VK_S) &&
+//                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
+//
+//                    e.consume();
+//                    saveCurrentFileContent();
+//                    actualOutputArea.setText("File saved successfully.");
+//                }
+//            }
+//        });
+//
+//        openFolderButton.addActionListener((ActionListener) new OpenFolderButtonHandler(this));
+//        addFileButton.addActionListener(new AddFileButtonHandler(this));
+//        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
+//        runCodeButton.addActionListener(new RunButtonHandler(this));
+//        createFolderButton.addActionListener(e -> {
+//            fileExplorerPanel.handleCreateFolderAction();
+//        });
+//        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
+//        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
+//        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+//    }
 
     private void initializeBackend() {
 
@@ -289,10 +397,6 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
     }
 
-
-    /* --------------- Setup --------------- */
-
-    /* --------------- Util --------------- */
     private void displayActualDiff(String actualText, String expectedText) {
         StyledDocument doc = actualOutputArea.getStyledDocument();
 
@@ -368,69 +472,71 @@ public class TextEditor extends JPanel {
             }
         }
     }
-    private void displayExpectedDiff(String actualText, String expectedText) {
-        // Note: We are using expectedOutputArea for this.
-        StyledDocument doc = expectedOutputArea.getStyledDocument();
 
-        try {
-            doc.remove(0, doc.getLength());
-        } catch (BadLocationException ignored) {}
+//    private void displayExpectedDiff(String actualText, String expectedText) {
+//        // Note: We are using expectedOutputArea for this.
+//        StyledDocument doc = expectedOutputArea.getStyledDocument();
+//
+//        try {
+//            doc.remove(0, doc.getLength());
+//        } catch (BadLocationException ignored) {}
+//
+//        String[] actualLines = actualText.split("\\R", -1);
+//        String[] expectedLines = expectedText.split("\\R", -1);
+//
+//        int maxLines = Math.max(actualLines.length, expectedLines.length);
+//
+//        for (int i = 0; i < maxLines; i++) {
+//            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
+//            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
+//
+//            int maxLength = Math.max(actualLine.length(), expectedLine.length());
+//
+//            for (int j = 0; j < maxLength; j++) {
+//                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
+//                char expectedChar = (j < expectedLines.length) ? expectedLines[j] : 0;
+//
+//                AttributeSet styleToApply;
+//                char charToProcess = expectedChar; // Focus on the expected character
+//
+//                // If Expected output ran out, stop processing this line in the Expected pane
+//                if (expectedChar == 0) {
+//                    continue;
+//                }
+//
+//                // --- Comparison Logic (Focus on Expected) ---
+//                if (actualChar == expectedChar) {
+//                    // Match
+//                    styleToApply = matchStyle; // Green
+//                } else {
+//                    // Lacking or Mismatched Character
+//                    styleToApply = mismatchStyle; // Red
+//                }
+//
+//                // --- Visualization Logic for Expected ---
+//                String charToDisplay;
+//                if (charToProcess == '\t') {
+//                    charToDisplay = "    "; // 4 spaces for Tab
+//                } else if (charToProcess == '\r' || charToProcess == '\n') {
+//                    charToDisplay = "\u2424"; // Symbol for Newline
+//                } else {
+//                    charToDisplay = String.valueOf(charToProcess);
+//                }
+//
+//                try {
+//                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+//                } catch (BadLocationException ignored) {}
+//            }
+//
+//            // Add a literal newline to advance the cursor in the JTextPane
+//            if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
+//                try {
+//                    doc.insertString(doc.getLength(), "\n", defaultStyle);
+//                } catch (BadLocationException ignored) {}
+//            }
+//        }
+//    }
 
-        String[] actualLines = actualText.split("\\R", -1);
-        String[] expectedLines = expectedText.split("\\R", -1);
-
-        int maxLines = Math.max(actualLines.length, expectedLines.length);
-
-        for (int i = 0; i < maxLines; i++) {
-            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
-            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
-
-            int maxLength = Math.max(actualLine.length(), expectedLine.length());
-
-            for (int j = 0; j < maxLength; j++) {
-                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
-                char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
-
-                AttributeSet styleToApply;
-                char charToProcess = expectedChar; // Focus on the expected character
-
-                // If Expected output ran out, stop processing this line in the Expected pane
-                if (expectedChar == 0) {
-                    continue;
-                }
-
-                // --- Comparison Logic (Focus on Expected) ---
-                if (actualChar == expectedChar) {
-                    // Match
-                    styleToApply = matchStyle; // Green
-                } else {
-                    // Lacking or Mismatched Character
-                    styleToApply = mismatchStyle; // Red
-                }
-
-                // --- Visualization Logic for Expected ---
-                String charToDisplay;
-                if (charToProcess == '\t') {
-                    charToDisplay = "    "; // 4 spaces for Tab
-                } else if (charToProcess == '\r' || charToProcess == '\n') {
-                    charToDisplay = "\u2424"; // Symbol for Newline
-                } else {
-                    charToDisplay = String.valueOf(charToProcess);
-                }
-
-                try {
-                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-                } catch (BadLocationException ignored) {}
-            }
-
-            // Add a literal newline to advance the cursor in the JTextPane
-            if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
-                try {
-                    doc.insertString(doc.getLength(), "\n", defaultStyle);
-                } catch (BadLocationException ignored) {}
-            }
-        }
-    }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
@@ -443,174 +549,6 @@ public class TextEditor extends JPanel {
             System.out.println("File saved: " + currentFile.getStringPath());
         }
     }
-
-    /* --------------- Util --------------- */
-
-    private JPanel createLeftPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        // Top Panel (buttons + language)
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(createTopPanel(), gbc);
-
-        // Editors Panel (file explorer + text editor)
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        panel.add(createEditorsPanel(), gbc);
-
-        // Bottom Panel (run code + set entry point)
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(createBottomPanel(), gbc);
-
-        return panel;
-    }
-
-    private JPanel createTopPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 0, 0, 0);
-
-        // File buttons
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
-
-        JPanel fileButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        fileButtonsPanel.setBackground(Color.decode("#28313b"));
-        openFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(openFolderButton);
-        addFileButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(addFileButton);
-        createFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(createFolderButton);
-        fileButtonsPanel.add(importTestcaseButton);
-        fileButtonsPanel.add(exportTestcaseButton);
-        panel.add(fileButtonsPanel, gbc);
-
-        // Spacer
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(Box.createHorizontalGlue(), gbc);
-
-        // Language Label
-        gbc.gridx = 2;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel languageLabel = new JLabel("Language:  ");
-        languageLabel.setBackground(Color.decode("#28313b"));
-        languageLabel.setForeground(Color.WHITE);
-        languageLabel.setOpaque(true);
-        panel.add(languageLabel, gbc);
-
-        // Language Dropdown
-        gbc.gridx = 3;
-        gbc.weightx = 0.0;
-        languageSelectDropdown.setPreferredSize(new Dimension(120, 25));
-        panel.add(languageSelectDropdown, gbc);
-
-        return panel;
-    }
-
-    private JPanel createEditorsPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 0);
-
-        // File Explorer
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weighty = 1.0;
-        gbc.weightx = 0.0;
-        fileExplorerPanel.setPreferredSize(new Dimension(175, Integer.MAX_VALUE));
-        panel.add(fileExplorerPanel, gbc);
-
-        // Text Editor
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weighty = 1.0;
-        gbc.weightx = 1.0;
-        gbc.insets = new Insets(5, 1, 5, 0);
-        JScrollPane editorScroll = new JScrollPane(dTextArea);
-        editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
-        editorScroll.setBackground(Color.decode("#1f2335"));
-        TitledBorder titledBorder = (TitledBorder) editorScroll.getBorder();
-        titledBorder.setTitleColor(Color.WHITE);
-        panel.add(editorScroll, gbc);
-
-        return panel;
-    }
-
-    private JPanel createBottomPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        panel.setBackground(Color.decode("#28313b"));
-        panel.add(setEntryPointButton);
-        panel.add(runCodeButton);
-        return panel;
-    }
-
-    private JPanel createRightPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.5;
-        JScrollPane actualScroll = new JScrollPane(actualOutputArea);
-        actualScroll.setBackground(Color.decode("#1f2335"));
-        actualScroll.setBorder(BorderFactory.createTitledBorder("Actual Output"));
-        TitledBorder titledBorder3 = (TitledBorder) actualScroll.getBorder();
-        titledBorder3.setTitleColor(Color.WHITE);
-        panel.add(actualScroll, gbc);
-
-        gbc.gridy = 1;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        JSeparator tempSeparator = new JSeparator(JSeparator.HORIZONTAL);
-        panel.add(tempSeparator, gbc);
-
-        gbc.gridy = 2;
-        gbc.weighty = 0.5;
-        gbc.fill = GridBagConstraints.BOTH;
-        JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
-        expectedScroll.setBackground(Color.decode("#1f2335"));
-        expectedScroll.setBorder(BorderFactory.createTitledBorder("Expected Output"));
-        TitledBorder titledBorder2 = (TitledBorder) expectedScroll.getBorder();
-        titledBorder2.setTitleColor(Color.WHITE);
-        panel.add(expectedScroll, gbc);
-
-        return panel;
-    }
-
-
 
     public void handleAddFileAction() {
         FileManager fm = fileExplorerPanel.getFileManager();
@@ -733,7 +671,7 @@ public class TextEditor extends JPanel {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
-            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setCurrentDirectory(fm != null ? fm.getRootdir().toFile() : null);
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -861,39 +799,28 @@ public class TextEditor extends JPanel {
         }
     }
 
-    public static class RunButtonHandler extends ComponentHandler {
-        public RunButtonHandler(TextEditor editor) {
-            super(editor);
-        }
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            getTextEditor().saveCurrentFileContent();
-            FileManager fm = fe.getFileManager();
-            String out = Judge.judge(fm, new String[]{}).output();
-            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
-            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
-
-            // Call the diff checker method
-            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
-            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
-
-            // Display raw expected output for reference
-//            getTextEditor().expectedOutputArea.setText(dummyExpected);
-////            getTextEditor().actualOutputArea.setText(out);
-////            getTextEditor().expectedOutputArea.setText("Expected output will appear here");
-//            JTextPane expectedPane = getTextEditor().expectedOutputArea;
-//            StyledDocument doc = expectedPane.getStyledDocument();
-//            try {
-//                doc.remove(0, doc.getLength()); // Clear previous content
-//                doc.insertString(0, dummyExpected, getTextEditor().defaultStyle);
-//            } catch (BadLocationException ignored) {}
-        }
-    }
+//    public static class RunButtonHandler extends ComponentHandler {
+//        public RunButtonHandler(TextEditor editor) {
+//            super(editor);
+//        }
+//        @Override
+//        public void actionPerformed(ActionEvent e) {
+//            FileExplorer fe = getTextEditor().fileExplorerPanel;
+//            getTextEditor().saveCurrentFileContent();
+//            FileManager fm = fe.getFileManager();
+//            String out = Judge.judge(fm, new String[]{}).output();
+//            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
+//            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
+//
+//            // Call the diff checker method
+//            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
+//            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
+//        }
+//    }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
         public SetEntryPointButtonHandler(TextEditor editor) {
-           super(editor);
+            super(editor);
         }
 
         @Override
@@ -950,7 +877,7 @@ public class TextEditor extends JPanel {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Select Testcase File");
-            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setCurrentDirectory(fm != null ? fm.getRootdir().toFile() : null);
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -964,12 +891,16 @@ public class TextEditor extends JPanel {
                             throw new InvalidFileException("Invalid file! Please select .ccpp files for testcases.");
                         }
 
-                   } catch (InvalidFileException ex) {
+                    } catch (InvalidFileException ex) {
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
-            System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+            if (fe.getTestcaseFile() != null) {
+                System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+            } else {
+                System.out.println("No testcase file selected.");
+            }
         }
     }
     public static class ExportTestcaseButtonHandler extends ComponentHandler {
@@ -984,7 +915,7 @@ public class TextEditor extends JPanel {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Export to");
-            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setCurrentDirectory(fm != null ? fm.getRootdir().toFile() : null);
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1047,4 +978,3 @@ public class TextEditor extends JPanel {
         });
     }
 }
-
