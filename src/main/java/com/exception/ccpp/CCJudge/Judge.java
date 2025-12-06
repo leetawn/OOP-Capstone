@@ -43,6 +43,7 @@ public class Judge {
             judge_res = compile(fm);
             if (judge_res.verdict() == JudgeVerdict.CE) {
                 recordCopy(verdicts, judge_res, testcases_size);
+                cleanup(fm);
                 return verdicts;
             };
 
