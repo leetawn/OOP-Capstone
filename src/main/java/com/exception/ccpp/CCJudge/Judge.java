@@ -78,15 +78,16 @@ public class Judge {
         DebugLog logger = DebugLog.getInstance();
         try {
             if (language.equals("java")) {
-                for (SFile file : fm.getFiles()) {
+                for (SFile file : fm.getLanguageFiles()) {
                     String className = file.getPath().toAbsolutePath().toString().replace(".java", ".class");
+                    logger.logln("Judge.cleanup: Deleting " + className);
                     Files.deleteIfExists(Paths.get(className));
                 }
             } else if (language.equals("cpp") || language.equals("c")) {
                 Path p = Paths.get(fm.getRootdir().toAbsolutePath().toString(),"Submission.exe");
-                logger.logln("Deleting " + p);
+                logger.logln("Judge.cleanup: Deleting " + p);
                 if (Files.exists(p)) { Files.delete(p); }
-                logger.logln("Deleted " + p);
+                logger.logln("Judge.cleanup: Deleted " + p);
             }
         } catch (IOException ignored) {}
     }
