@@ -18,7 +18,7 @@ public class FileManager {
 
     private Path rootdir;
     private SFile currentFile;
-    private ArrayList<SFile> all_files;
+    private final ArrayList<SFile> all_files;
     private ArrayList<SFile> s_files;
     private String language;
     private FileWatcher fileWatcher;
@@ -48,8 +48,10 @@ public class FileManager {
             }
 
             Files.move(oldPath, newPath);
-            if (currentFile != null && currentFile.equals(sfile)) {
-                currentFile = all_files.get(all_files.size()-1);
+            synchronized (all_files) {
+                if (currentFile != null && currentFile.equals(sfile)) {
+                    currentFile = all_files.get(all_files.size()-1);
+                }
             }
             return true;
         } catch (IOException e) {
