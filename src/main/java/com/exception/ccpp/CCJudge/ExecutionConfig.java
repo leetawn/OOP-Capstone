@@ -36,6 +36,12 @@ public class ExecutionConfig {
 
         String[] command;
         switch (language) {
+            case "java":
+//                return new String[] {"where","javac"};
+                command = new String[1 + sourceFilenames.length];
+                command[0] = "javac";
+                System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
+                return command;
             case "cpp":
                 String[] cppSourceFiles = Arrays.stream(sourceFilenames)
                         .filter(f -> f.endsWith(".cpp"))
