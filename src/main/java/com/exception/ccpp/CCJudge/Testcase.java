@@ -12,7 +12,7 @@ public class Testcase implements Serializable {
         this.expected_output = expected_output;
     }
 
-    public String getExpected_output() {
+    public String getExpectedOutput() {
         return expected_output;
     }
     public String[] getInputs() {

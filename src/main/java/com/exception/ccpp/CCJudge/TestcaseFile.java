@@ -6,13 +6,11 @@ import com.exception.ccpp.FileManagement.FileManager;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class TestcaseFile extends CCFile implements TerminalCallback{
     private ArrayList<String[]> inputs = new ArrayList<>();
     private ArrayList<String> expected_outputs = new ArrayList<>();
-    Map<String, Testcase> testcases = new ConcurrentHashMap<>();
+    Map<Testcase, String> testcases = new LinkedHashMap<>();
 
     public TestcaseFile(String filepath) {
         super(filepath);
@@ -22,28 +20,20 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         super(path);
         load();
     }
-    // FOR TerminalApp Usage ONLY
-    TestcaseFile(String[] input) {
-        super((Path) null);
-        inputs.add(input);
-        expected_outputs.add(null);
-    }
 
-    public ArrayList<String[]> getInputs() {
-        return this.inputs;
-    }
-    public ArrayList<String> getExpectedOutputs() {
-        return this.expected_outputs;
-    }
+    /************ GETTERS *******************/
+    // TODO: USE THIS INSTEAD
+    public Map<Testcase, String>  getTestcases() { return testcases; }
 
-    public void deleteTestcase() {
-
+    /************ BASIC OPS *******************/
+    public void deleteTestcase(Testcase tc) {
+        testcases.remove(tc);
     }
-
     public void addTestcase(FileManager fm) {
-
+        new TerminalApp(fm,this);
     }
 
+    /************ I/O *******************/
     @Override
     protected void load() {
         if (path == null) return;
@@ -51,11 +41,10 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         try {
             List<Object> retrievedData = CrypticWriter.readEncryptedData(path);
             if (retrievedData.size() > 0) {
-                String[][] input_arr = (String[][]) retrievedData.get(0);
-                String[] exout_arr = (String[]) retrievedData.get(1);
+                Object rawMap = retrievedData.get(0);
 
-                inputs = new ArrayList<>(Arrays.asList(input_arr));
-                expected_outputs = new ArrayList<>(Arrays.asList(exout_arr));
+                testcases = (LinkedHashMap<Testcase, String>) rawMap;
+
             }
         } catch (Exception e) {
             System.err.println("TestcaseFile.load() error loading " + path);
@@ -68,10 +57,7 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         if (path == null) return;
 
         List<Object> data = new ArrayList<>();
-        String[][] input_arr = inputs.toArray(new String[inputs.size()][]);
-        String[] ex_out =  expected_outputs.toArray(new String[0]);
-        data.add(input_arr);
-        data.add(ex_out);
+        data.add(testcases);
         try {
             CrypticWriter.writeEncryptedData(data, path);
         } catch (Exception e) {
@@ -80,9 +66,9 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         }
     }
 
+    /************ CALLBACKS *******************/
     @Override
     public void onTerminalExit(String[] inputs, String expected) {
-        this.inputs.add(inputs);
-        this.expected_outputs.add(expected);
+        testcases.put(new Testcase(inputs, expected), UUID.randomUUID().toString());
     }
 }

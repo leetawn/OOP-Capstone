@@ -14,6 +14,7 @@
     import java.awt.event.WindowAdapter;
     import java.awt.event.WindowEvent;
     import java.io.*;
+    import java.nio.MappedByteBuffer;
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.Map;
@@ -32,10 +33,10 @@
         private final FileManager fm;
         private ArrayList<String> inputs;
         private TerminalCallback exitCallback;
+        private String[] terminal_command;
+        private boolean prompt_again;
+        private boolean terminal_loop;
 
-        // --- Configuration ---
-        // Switched to powershell.exe as the default for better modern Windows compatibility.
-        // Uncomment the other options to switch shells (remember to recompile).
         private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         private static final String[] TERMINAL_START_COMMAND;
 
@@ -53,6 +54,7 @@
             super("Java Swing Command Console");
             this.fm = fm;
             this.exitCallback = exitCallback;
+            terminal_loop = false;
             inputs = new ArrayList<>();
 
             outputArea = new JTextArea();
@@ -62,7 +64,9 @@
             scrollPane.setPreferredSize(new Dimension(800, 600));
 
             inputField = new JTextField();
-            inputField.addActionListener(new CommandListener(fm.getLanguage()));
+            inputField.addActionListener(
+                    new CommandListener(fm.getLanguage())
+            );
 
             setLayout(new BorderLayout());
             add(scrollPane, BorderLayout.CENTER);
@@ -71,49 +75,50 @@
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
-//
-//                    String output = outputArea.getText();
-//                    System.out.print("Full Received [");
-//                    int j=1;
-//                    for (int c : output.getBytes()) {
-//                        System.out.printf("%d, ", c);
-//                        if (j%10==0) System.out.println();
-//                        j++;
-//                    }
-//                    if (output.getBytes().length > 0) System.out.print("\b\b");
-//                    System.out.println("]");
 
                     System.out.println("windowClosing");
                     Judge.cleanup(fm);
                 }
             });
-            ;
             setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             pack();
+
             setLocationRelativeTo(null);
             setVisible(true);
 
-            startTerminalProcess();
+            if (initTerminalProcess())
+            {
+                startTerminalProcess();
+            }
+        }
+
+        private boolean initTerminalProcess()
+        {
+            SubmissionRecord sr = null;
+            try {
+                sr = Judge.compile(fm);
+            } catch (Exception e) {
+                System.err.println("Compilation error:\n" + e.getMessage());
+            }
+
+            if (sr.verdict() == JudgeVerdict.CE)  {
+                outputArea.append(sr.output());
+                return false;
+            }
+
+            String[] execCmd = ExecutionConfig.getExecuteCommand(fm);
+            System.out.println(String.join(" ", execCmd));
+            terminal_command = Helpers.concatStringArrays(execCmd);
+            return true;
         }
 
         private void startTerminalProcess() {
             try {
 
-                SubmissionRecord sr = Judge.compile(fm);
-                if (sr.verdict() == JudgeVerdict.CE)  {
-                    outputArea.append(sr.output());
-                    return;
-                }
-
-                String[] execCmd = ExecutionConfig.getExecuteCommand(fm);
-                System.out.println(String.join(" ", execCmd));
-                String[] cmd = Helpers.concatStringArrays(execCmd);
-
                 Map<String, String> env = new HashMap<>(System.getenv());
                 if (!env.containsKey("TERM")) env.put("TERM", "xterm");
-
                 terminalProcess = new PtyProcessBuilder()
-                        .setCommand(cmd)
+                        .setCommand(terminal_command)
                         .setEnvironment(env)
                         .setRedirectErrorStream(true)
                         .setDirectory(fm.getRootdir().toString())
@@ -126,19 +131,21 @@
                     System.out.println("Process exited with: " + p.exitValue());
 
                     String[] inputs_arr = inputs.toArray(new String[0]);
+                    inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
                     SubmissionRecord verdict = Judge.judgeInteractively(fm, inputs_arr, null);
 
-                    if (exitCallback != null) {
-                        SwingUtilities.invokeLater(() -> exitCallback.onTerminalExit(inputs_arr, verdict.output()));
-                    }
-
-                    // keeps the terminal open
-                    try {
-                        while (true) Thread.sleep(100);
-                    } catch (InterruptedException f) {}
-
-                    SwingUtilities.invokeLater(this::dispose);
+                    SwingUtilities.invokeLater(() -> {
+                        // Only prompt if a callback handler is present (for testcase generation)
+                        if (exitCallback != null) {
+                            exitCallback.onTerminalExit(inputs_arr, verdict.output());
+                            outputArea.append("\nContinue adding testcases [y/n]?\n");
+                            prompt_again = true; // Set flag to divert the *next* input
+                        } else {
+                            // If no callback, just dispose if terminal_loop is false
+                            TerminalApp.this.dispose();
+                        }
+                    });
 
                     return p.exitValue();
                 });
@@ -165,7 +172,19 @@
                 String command = inputField.getText();
                 inputField.setText(""); // Clear the input field
 
-                // SEND TO TERMINAL
+                if (prompt_again) {
+                    prompt_again = false;
+
+                    if (command.length() > 0 && Character.toLowerCase(command.charAt(0)) == 'y') {
+                        outputArea.append(command + "\n");
+                        startTerminalProcess();
+                        outputArea.setText("");
+                    } else {
+                        SwingUtilities.invokeLater(TerminalApp.this::dispose);
+                    }
+                    return;
+                }
+
                 System.out.printf("Entered: [%s]\n", command);
                 inputs.add(command);
 
@@ -204,17 +223,6 @@
                             if (readChars > 0) {
                                 final String output = (new String(buffer, 0, readChars));
 
-//                                System.out.print("Recieved [");
-//                                int j = 1;
-//                                for (int c : output.getBytes())
-//                                {
-//                                    System.out.printf("%d, ", c);
-//                                    if (j%10==0) System.out.println();
-//                                    j++;
-//                                }
-//                                if (output.getBytes().length > 0) System.out.print("\b\b");
-//                                System.out.println("]");
-
                                 SwingUtilities.invokeLater(() -> {
                                     outputArea.append(Helpers.stripAnsi(output));
                                     outputArea.setText(Helpers.stripCRLines(outputArea.getText()));
@@ -249,12 +257,12 @@
 
         public static void main(String[] args) {
             boolean OPEN_TERMINAL, APPEND_TESTCASES, RUN_TESTCASES;
-            String[] files = {"datafile3.ccpp", "datafile4.ccpp"};
+            String[] files = {"datafile3.ccpp", "datafile2.ccpp"};
 
             // TEST VARIABLES
             final String TEST_LANG = "CPP";
-            final String TEST_FILE = files[1];
-            final int TEST_TYPE = 0;
+            final String TEST_FILE = files[0];
+            final int TEST_TYPE = 1;
 
             switch (TEST_TYPE) {
                 case 1: // TEST SUBMIT CODE
@@ -297,20 +305,20 @@
             }
 
 
+            FileManager finalFm = fm;
             if (OPEN_TERMINAL)
             {
-                FileManager finalFm = fm;
-                SwingUtilities.invokeLater(() -> {
-                    if (APPEND_TESTCASES) new TerminalApp(finalFm, tf); // adds testcases to tf
-                    else new TerminalApp(finalFm, null); // equivalent to run code, doesnt make testcases
-                });
+                TerminalApp ta  = null;
+                if (APPEND_TESTCASES) ta = new TerminalApp(finalFm, tf);
+                else ta = new TerminalApp(finalFm, null);
 
-                // sleep main thread for 10 seconds to mimic workload on main
+                // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished
                 try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                }
+                    while (ta.isDisplayable()) Thread.sleep(100);
+                } catch (InterruptedException e) {}
+                System.out.printf("CONTINUING AFTER TerminalApp DISPOSAL.\n");
+                if (APPEND_TESTCASES) tf.writeOut();
             }
 
             if (RUN_TESTCASES)
@@ -327,8 +335,8 @@
                     System.out.println(sr.expected_output()); // expected output
                     System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
                 }
-                tf.writeOut(); // saves testcase
             }
+
 
 
         }
