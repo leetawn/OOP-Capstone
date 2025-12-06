@@ -15,12 +15,16 @@ public class ExecutionConfig {
     public final static boolean CLANG_AVAILABLE;
     public final static boolean CLANGPP_AVAILABLE;
     public final static boolean IS_WINDOWS;
+    public final static boolean PYTHON_AVAILABLE;
+    public final static boolean PYTHON3_AVAILABLE;
     static {
         IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
-        GCC_AVAILABLE = ExecutionConfig.isCommandAvailable("gcc");
-        GPP_AVAILABLE = ExecutionConfig.isCommandAvailable("g++");
-        CLANG_AVAILABLE = ExecutionConfig.isCommandAvailable("clang");
-        CLANGPP_AVAILABLE = ExecutionConfig.isCommandAvailable("clang++");
+        GCC_AVAILABLE = isCommandAvailable("gcc");
+        GPP_AVAILABLE = isCommandAvailable("g++");
+        CLANG_AVAILABLE = isCommandAvailable("clang");
+        CLANGPP_AVAILABLE = isCommandAvailable("clang++");
+        PYTHON_AVAILABLE = isCommandAvailable("python");
+        PYTHON3_AVAILABLE = isCommandAvailable("python3");
     }
 
     public static String[] getCompileCommand(FileManager fm) {
@@ -67,7 +71,7 @@ public class ExecutionConfig {
         return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", fm.getCurrentFileStringPath().replace(".java","").replaceAll("[\\\\/]",".")}; // idk if com.exception.ccpp.Main is in all program
             case "cpp", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
-            case "python" -> new String[]{"python3", "main.py"};
+            case "python" -> new String[]{ (PYTHON3_AVAILABLE) ? "python3" : "python", fm.getCurrentFileStringPath()};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
     }
