@@ -682,6 +682,7 @@ public class TextEditor extends JPanel {
 
     public String getCurrentSelectedLanguage() {
         if (languageSelectDropdown.getSelectedItem().equals("C++")) return "cpp";
+        if (languageSelectDropdown.getSelectedItem().equals("Python")) return "py";
         return (String) languageSelectDropdown.getSelectedItem();
     }
 
@@ -884,7 +885,7 @@ public class TextEditor extends JPanel {
                 return;
             }
 
-            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("Java")) {
+            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("java")) {
                 if (sfile.getStringPath().toLowerCase().endsWith(".java")) fileManager.setCurrentFile(sfile);
                 else {
                     JOptionPane.showMessageDialog(null,
@@ -895,7 +896,7 @@ public class TextEditor extends JPanel {
 
             }
 
-            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
+            if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("py"))  {
                 if (sfile.getStringPath().toLowerCase().endsWith(".py")) fileManager.setCurrentFile(sfile);
                 else {
                     JOptionPane.showMessageDialog(null,
