@@ -743,7 +743,7 @@ public class TextEditor extends JPanel {
                 }
             }
         }
-    };
+    }
 
     public static class AddFileButtonHandler extends ComponentHandler {
         public AddFileButtonHandler(TextEditor editor) {
@@ -834,11 +834,7 @@ public class TextEditor extends JPanel {
             FileManager fileManager = FileManager.getInstance();
             String newLanguage = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
             if (oldLanguage.equals(newLanguage)) return; // no need to reset
-            if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
-                getTextEditor().setEntryPointButton.setVisible(true);
-            } else {
-                getTextEditor().setEntryPointButton.setVisible(false);
-            }
+            getTextEditor().setEntryPointButton.setVisible(newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python"));
             fileManager.setLanguage(newLanguage);
             oldLanguage = newLanguage;
 
@@ -986,28 +982,27 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            boolean is_java_python = false;
-            FileManager fm = FileManager.getInstance();
-            String sel_lang = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
-            SFile sel_file = FileExplorer.getInstance().getSelectedFile();
-            if (sel_lang != null) is_java_python = sel_lang.equalsIgnoreCase("python") || sel_lang.equalsIgnoreCase("java");
-            if (is_java_python) {
-
-                if (sel_file == null)
-                {
-                    JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                else if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage())))
-                {
+            final Object selectedLanguage = getTextEditor().languageSelectDropdown.getSelectedItem();
+            final boolean isJava = "Java".equals(selectedLanguage);
+            final boolean isPython = "Python".equals(selectedLanguage);
+            final boolean isCOrCPP = "C".equals(selectedLanguage) || "C++".equals(selectedLanguage);
+            final CCFile selectedFile = FileExplorer.getInstance().getSelectedFile();
+            if ((isPython || isJava) && selectedFile == null) {
+                JOptionPane.showMessageDialog(getTextEditor(), "select file please king i need this king", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // W ONE LINER HAHAHAHAHAHAHAHA
+            if (selectedFile != null) {
+                final String fileExtension = FileExplorer.getFileExtension(FileExplorer.getInstance().getSelectedFile().getStringPath());
+                if ((!isPython && fileExtension.equals("py")) || (!isJava && fileExtension.equals("java"))) {
                     JOptionPane.showMessageDialog(getTextEditor(), "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                if ((isPython || isJava)) {
+                    getTextEditor().saveCurrentFileContent();
+                }
             }
 
-            if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
-                getTextEditor().saveCurrentFileContent();
-            }
             SubmissionRecord[] results = Judge.judge(FileManager.getInstance(), new TestcaseFile("datafile3.ccpp"));
 
             if (results.length > 0) {
@@ -1016,18 +1011,6 @@ public class TextEditor extends JPanel {
                 String expected = rec.expected_output();
                 getTextEditor().displayActualDiff(actual, expected);
                 getTextEditor().displayExpectedDiff(actual, expected);
-                System.out.println("ORIGINAL ------------------------");
-                for (char c : rec.output().toCharArray()) {
-                    if (c == '\r') System.out.print("\\r");
-                    else if (c == '\n') System.out.print("\\n");
-                    else System.out.print(c);
-                }
-                System.out.println("\nSTRIPED ------------------------");
-                for (char c : actual.toCharArray()) {
-                    if (c == '\r') System.out.print("\\r");
-                    else if (c == '\n') System.out.print("\\n");
-                    else System.out.print(c);
-                }
             }
         }
     }
