@@ -151,7 +151,7 @@ public class TextEditor extends JPanel {
 
     private JPanel create_first_panel() {
         JPanel panel = new JPanel();
-        panel.setBackground(Color.decode("#ffffff"));
+        panel.setBackground(Color.decode("#000000"));
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
 
         panel.setLayout(new GridBagLayout());
@@ -184,9 +184,8 @@ public class TextEditor extends JPanel {
 
     private JPanel create_1_1_panel(){
         JPanel panel = new FixedSizePanel(1, 20);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 3));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 7));
 
         JLabel label = new JLabel();
         label.setText("File Explorer");
@@ -244,7 +243,6 @@ public class TextEditor extends JPanel {
     // Helper method definition (place this as a private method in your class)
     private JPanel create_1_2_panel(){
         JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
         // Keep FlowLayout.LEFT and hgap/vgap settings
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -289,7 +287,6 @@ public class TextEditor extends JPanel {
 
     private JPanel create_1_3_panel(){
         JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
@@ -310,8 +307,8 @@ public class TextEditor extends JPanel {
 
     private JPanel create_second_panel() {
         JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#32CD32"), 2));
+        panel.setBackground(Color.decode("#1f2335"));
+        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
 
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -342,21 +339,25 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
-        // The FixedSizePanel size is critical. Using (600, 30) as a realistic example.
+        // Using a realistic height (e.g., 30 pixels tall) to contain the components.
+        // The width (1) lets the parent GridBagLayout control horizontal stretching.
         JPanel panel = new FixedSizePanel(1, 20);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
 
-        // 1. Set the main panel to use BorderLayout
+        // Set the main panel to use BorderLayout to anchor left and right groups
         panel.setLayout(new BorderLayout());
+
+        // --- Define Colors for Consistency ---
+        Color panelBgColor = Color.decode("#1f2335");
+        Color foreColor = Color.WHITE;
 
         // --- LEFT SIDE (Text Editor Label) ---
         JLabel label1 = new JLabel();
         label1.setText("Text Editor");
-        label1.setForeground(Color.WHITE);
-        label1.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
+        label1.setForeground(foreColor);
+        label1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
-        // Add margin/padding to the left label
+        // Add margin/padding to the left label (10px on the left)
         label1.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
         // Add label1 to the WEST (left) region
@@ -366,28 +367,35 @@ public class TextEditor extends JPanel {
 
         // Create an INNER panel to hold the two right-side components
         JPanel rightPanel = new JPanel();
-        rightPanel.setBackground(Color.decode("#1f2335")); // Match parent background
+        rightPanel.setBackground(panelBgColor); // Match parent background
 
-        // Use FlowLayout.RIGHT to align components to the right edge of this panel
-        // hgap=10 provides spacing between the label and the dropdown
+        // Use FlowLayout.RIGHT to align components to the right edge. vgap=0 to keep it centered vertically.
         rightPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 5));
 
+        // 1. Language Label
         JLabel label2 = new JLabel();
         label2.setText("Language: ");
-        label2.setForeground(Color.WHITE);
-        label2.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
+        label2.setForeground(foreColor);
+        label2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
-        // Use your custom JComboBox and apply transparency/color fixes
+        // 2. Dropdown Initialization and Customization
         languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-        languageSelectDropdown.setOpaque(false);
-        languageSelectDropdown.setForeground(Color.WHITE);
+
+        // Set custom width (e.g., 120 wide). Height is determined by font/L&F.
+        Dimension d = languageSelectDropdown.getPreferredSize();
         languageSelectDropdown.setPreferredSize(new Dimension(150, 20));
 
-        // Ensure the editor component is also transparent/white
+        // Apply colors and transparency (These settings rely on your RoundedComboBox class changes)
+        languageSelectDropdown.setOpaque(false);
+        languageSelectDropdown.setForeground(foreColor);
+        languageSelectDropdown.setBackground(panelBgColor);
+
+        // Ensure the internal editor component is also set correctly
         Component editor = languageSelectDropdown.getEditor().getEditorComponent();
         if (editor instanceof JTextField textField) {
             textField.setOpaque(false);
-            textField.setForeground(Color.WHITE);
+            textField.setForeground(foreColor);
+            textField.setBackground(panelBgColor); // Ensure the background is dark
         }
 
         // Add components to the right panel
@@ -405,7 +413,6 @@ public class TextEditor extends JPanel {
 
     private JPanel create_2_2_panel(){
         JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
 
         return panel;
@@ -455,27 +462,27 @@ public class TextEditor extends JPanel {
         // Note: I'm omitting button code for brevity, but you put it here.
 
         importTestcaseButton = new JButton("Import Testcase");
-        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
 
         exportTestcaseButton = new JButton("Export Testcase");
-        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
 
         setEntryPointButton = new RoundedButton("Set Entry Point", 30);
-        setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         setEntryPointButton.setForeground(Color.WHITE);
         setEntryPointButton.setBackground(Color.decode("#568afc"));
 
         runCodeButton = new RoundedButton("Run Code", 30);
-        runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         runCodeButton.setForeground(Color.WHITE);
         runCodeButton.setBackground(Color.decode("#568afc"));
 
         submitCodeButton = new RoundedButton("Submit Code", 30);
-        submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         submitCodeButton.setForeground(Color.WHITE);
         submitCodeButton.setBackground(Color.decode("#0cf500"));
 
@@ -495,8 +502,7 @@ public class TextEditor extends JPanel {
 
     private JPanel create_third_panel() {
         JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+        panel.setBackground(Color.decode("#1f2335"));
 
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
