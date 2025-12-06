@@ -43,8 +43,6 @@ public class TextEditor extends JPanel {
     private SimpleAttributeSet defaultStyle;
 
     public TextEditor() {
-//        initializeComponents();
-        // Initialize the essential components that are used elsewhere
         dTextArea = new JTextArea();
         actualOutputArea = new JTextPane();
         expectedOutputArea = new JTextPane();
@@ -147,35 +145,31 @@ public class TextEditor extends JPanel {
         add(create_third_panel(), gbc);
     }
 
-// --- PANEL CREATION METHODS ---
-
     private JPanel create_first_panel() {
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.decode("#000000"));
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
-
-        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(0, 0, 0, 0);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.0125;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_1_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.0325;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.955;
+        gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_3_panel(), gbc);
 
@@ -183,14 +177,15 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_1_1_panel(){
-        JPanel panel = new FixedSizePanel(1, 20);
+        JPanel panel = new JPanel(); // Don't use FixedSizePanel here either!
         panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 7));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
 
-        JLabel label = new JLabel();
-        label.setText("File Explorer");
+        panel.setPreferredSize(new Dimension(0, 30));
+
+        JLabel label = new JLabel("File Explorer");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
         panel.add(label);
 
@@ -240,12 +235,10 @@ public class TextEditor extends JPanel {
         button.setMaximumSize(fixedSize);
     }
 
-    // Helper method definition (place this as a private method in your class)
     private JPanel create_1_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(); // Don't use FixedSizePanel here!
         panel.setBackground(Color.decode("#191c2a"));
-        // Keep FlowLayout.LEFT and hgap/vgap settings
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5)); // Add some vertical padding
 
         Class<?> contextClass = this.getClass();
 
@@ -255,8 +248,6 @@ public class TextEditor extends JPanel {
         URL openFolderUrl = contextClass.getResource("/assets/open_folder.png");
         URL addFileUrl = contextClass.getResource("/assets/add_file.png");
         URL createFolderUrl = contextClass.getResource("/assets/create_folder.png");
-
-        // 1. Create the JButtons using the scaled icons
 
         // Get the scaled icons
         ImageIcon openFolderIcon = getScaledIcon(openFolderUrl, ICON_SIZE, ICON_SIZE);
@@ -268,39 +259,49 @@ public class TextEditor extends JPanel {
         addFileButton = new JButton(addFileIcon);
         createFolderButton = new JButton(createFolderIcon);
 
+        openFolderButton.setToolTipText("Open Folder");
+        addFileButton.setToolTipText("Add File");
+        createFolderButton.setToolTipText("Create Folder");
+
+        // Set tooltip delay ONCE for all components
+        ToolTipManager.sharedInstance().setInitialDelay(500);
+
         openFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         addFileButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         createFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // 2. Configure the Buttons to look like Icons (Crucial for a toolbar)
+        // Configure the Buttons to look like Icons
         configureToolbarButton(openFolderButton);
         configureToolbarButton(addFileButton);
         configureToolbarButton(createFolderButton);
 
-        // 3. Add JButtons to the Panel
+        // Add JButtons to the Panel
         panel.add(openFolderButton);
         panel.add(addFileButton);
         panel.add(createFolderButton);
+
+        // Set a minimum height for the panel
+        panel.setPreferredSize(new Dimension(0, 30)); // Height of 30 pixels
 
         return panel;
     }
 
     private JPanel create_1_3_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        // Use GridBagLayout like your working branch
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#191c2a")); // Match FileExplorer background
 
-        Class<?> contextClass = this.getClass();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 0, 0);
 
-        URL folderDropdownrUrl = contextClass.getResource("/assets/folder_dropdown.png");
-
-        ImageIcon folderDropdownIcon = getScaledIcon(folderDropdownrUrl, 48, 20);
-
-        folderDropdownButton = new JButton(folderDropdownIcon);
-        folderDropdownButton.setOpaque(false);
-        folderDropdownButton.setContentAreaFilled(false);
-
-        panel.add(folderDropdownButton);
+        // Set preferred size for the FileExplorer like in working branch
+        fileExplorerPanel.setPreferredSize(new Dimension(175, Integer.MAX_VALUE));
+        panel.add(fileExplorerPanel, gbc);
 
         return panel;
     }
@@ -358,8 +359,6 @@ public class TextEditor extends JPanel {
         // Add label1 to the WEST (left) region
         panel.add(label1, BorderLayout.WEST);
 
-        // --- RIGHT SIDE (Language Label + Dropdown) ---
-
         // Create an INNER panel to hold the two right-side components
         JPanel rightPanel = new JPanel();
         rightPanel.setBackground(panelBgColor); // Match parent background
@@ -407,8 +406,16 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.decode("#1f2335"));
+
+        // Add the text editor with scroll pane
+        dTextArea.setBackground(Color.decode("#1f2335"));
+        dTextArea.setForeground(Color.WHITE);
+        JScrollPane editorScroll = new JScrollPane(dTextArea);
+        editorScroll.setBorder(null);
+        editorScroll.setBackground(Color.decode("#1f2335"));
+        panel.add(editorScroll, BorderLayout.CENTER);
 
         return panel;
     }
@@ -478,12 +485,14 @@ public class TextEditor extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
 
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
+        importTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
         importTestcaseButton.setPreferredSize(new Dimension(135, 40));
 
         exportTestcaseButton = new RoundedButton("Export Testcase", 15);
+        exportTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
@@ -513,6 +522,7 @@ public class TextEditor extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
 
         setEntryPointButton = new RoundedButton("Set Entry Point", 15);
+        setEntryPointButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         setEntryPointButton.setForeground(Color.WHITE);
         setEntryPointButton.setBackground(Color.decode("#568afc"));
@@ -561,12 +571,14 @@ public class TextEditor extends JPanel {
         // Smaller font sizes and minimal padding
 
         runCodeButton = new RoundedButton("Run Code", 15);
+        runCodeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         runCodeButton.setForeground(Color.WHITE);
         runCodeButton.setBackground(Color.decode("#568afc"));
         runCodeButton.setPreferredSize(new Dimension(145, 50));
 
         submitCodeButton = new RoundedButton("Submit Code", 15);
+        submitCodeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         submitCodeButton.setForeground(Color.WHITE);
         submitCodeButton.setBackground(Color.decode("#39ca79"));
@@ -615,113 +627,54 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_3_1_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-
-        // 1. Set the panel to use BorderLayout for anchoring
-        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Actual Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
-
-        // Optional: Add a small margin/padding around the text
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-
-        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
         label.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // 2. Add the label to the top (NORTH) region
         panel.add(label, BorderLayout.NORTH);
+
+        // Add the actual output area
+        actualOutputArea.setBackground(Color.decode("#1f2335"));
+        actualOutputArea.setForeground(Color.WHITE);
+        JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setBackground(Color.decode("#1f2335"));
+        actualScroll.setBorder(null);
+        panel.add(actualScroll, BorderLayout.CENTER);
 
         return panel;
     }
 
     private JPanel create_3_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-
-        // 1. Set the panel to use BorderLayout for anchoring
-        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Expected Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
-
-        // Optional: Add a small margin/padding around the text
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-
-        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
         label.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // 2. Add the label to the top (NORTH) region
         panel.add(label, BorderLayout.NORTH);
+
+        // Add the expected output area
+        expectedOutputArea.setBackground(Color.decode("#1f2335"));
+        expectedOutputArea.setForeground(Color.WHITE);
+        JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setBackground(Color.decode("#1f2335"));
+        expectedScroll.setBorder(null);
+        panel.add(expectedScroll, BorderLayout.CENTER);
 
         return panel;
     }
-
-//    private void initializeComponents() {
-//        // Initialize Buttons
-//        runCodeButton = new RoundedButton("Run Code", 30);
-//        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
-//        addFileButton = new RoundedButton("Add File", 15);
-//        openFolderButton = new RoundedButton("", 15); // Icon only
-//        createFolderButton = new RoundedButton("Create Folder", 15);
-//        importTestcaseButton = new RoundedButton("Import Testcase", 15);
-//        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
-//
-//        // Initialize Text Areas
-//        dTextArea = new JTextArea();
-//        actualOutputArea = new JTextPane();
-//        expectedOutputArea = new JTextPane();
-//
-//        // Initialize Language Dropdown
-//        languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
-//        ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
-//
-//        // Initialize File Explorer
-//        fileExplorerPanel = new com.exception.ccpp.GUI.FileExplorer(".", dTextArea, this);
-//
-//        // Set up Open Folder Button Icon
-//        URL urlOpenFolderButton = TextEditor.class.getResource("/assets/open_folder.png");
-//        if (urlOpenFolderButton != null) {
-//            ImageIcon iconOpenFolderButton = new ImageIcon(urlOpenFolderButton);
-//            Image originalImage = iconOpenFolderButton.getImage();
-//            Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-//            ((RoundedButton)openFolderButton).setIconImage(scaledImage);
-//        } else {
-//            System.err.println("Resource not found: /assets/open_folder.png");
-//        }
-//
-//        // Apply Styling
-//        runCodeButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-//        setEntryPointButton.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-//
-//        Color buttonColor = Color.decode("#568afc");
-//        Color bgColor = Color.decode("#28313b");
-//
-//        // Shared Button Styling
-//        JButton[] buttons = {runCodeButton, setEntryPointButton, addFileButton, createFolderButton, importTestcaseButton, exportTestcaseButton};
-//        for (JButton btn : buttons) {
-//            btn.setBackground(buttonColor);
-//            btn.setForeground(Color.WHITE);
-//            btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-//        }
-//
-//        // Specific Button Styling
-//        openFolderButton.setBackground(bgColor);
-//        openFolderButton.setForeground(Color.WHITE);
-//        openFolderButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-//        openFolderButton.setToolTipText("Open Project Folder");
-//
-//        setEntryPointButton.setVisible(false);
-//        setEntryPointButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
-//        runCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
-//    }
 
     // END OF FRONT END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // START OF BACK END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -743,7 +696,7 @@ public class TextEditor extends JPanel {
         openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
         addFileButton.addActionListener(new AddFileButtonHandler(this));
         languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
-//        runCodeButton.addActionListener(new RunButtonHandler(this));
+        runCodeButton.addActionListener(new RunButtonHandler(this));
         createFolderButton.addActionListener(e -> {
             fileExplorerPanel.handleCreateFolderAction();
         });
@@ -841,69 +794,69 @@ public class TextEditor extends JPanel {
         }
     }
 
-//    private void displayExpectedDiff(String actualText, String expectedText) {
-//        // Note: We are using expectedOutputArea for this.
-//        StyledDocument doc = expectedOutputArea.getStyledDocument();
-//
-//        try {
-//            doc.remove(0, doc.getLength());
-//        } catch (BadLocationException ignored) {}
-//
-//        String[] actualLines = actualText.split("\\R", -1);
-//        String[] expectedLines = expectedText.split("\\R", -1);
-//
-//        int maxLines = Math.max(actualLines.length, expectedLines.length);
-//
-//        for (int i = 0; i < maxLines; i++) {
-//            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
-//            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
-//
-//            int maxLength = Math.max(actualLine.length(), expectedLine.length());
-//
-//            for (int j = 0; j < maxLength; j++) {
-//                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
-//                char expectedChar = (j < expectedLines.length) ? expectedLines[j] : 0;
-//
-//                AttributeSet styleToApply;
-//                char charToProcess = expectedChar; // Focus on the expected character
-//
-//                // If Expected output ran out, stop processing this line in the Expected pane
-//                if (expectedChar == 0) {
-//                    continue;
-//                }
-//
-//                // --- Comparison Logic (Focus on Expected) ---
-//                if (actualChar == expectedChar) {
-//                    // Match
-//                    styleToApply = matchStyle; // Green
-//                } else {
-//                    // Lacking or Mismatched Character
-//                    styleToApply = mismatchStyle; // Red
-//                }
-//
-//                // --- Visualization Logic for Expected ---
-//                String charToDisplay;
-//                if (charToProcess == '\t') {
-//                    charToDisplay = "    "; // 4 spaces for Tab
-//                } else if (charToProcess == '\r' || charToProcess == '\n') {
-//                    charToDisplay = "\u2424"; // Symbol for Newline
-//                } else {
-//                    charToDisplay = String.valueOf(charToProcess);
-//                }
-//
-//                try {
-//                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-//                } catch (BadLocationException ignored) {}
-//            }
-//
-//            // Add a literal newline to advance the cursor in the JTextPane
-//            if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
-//                try {
-//                    doc.insertString(doc.getLength(), "\n", defaultStyle);
-//                } catch (BadLocationException ignored) {}
-//            }
-//        }
-//    }
+    private void displayExpectedDiff(String actualText, String expectedText) {
+        // Note: We are using expectedOutputArea for this.
+        StyledDocument doc = expectedOutputArea.getStyledDocument();
+
+        try {
+            doc.remove(0, doc.getLength());
+        } catch (BadLocationException ignored) {}
+
+        String[] actualLines = actualText.split("\\R", -1);
+        String[] expectedLines = expectedText.split("\\R", -1);
+
+        int maxLines = Math.max(actualLines.length, expectedLines.length);
+
+        for (int i = 0; i < maxLines; i++) {
+            String actualLine = (i < actualLines.length) ? actualLines[i] : "";
+            String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
+
+            int maxLength = Math.max(actualLine.length(), expectedLine.length());
+
+            for (int j = 0; j < maxLength; j++) {
+                char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
+                char expectedChar = (j < expectedLines.length) ? expectedLine.charAt(j) : 0;
+
+                AttributeSet styleToApply;
+                char charToProcess = expectedChar; // Focus on the expected character
+
+                // If Expected output ran out, stop processing this line in the Expected pane
+                if (expectedChar == 0) {
+                    continue;
+                }
+
+                // --- Comparison Logic (Focus on Expected) ---
+                if (actualChar == expectedChar) {
+                    // Match
+                    styleToApply = matchStyle; // Green
+                } else {
+                    // Lacking or Mismatched Character
+                    styleToApply = mismatchStyle; // Red
+                }
+
+                // --- Visualization Logic for Expected ---
+                String charToDisplay;
+                if (charToProcess == '\t') {
+                    charToDisplay = "    "; // 4 spaces for Tab
+                } else if (charToProcess == '\r' || charToProcess == '\n') {
+                    charToDisplay = "\u2424"; // Symbol for Newline
+                } else {
+                    charToDisplay = String.valueOf(charToProcess);
+                }
+
+                try {
+                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+                } catch (BadLocationException ignored) {}
+            }
+
+            // Add a literal newline to advance the cursor in the JTextPane
+            if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
+                try {
+                    doc.insertString(doc.getLength(), "\n", defaultStyle);
+                } catch (BadLocationException ignored) {}
+            }
+        }
+    }
 
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -1172,24 +1125,24 @@ public class TextEditor extends JPanel {
         }
     }
 
-//    public static class RunButtonHandler extends ComponentHandler {
-//        public RunButtonHandler(TextEditor editor) {
-//            super(editor);
-//        }
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//            FileExplorer fe = getTextEditor().fileExplorerPanel;
-//            getTextEditor().saveCurrentFileContent();
-//            FileManager fm = fe.getFileManager();
-//            String out = Judge.judge(fm, new String[]{}).output();
-//            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
-//            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
-//
-//            // Call the diff checker method
-//            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
-//            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
-//        }
-//    }
+    public static class RunButtonHandler extends ComponentHandler {
+        public RunButtonHandler(TextEditor editor) {
+            super(editor);
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            FileExplorer fe = getTextEditor().fileExplorerPanel;
+            getTextEditor().saveCurrentFileContent();
+            FileManager fm = fe.getFileManager();
+            String out = Judge.judge(fm, new String[]{}).output();
+            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
+            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
+
+            // Call the diff checker method
+            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
+            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
+        }
+    }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
         public SetEntryPointButtonHandler(TextEditor editor) {
@@ -1219,7 +1172,6 @@ public class TextEditor extends JPanel {
                             "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-
             }
 
             if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("Python"))  {
@@ -1232,9 +1184,6 @@ public class TextEditor extends JPanel {
                 }
             }
             getTextEditor().setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
-            // DEBUG SHIT
-            // System.out.println("Language: " + fileManager.getLanguage());
-            // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
         }
     }
 
