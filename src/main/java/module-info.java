@@ -6,6 +6,7 @@ module com.exception.ccpp {
     requires pty4j;
     requires jdk.compiler;
     requires jdk.incubator.vector;
+    requires java.sql;
     exports com.exception.ccpp;
     exports com.exception.ccpp.FileManagement;
 }

@@ -194,7 +194,6 @@ public class FileExplorer extends JPanel {
 
                     setSelectedFile(sfile);
                     textEditor.setTextArea(true);
-
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
@@ -407,11 +406,6 @@ public class FileExplorer extends JPanel {
             explorer.textEditor.saveCurrentFileContent();
         }
 
-        explorer.selectedFile = null;
-
-        explorer.dTextArea.setText("File explorer view refreshed due to external changes. No file selected.");
-        explorer.textEditor.setTextArea(false);
-
         FileExplorer.buildFileTree();
 
         fe_tree.revalidate();
@@ -510,5 +504,18 @@ public class FileExplorer extends JPanel {
     }
     public static FileExplorer getInstance() {
         return fe_instance;
+    }
+    public static String getFileExtension(Path filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return "";
+        }
+        int lastDotIndex = filePath.lastIndexOf('.');
+
+        int lastSeparatorIndex = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+
+        if (lastDotIndex > lastSeparatorIndex && lastDotIndex < filePath.length() - 1) {
+            return filePath.substring(lastDotIndex + 1);
+        }
+        return "";
     }
 }

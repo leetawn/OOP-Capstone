@@ -21,6 +21,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.sql.SQLOutput;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -41,6 +42,8 @@ public class TextEditor extends JPanel {
     private SimpleAttributeSet mismatchStyle;
     private SimpleAttributeSet excessStyle;
     private SimpleAttributeSet defaultStyle;
+
+    private static String oldLanguage;
 
     public TextEditor() {
         initializeComponents();
@@ -288,6 +291,7 @@ public class TextEditor extends JPanel {
         dTextArea.setText("No selected file. Select a file to start editing.");
         dTextArea.setEditable(false);
 
+        oldLanguage = getCurrentSelectedLanguage();
         actualOutputArea.setEditable(false);
         actualOutputArea.setCaretColor(Color.decode("#1f2335"));
         expectedOutputArea.setEditable(false);
@@ -325,29 +329,21 @@ public class TextEditor extends JPanel {
                 AttributeSet styleToApply;
                 char charToProcess = actualChar; // Start with the actual character
 
-                // --- 1. Comparison Logic (Inverted: Focus on Expected Status) ---
 
                 if (expectedChar == 0 && actualChar != 0) {
-                    // 1. EXCESS (Yellow): Actual output continues beyond Expected length
                     styleToApply = excessStyle; // Yellow
 
                 } else if (expectedChar != 0 && actualChar == expectedChar) {
-                    // 2. MATCH (Green): Expected character was found exactly
                     styleToApply = matchStyle; // Green
 
                 } else {
-                    // 3. LACKING / MISMATCH (Red):
-                    //    - Expected char exists, but Actual is different, OR
-                    //    - Expected char exists, but Actual is missing (actualChar == 0).
                     styleToApply = mismatchStyle; // Red
 
-                    // If Actual is missing, insert a space placeholder to show the red box
                     if (actualChar == 0) {
                         charToProcess = ' ';
                     }
                 }
 
-                // --- 2. Visualization Logic (Based on the character being displayed) ---
                 String charToDisplay;
 
                 if (charToProcess == '\t') {
@@ -355,19 +351,16 @@ public class TextEditor extends JPanel {
                 } else if (charToProcess == '\r' || charToProcess == '\n') {
                     charToDisplay = "\u2424"; // Symbol for Newline
                 } else if (charToProcess == 0 || charToProcess == ' ') {
-                    // Handles the space placeholder for LACKING or actual space characters
                     charToDisplay = " ";
                 } else {
                     charToDisplay = String.valueOf(charToProcess);
                 }
 
                 try {
-                    // Insert the visual representation of the character with the determined style
                     doc.insertString(doc.getLength(), charToDisplay, styleToApply);
                 } catch (BadLocationException ignored) {}
             }
 
-            // Add a literal newline to advance the cursor in the JTextPane
             if (i < maxLines - 1) {
                 try {
                     doc.insertString(doc.getLength(), "\n", defaultStyle);
@@ -401,21 +394,16 @@ public class TextEditor extends JPanel {
                 AttributeSet styleToApply;
                 char charToProcess = expectedChar; // Focus on the expected character
 
-                // If Expected output ran out, stop processing this line in the Expected pane
                 if (expectedChar == 0) {
                     continue;
                 }
 
-                // --- Comparison Logic (Focus on Expected) ---
                 if (actualChar == expectedChar) {
-                    // Match
                     styleToApply = matchStyle; // Green
                 } else {
-                    // Lacking or Mismatched Character
                     styleToApply = mismatchStyle; // Red
                 }
 
-                // --- Visualization Logic for Expected ---
                 String charToDisplay;
                 if (charToProcess == '\t') {
                     charToDisplay = "    "; // 4 spaces for Tab
@@ -430,7 +418,6 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             }
 
-            // Add a literal newline to advance the cursor in the JTextPane
             if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
                 try {
                     doc.insertString(doc.getLength(), "\n", defaultStyle);
@@ -704,8 +691,6 @@ public class TextEditor extends JPanel {
         this.dTextArea.setEditable(ok);
         if (!ok) {
             this.dTextArea.setText("No file selected. Please open a project or select a file to begin editing.");
-
-            fileExplorerPanel.setSelectedFile(null);
         }
     }
     public static void setNimbusLaf() {
@@ -847,23 +832,20 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            FileManager fileManager = fe.getFileManager();
+            FileManager fileManager = FileManager.getInstance();
             String newLanguage = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
-
+            if (oldLanguage.equals(newLanguage)) return; // no need to reset
             if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
                 getTextEditor().setEntryPointButton.setVisible(true);
             } else {
                 getTextEditor().setEntryPointButton.setVisible(false);
             }
             fileManager.setLanguage(newLanguage);
+            oldLanguage = newLanguage;
 
             fileManager.setCurrentFile(null);
 
             getTextEditor().setEntryPointButton.setText("Set Entry Point");
-
-            getTextEditor().actualOutputArea.setText("");
-            getTextEditor().expectedOutputArea.setText("");
 
             System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
         }
@@ -1005,10 +987,11 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            FileManager fm = fe.getFileManager();
+            if (FileExplorer.getInstance().getSelectedFile() == null) return; // CANNOT SUBMIT NULL FILES
+            // W ONE LINER HAHAHAHAHAHAHAHA
+            if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath()).equals(getTextEditor().getCurrentSelectedLanguage()))) return;
             getTextEditor().saveCurrentFileContent();
-            SubmissionRecord[] results = Judge.judge(fm, new TestcaseFile("datafile3.ccpp"));
+            SubmissionRecord[] results = Judge.judge(FileManager.getInstance(), new TestcaseFile("datafile3.ccpp"));
 
             if (results.length > 0) {
                 SubmissionRecord rec = results[0];
