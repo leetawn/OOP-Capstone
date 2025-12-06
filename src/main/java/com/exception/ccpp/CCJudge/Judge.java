@@ -120,8 +120,8 @@ public class Judge {
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
             String cmd_newline = "\r\n";
-            if (fm.getLanguage().equals("python")) cmd_newline = "\n";
-
+            if (fm.getLanguage().equals("python")) cmd_newline = "\r\n";
+            System.out.println("Language: " + fm.getLanguage());
             System.out.printf("input size: %d\n",testInputs.length);
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
