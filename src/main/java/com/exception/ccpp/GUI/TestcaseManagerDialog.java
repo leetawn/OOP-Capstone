@@ -76,6 +76,7 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
 
             listModel.addElement(String.format("TC %d: Input: %s | Output: %s", ++i, inputSummary, outputSummary));
         }
+        tf.writeOut();
     }
     private void handleAddTestcase() {
         // api call
