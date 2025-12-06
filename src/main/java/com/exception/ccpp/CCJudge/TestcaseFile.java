@@ -21,6 +21,12 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         super(path);
         load();
     }
+    // FOR TerminalApp Usage ONLY
+    TestcaseFile(String[] input) {
+        super((Path) null);
+        inputs.add(input);
+        expected_outputs.add(null);
+    }
 
     public ArrayList<String[]> getInputs() {
         return this.inputs;
@@ -32,6 +38,8 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
 
     @Override
     protected void load() {
+        if (path == null) return;
+
         try {
             List<Object> retrievedData = CrypticWriter.readEncryptedData(path);
             if (retrievedData.size() > 0) {
@@ -49,18 +57,18 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
 
     @Override
     public void writeOut() {
-        {
-            List<Object> data = new ArrayList<>();
-            String[][] input_arr = inputs.toArray(new String[inputs.size()][]);
-            String[] ex_out =  expected_outputs.toArray(new String[0]);
-            data.add(input_arr);
-            data.add(ex_out);
-            try {
-                CrypticWriter.writeEncryptedData(data, path);
-            } catch (Exception e) {
-                System.err.println("TestcaseFile.writeOut() error writing " + path);
-                e.printStackTrace();
-            }
+        if (path == null) return;
+
+        List<Object> data = new ArrayList<>();
+        String[][] input_arr = inputs.toArray(new String[inputs.size()][]);
+        String[] ex_out =  expected_outputs.toArray(new String[0]);
+        data.add(input_arr);
+        data.add(ex_out);
+        try {
+            CrypticWriter.writeEncryptedData(data, path);
+        } catch (Exception e) {
+            System.err.println("TestcaseFile.writeOut() error writing " + path);
+            e.printStackTrace();
         }
     }
 
