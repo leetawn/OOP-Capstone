@@ -1,9 +1,14 @@
 package com.exception.ccpp.GUI;
 
+import com.exception.ccpp.CCJudge.TerminalApp;
 import com.exception.ccpp.CCJudge.TestcaseFile;
+import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 
 public class TestcaseManagerDialog extends JDialog {
     private final TestcaseFile tf;
@@ -48,7 +53,26 @@ public class TestcaseManagerDialog extends JDialog {
         passwordButton.addActionListener(e -> handleSetPassword());
     }
     private void loadTestcases() {
+        listModel.clear();
+        ArrayList<String[]> inputs = tf.getInputs();
+        ArrayList<String> expectedOutputs = tf.getExpectedOutputs();
 
+        if (inputs.isEmpty()) {
+            listModel.addElement("No testcases found.");
+            return;
+        }
+
+        for (int i = 0; i < inputs.size(); i++) {
+            // Display a summary of the input and expected output
+            String inputSummary = inputs.get(i).length > 0 ?
+                    String.join(", ", inputs.get(i)) : "[]";
+
+            String output = expectedOutputs.get(i);
+            String outputSummary = (output != null && !output.isBlank()) ?
+                    output.substring(0, Math.min(output.length(), 30)).replace("\n", " ") + "..." : "[No Expected Output]";
+
+            listModel.addElement(String.format("TC %d: Input: %s | Output: %s", i + 1, inputSummary, outputSummary));
+        }
     }
     private void handleAddTestcase() {
         // api call
