@@ -139,6 +139,8 @@ public class FileManager {
     }
 
     /****************** File Manager ******************/
+    // alll of these functions by FileWatcher
+    // TODO @ETHAN: you add function CALLS here to refresh your fileExplorer
     public void addFile(Path file) {
         all_files.add(new SFile(file));
     }

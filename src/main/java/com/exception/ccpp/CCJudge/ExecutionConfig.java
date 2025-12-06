@@ -21,6 +21,7 @@ public class ExecutionConfig {
 
     private static String[] getCompileCommand(String language, String[] sourceFilenames) {
         boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+
         String[] command;
         switch (language) {
             case "java":
@@ -29,31 +30,24 @@ public class ExecutionConfig {
                 command[0] = "javac";
                 System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
                 return command;
-            case "cpp":
-                String[] cppSourceFiles = Arrays.stream(sourceFilenames)
-                        .filter(f -> f.endsWith(".cpp"))
-                        .toArray(String[]::new);
-
-                command = new String[3 + cppSourceFiles.length];
+            case "cpp", "c++":
+                command = new String[3 + sourceFilenames.length];
                 if (isCommandAvailable("clang++")) command[0] = "clang++";
                 else if (isCommandAvailable("g++")) command[0] = "g++";
                 else return null;
-                System.arraycopy(cppSourceFiles, 0, command, 1, cppSourceFiles.length);
-                command[1 + cppSourceFiles.length] = "-o";
-                command[2 + cppSourceFiles.length] = IS_WINDOWS ? "Submission.exe" : "Submission";
+                System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
+                command[1 + sourceFilenames.length] = "-o";
+                command[2 + sourceFilenames.length] = IS_WINDOWS ? "Submission.exe" : "Submission";
                 return command;
             case "c":
-                String[] cSourceFiles = Arrays.stream(sourceFilenames)
-                        .filter(f -> f.endsWith(".c"))
-                        .toArray(String[]::new);
-                command = new String[3 + cSourceFiles.length];
+                command = new String[3 + sourceFilenames.length];
                 if (isCommandAvailable("clang")) command[0] = "clang";
                 else if (isCommandAvailable("gcc")) command[0] = "gcc";
                 else return null;
 
-                System.arraycopy(cSourceFiles, 0, command, 1, cSourceFiles.length);
-                command[1 + cSourceFiles.length] = "-o";
-                command[2 + cSourceFiles.length] = IS_WINDOWS ? "Submission.exe" : "Submission";
+                System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
+                command[1 + sourceFilenames.length] = "-o";
+                command[2 + sourceFilenames.length] = IS_WINDOWS ? "Submission.exe" : "Submission";
                 return command;
             default:
                 return null;
@@ -63,7 +57,7 @@ public class ExecutionConfig {
     public static String[] getExecuteCommand(FileManager fm) {
         return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", fm.getCurrentFileStringPath().replace(".java","").replaceAll("[\\\\/]",".")}; // idk if com.exception.ccpp.Main is in all program
-            case "cpp", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
+            case "cpp", "c++", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
             case "python" -> new String[]{ (isCommandAvailable("python3")) ? "python3" : "python", fm.getCurrentFileStringPath()};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
@@ -77,11 +71,13 @@ public class ExecutionConfig {
 
     public static boolean isCommandAvailable(String command) {
         // 1. Check the cache first (O(1))
+        System.out.println("Checking command: " + command);
         if (COMMAND_CACHE.containsKey(command)) {
-            return COMMAND_CACHE.get(command);
+            boolean val = COMMAND_CACHE.get(command);
+            System.out.println("Command " + command + " exists: " + val);
+            return val;
         }
 
-        // 2. Perform the expensive OS check
         String os = System.getProperty("os.name").toLowerCase();
         String checkCmd = os.contains("win") ? "where" : "which";
 
@@ -106,6 +102,7 @@ public class ExecutionConfig {
 
         // 3. Store the result in the cache
         COMMAND_CACHE.put(command, isAvailable);
+        System.out.println("Command " + command+ " exists: " + isAvailable);
         return isAvailable;
     }
 
