@@ -7,25 +7,12 @@ import com.exception.ccpp.FileManagement.FileManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 
 public class ExecutionConfig {
-    public final static boolean GCC_AVAILABLE;
-    public final static boolean GPP_AVAILABLE;
-    public final static boolean CLANG_AVAILABLE;
-    public final static boolean CLANGPP_AVAILABLE;
-    public final static boolean IS_WINDOWS;
-    public final static boolean PYTHON_AVAILABLE;
-    public final static boolean PYTHON3_AVAILABLE;
-    static {
-        IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
-        GCC_AVAILABLE = isCommandAvailable("gcc");
-        GPP_AVAILABLE = isCommandAvailable("g++");
-        CLANG_AVAILABLE = isCommandAvailable("clang");
-        CLANGPP_AVAILABLE = isCommandAvailable("clang++");
-        PYTHON_AVAILABLE = isCommandAvailable("python");
-        PYTHON3_AVAILABLE = isCommandAvailable("python3");
-    }
+    public static final ConcurrentMap<String, Boolean> COMMAND_CACHE = new ConcurrentHashMap<>();
 
     public static String[] getCompileCommand(FileManager fm) {
         String[] sourceFilenames = fm.getLanguageFiles().stream().map(fm::getRelativePath).map(Path::toString).toArray(String[]::new);
@@ -33,7 +20,7 @@ public class ExecutionConfig {
     }
 
     private static String[] getCompileCommand(String language, String[] sourceFilenames) {
-
+        boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
         String[] command;
         switch (language) {
             case "java":
@@ -48,8 +35,8 @@ public class ExecutionConfig {
                         .toArray(String[]::new);
 
                 command = new String[3 + cppSourceFiles.length];
-                if (CLANGPP_AVAILABLE) command[0] = "clang++";
-                else if (GPP_AVAILABLE) command[0] = "g++";
+                if (isCommandAvailable("clang++")) command[0] = "clang++";
+                else if (isCommandAvailable("g++")) command[0] = "g++";
                 else return null;
                 System.arraycopy(cppSourceFiles, 0, command, 1, cppSourceFiles.length);
                 command[1 + cppSourceFiles.length] = "-o";
@@ -60,8 +47,8 @@ public class ExecutionConfig {
                         .filter(f -> f.endsWith(".c"))
                         .toArray(String[]::new);
                 command = new String[3 + cSourceFiles.length];
-                if (CLANG_AVAILABLE) command[0] = "clang";
-                else if (GCC_AVAILABLE) command[0] = "gcc";
+                if (isCommandAvailable("clang")) command[0] = "clang";
+                else if (isCommandAvailable("gcc")) command[0] = "gcc";
                 else return null;
 
                 System.arraycopy(cSourceFiles, 0, command, 1, cSourceFiles.length);
@@ -77,7 +64,7 @@ public class ExecutionConfig {
         return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", fm.getCurrentFileStringPath().replace(".java","").replaceAll("[\\\\/]",".")}; // idk if com.exception.ccpp.Main is in all program
             case "cpp", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
-            case "python" -> new String[]{ (PYTHON3_AVAILABLE) ? "python3" : "python", fm.getCurrentFileStringPath()};
+            case "python" -> new String[]{ (isCommandAvailable("python3")) ? "python3" : "python", fm.getCurrentFileStringPath()};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
     }
@@ -89,18 +76,37 @@ public class ExecutionConfig {
 
 
     public static boolean isCommandAvailable(String command) {
+        // 1. Check the cache first (O(1))
+        if (COMMAND_CACHE.containsKey(command)) {
+            return COMMAND_CACHE.get(command);
+        }
+
+        // 2. Perform the expensive OS check
         String os = System.getProperty("os.name").toLowerCase();
         String checkCmd = os.contains("win") ? "where" : "which";
 
+        boolean isAvailable = false;
         try {
             Process process = new ProcessBuilder(checkCmd, command)
                     .redirectErrorStream(true)
                     .start();
-            process.waitFor();
-            return process.exitValue() == 0;
+
+            // IMPORTANT: Limit the wait time to avoid indefinite hangs
+            // We expect the check to be fast, so 5 seconds is very generous.
+            if (process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                isAvailable = process.exitValue() == 0;
+            } else {
+                // Process timed out (very rare for 'which'/'where')
+                process.destroyForcibly();
+            }
         } catch (Exception e) {
-            return false;
+            // Error starting or waiting for the process
+            isAvailable = false;
         }
+
+        // 3. Store the result in the cache
+        COMMAND_CACHE.put(command, isAvailable);
+        return isAvailable;
     }
 
 
