@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TerminalApp" type="Application" factoryName="Application">
+    <envs>
+      <env name="PROJECT_DIR" value="$PROJECT_DIR$" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.exception.ccpp.CCJudge.TerminalApp" />
+    <module name="OOP-Capstone" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

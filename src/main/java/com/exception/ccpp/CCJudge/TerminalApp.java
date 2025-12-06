@@ -11,6 +11,8 @@
     import java.awt.*;
     import java.awt.event.ActionEvent;
     import java.awt.event.ActionListener;
+    import java.awt.event.WindowAdapter;
+    import java.awt.event.WindowEvent;
     import java.io.*;
     import java.util.ArrayList;
     import java.util.HashMap;
@@ -43,7 +45,7 @@
                 TERMINAL_START_COMMAND = new String[]{"bash", "-c"};
             } else {
                 // Fallback (WIN)
-                TERMINAL_START_COMMAND = new String[]{"powershell.exe"}; // "-NoExit"
+                TERMINAL_START_COMMAND = new String[]{"powershell.exe", "-c"}; //
             }
         }
 
@@ -60,13 +62,21 @@
             scrollPane.setPreferredSize(new Dimension(800, 600));
 
             inputField = new JTextField();
-            inputField.addActionListener(new CommandListener());
+            inputField.addActionListener(new CommandListener(fm.getLanguage()));
 
             setLayout(new BorderLayout());
             add(scrollPane, BorderLayout.CENTER);
             add(inputField, BorderLayout.SOUTH);
 
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    System.out.println("windowClosing");
+                    Judge.cleanup(fm);
+                }
+            });
+            ;
+            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             pack();
             setLocationRelativeTo(null);
             setVisible(true);
@@ -85,7 +95,7 @@
 
                 String[] execCmd = ExecutionConfig.getExecuteCommand(fm);
                 System.out.println(String.join(" ", execCmd));
-                String[] cmd = Helpers.concatStringArrays(TERMINAL_START_COMMAND,execCmd);
+                String[] cmd = Helpers.concatStringArrays(execCmd);
 
                 Map<String, String> env = new HashMap<>(System.getenv());
                 if (!env.containsKey("TERM")) env.put("TERM", "xterm");
@@ -101,17 +111,19 @@
                 // TERMINAL WILL EXIT HERE
                 terminalProcess.onExit().thenApply( p -> {
                     System.out.println("Process exited with: " + p.exitValue());
+
                     String[] inputs_arr = inputs.toArray(new String[0]);
+                    System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
                     SubmissionRecord verdict = Judge.judgeInteractively(fm, inputs_arr, null);
-                    outputArea.append("-------- MAIN OUTPUT --------\n");
-                    outputArea.append(verdict.output());
-                    outputArea.append("\n-------- MAIN END --------\n");
-                    Judge.cleanup(fm);
 
                     if (exitCallback != null) {
-                        // Ensure the callback runs on the EDT if it manipulates Swing components
                         SwingUtilities.invokeLater(() -> exitCallback.onTerminalExit(inputs_arr, verdict.output()));
                     }
+
+                    // keeps the terminal open
+                    try {
+                        while (true) Thread.sleep(100);
+                    } catch (InterruptedException f) {}
 
                     SwingUtilities.invokeLater(this::dispose);
 
@@ -123,45 +135,33 @@
 
                 // Start a thread to continuously read the process's output (stdout and stderr)
                 new Thread(new ConsoleOutputReader(terminalProcess.getInputStream())).start();
-
             } catch (Exception e) {
                 outputArea.append("Error starting external process:\n" + e.getMessage() + "\n");
                 e.printStackTrace();
             }
         }
 
-        /**
-         * Listener for the input field. Sends the command to the external process.
-         */
         private class CommandListener implements ActionListener {
-            private final static String PROMPT_ENDERS = ":?>";
-
-            // only someone autistic would do a printf("Enter x:                 "); with 100 whitespaces
-            private final static int MAX_WHITESPACE = 10; // limit amount of whitespaces to append
+            String language;
+            public CommandListener(String language) {
+                this.language = language;
+            }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 String command = inputField.getText();
                 inputField.setText(""); // Clear the input field
 
-                System.out.printf("Entered: [%s]\n",command);
-                String text = outputArea.getText();
-                // lil hack to get the whitespace at the end
-                if (!text.isEmpty()) {
-                    char lastChar = text.charAt(text.length() - 1);
-
-                    if (lastChar != ' ' && PROMPT_ENDERS.contains(String.valueOf(lastChar))) {
-
-                        for (int i = 0; i < MAX_WHITESPACE; i++) {
-                            outputArea.append(" ");
-                        }
-                    }
-                }
-                inputs.add(command);
-                outputArea.append(command);
-                outputArea.setCaretPosition(outputArea.getDocument().getLength());
-
                 // SEND TO TERMINAL
+                System.out.printf("Entered: [%s]\n", command);
+                inputs.add(command);
+                if (!language.equals("python"))
+                {
+                    SwingUtilities.invokeLater(() -> {
+                        outputArea.append(command);
+                    });
+                }
+
                 try {
                     processWriter.write(command + "\n");
                     processWriter.flush();
@@ -175,10 +175,6 @@
             }
         }
 
-        /**
-         * Runnable class to continuously read the output (stdout/stderr) of the external process
-         * and append it to the Swing JTextArea.
-         */
         private class ConsoleOutputReader implements Runnable {
             private final InputStream inputStream;
 
@@ -188,6 +184,7 @@
 
             @Override
             public void run() {
+
                 try (InputStreamReader reader = new InputStreamReader(inputStream)) {
 
                     char[] buffer = new char[1024];
@@ -205,6 +202,7 @@
                                 });
                             }
                         }
+
                         // Wait briefly to prevent the thread from consuming excessive CPU
                         Thread.sleep(50);
                     }
@@ -214,9 +212,8 @@
                         System.out.println("Error: " + e.getMessage());
                     });
                 } catch (InterruptedException e) {
-                    // The thread was interrupted while sleeping
-                    Thread.currentThread().interrupt();
                     SwingUtilities.invokeLater(() -> System.out.println("Console output reader interrupted."));
+                    Thread.currentThread().interrupt();
                 } finally {
                     outputArea.append("\n");
                     // Ensure resources are cleaned up
@@ -224,50 +221,93 @@
                         terminalProcess.destroy();
                     }
                 }
-            }
 
+
+
+            }
         }
 
         public static void main(String[] args) {
+            boolean OPEN_TERMINAL, APPEND_TESTCASES, RUN_TESTCASES;
+            String[] files = {"datafile3.ccpp", "datafile4.ccpp"};
+
+            // TEST VARIABLES
+            final String TEST_LANG = "CPP";
+            final String TEST_FILE = files[1];
+            final int TEST_TYPE = 1;
+
+            switch (TEST_TYPE) {
+                case 1: // TEST SUBMIT CODE
+                {
+                    OPEN_TERMINAL = false;
+                    APPEND_TESTCASES = false;
+                    RUN_TESTCASES = true;
+                    break;
+                }
+                case 2: // TEST GENERATE TESTCASES
+                {
+                    OPEN_TERMINAL = true;
+                    APPEND_TESTCASES = true;
+                    RUN_TESTCASES = true;
+                    break;
+                }
+                default: // TEST RUN CODE
+                {
+                    OPEN_TERMINAL = true;
+                    APPEND_TESTCASES = false;
+                    RUN_TESTCASES = false;
+                    break;
+                }
+            }
+
             // Start the GUI on the Event Dispatch Thread (EDT)
-            String directoryPath = "W:\\sysdev\\OOP-Capstone\\COMPILER_TEST\\C";
-            TestcaseFile tf = new TestcaseFile("datafile2.ccpp");
+            String directoryPath =  System.getenv("PROJECT_DIR") + "/COMPILER_TEST/"+TEST_LANG.toUpperCase();
+            TestcaseFile tf;
             FileManager fm = null;
+
+            if (APPEND_TESTCASES || RUN_TESTCASES) tf = new TestcaseFile(TEST_FILE);
+            else tf = null;
+
             try {
-                fm = FileManager.getInstance().setAll(directoryPath, "c");
+                fm = FileManager.getInstance().setAll(directoryPath, TEST_LANG.toLowerCase());
                 fm.setCurrentFile(fm.getFiles().getLast());
             } catch (NotDirException e) {
                 System.err.println("ERR: fm.setAll()");
             }
 
 
-            FileManager finalFm = fm;
-            SwingUtilities.invokeLater(() -> {
-                    new TerminalApp(finalFm, tf); // adds testcases to tf
-                    // new TerminalApp(finalFm, null); // equivalent to run code, doesnt make testcases
+            if (OPEN_TERMINAL)
+            {
+                FileManager finalFm = fm;
+                SwingUtilities.invokeLater(() -> {
+                    if (APPEND_TESTCASES) new TerminalApp(finalFm, tf); // adds testcases to tf
+                    else new TerminalApp(finalFm, null); // equivalent to run code, doesnt make testcases
+                });
 
-            });
-
-            // sleep main thread for 10 seconds to mimic workload on main
-            // the testfile will be updated after the terminal is finished
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
+                // sleep main thread for 10 seconds to mimic workload on main
+                // the testfile will be updated after the terminal is finished
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                }
             }
 
-            // this is how you call judge
-            SubmissionRecord[] sr_arr= Judge.judge(fm,tf);
+            if (RUN_TESTCASES)
+            {
+                // this is how you call judge
+                SubmissionRecord[] sr_arr= Judge.judge(fm,tf);
 
-            // print test cases
-            int i = 0;
-            for (SubmissionRecord sr : sr_arr) {
-                System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
-                System.out.println(sr.output()); // actual output
-                System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", i);
-                System.out.println(sr.expected_output()); // expected output
-                System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
+                // print test cases
+                int i = 0;
+                for (SubmissionRecord sr : sr_arr) {
+                    System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
+                    System.out.println(sr.output()); // actual output
+                    System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", i);
+                    System.out.println(sr.expected_output()); // expected output
+                    System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
+                }
+                tf.writeOut(); // saves testcase
             }
-            tf.writeOut(); // saves testcase
 
 
         }

@@ -1,0 +1,4 @@
+Judge:
+
+processInputWriter.write(inputLine + "\n"); - works for python
+processInputWriter.write(inputLine + "\r\n"); - works for c/cpp

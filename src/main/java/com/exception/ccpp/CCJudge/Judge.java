@@ -115,22 +115,25 @@ public class Judge {
 
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
+            String cmd_newline = "\r\n";
+            if (fm.getLanguage().equals("python")) cmd_newline = "\n";
 
+            System.out.printf("input size: %d\n",testInputs.length);
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
                     return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim(), expected_output);
                 }
 
-//                Thread.sleep(INPUT_WAIT_MS);
+                Thread.sleep(50);
 
                 // Send the next input line
+
                 if (inputIndex < testInputs.length) {
                     String inputLine = testInputs[inputIndex++];
-//                    transcript.append(inputLine).append("\n");
                     logger.logln("-> Judge providing input: " + inputLine);
-                    processInputWriter.write(inputLine);
-                    processInputWriter.newLine();
+                    processInputWriter.write(inputLine + cmd_newline);
+//                    processInputWriter.newLine();
                 }
 
                 processInputWriter.flush();
@@ -157,6 +160,7 @@ public class Judge {
             } else if (process.exitValue() != 0) {
                 String errorOutput = readStream(process.getErrorStream());
                 System.err.println("Runtime Error Details:\n" + errorOutput);
+                System.err.println("Program Details:\n" + transcript.toString().trim());
                 process.destroy();
                 return new SubmissionRecord(
                         JudgeVerdict.RE,
