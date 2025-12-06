@@ -35,6 +35,7 @@ public class TextEditor extends JPanel {
     private JButton importTestcaseButton;
     private JButton exportTestcaseButton;
     private JButton submitCodeButton;
+    private JButton folderDropdownButton;
 
     private SimpleAttributeSet matchStyle;
     private SimpleAttributeSet mismatchStyle;
@@ -182,15 +183,15 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_1_1_panel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new FixedSizePanel(1, 20);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 3));
 
         JLabel label = new JLabel();
         label.setText("File Explorer");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
 
         panel.add(label);
 
@@ -290,6 +291,19 @@ public class TextEditor extends JPanel {
         JPanel panel = new FixedSizePanel(1, 1);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#191c2a"));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+
+        Class<?> contextClass = this.getClass();
+
+        URL folderDropdownrUrl = contextClass.getResource("/assets/folder_dropdown.png");
+
+        ImageIcon folderDropdownIcon = getScaledIcon(folderDropdownrUrl, 48, 20);
+
+        folderDropdownButton = new JButton(folderDropdownIcon);
+        folderDropdownButton.setOpaque(false);
+        folderDropdownButton.setContentAreaFilled(false);
+
+        panel.add(folderDropdownButton);
 
         return panel;
     }
@@ -328,25 +342,63 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
+        // The FixedSizePanel size is critical. Using (600, 30) as a realistic example.
         JPanel panel = new FixedSizePanel(1, 20);
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
 
+        // 1. Set the main panel to use BorderLayout
+        panel.setLayout(new BorderLayout());
+
+        // --- LEFT SIDE (Text Editor Label) ---
         JLabel label1 = new JLabel();
         label1.setText("Text Editor");
         label1.setForeground(Color.WHITE);
-        label1.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+        label1.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
+
+        // Add margin/padding to the left label
+        label1.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+
+        // Add label1 to the WEST (left) region
+        panel.add(label1, BorderLayout.WEST);
+
+        // --- RIGHT SIDE (Language Label + Dropdown) ---
+
+        // Create an INNER panel to hold the two right-side components
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBackground(Color.decode("#1f2335")); // Match parent background
+
+        // Use FlowLayout.RIGHT to align components to the right edge of this panel
+        // hgap=10 provides spacing between the label and the dropdown
+        rightPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 5));
 
         JLabel label2 = new JLabel();
         label2.setText("Language: ");
         label2.setForeground(Color.WHITE);
-        label2.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+        label2.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
 
-        languageSelectDropdown = new JComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+        // Use your custom JComboBox and apply transparency/color fixes
+        languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
+        languageSelectDropdown.setOpaque(false);
+        languageSelectDropdown.setForeground(Color.WHITE);
+        languageSelectDropdown.setPreferredSize(new Dimension(150, 20));
 
-        panel.add(label1);
-        panel.add(label2);
-        panel.add(languageSelectDropdown);
+        // Ensure the editor component is also transparent/white
+        Component editor = languageSelectDropdown.getEditor().getEditorComponent();
+        if (editor instanceof JTextField textField) {
+            textField.setOpaque(false);
+            textField.setForeground(Color.WHITE);
+        }
+
+        // Add components to the right panel
+        rightPanel.add(label2);
+        rightPanel.add(languageSelectDropdown);
+
+        // Add margin/padding to the right panel (10px on the right side)
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+
+        // Add the rightPanel to the EAST (right) region of the main panel
+        panel.add(rightPanel, BorderLayout.EAST);
 
         return panel;
     }
@@ -403,12 +455,12 @@ public class TextEditor extends JPanel {
         // Note: I'm omitting button code for brevity, but you put it here.
 
         importTestcaseButton = new JButton("Import Testcase");
-        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
 
         exportTestcaseButton = new JButton("Export Testcase");
-        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
 
@@ -478,7 +530,7 @@ public class TextEditor extends JPanel {
         JLabel label = new JLabel();
         label.setText("Actual Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
 
         // Optional: Add a small margin/padding around the text
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
@@ -503,7 +555,7 @@ public class TextEditor extends JPanel {
         JLabel label = new JLabel();
         label.setText("Expected Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 11));
+        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
 
         // Optional: Add a small margin/padding around the text
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
