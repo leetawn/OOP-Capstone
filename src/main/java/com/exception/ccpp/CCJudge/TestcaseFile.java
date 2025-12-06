@@ -2,16 +2,17 @@ package com.exception.ccpp.CCJudge;
 
 import com.exception.ccpp.FileManagement.CCFile;
 import com.exception.ccpp.FileManagement.CrypticWriter;
+import com.exception.ccpp.FileManagement.FileManager;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class TestcaseFile extends CCFile implements TerminalCallback{
     private ArrayList<String[]> inputs = new ArrayList<>();
     private ArrayList<String> expected_outputs = new ArrayList<>();
+    Map<String, Testcase> testcases = new ConcurrentHashMap<>();
 
     public TestcaseFile(String filepath) {
         super(filepath);
@@ -35,6 +36,13 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         return this.expected_outputs;
     }
 
+    public void deleteTestcase() {
+
+    }
+
+    public void addTestcase(FileManager fm) {
+
+    }
 
     @Override
     protected void load() {
