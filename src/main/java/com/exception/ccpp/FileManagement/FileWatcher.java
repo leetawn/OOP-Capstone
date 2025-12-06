@@ -1,6 +1,8 @@
 package com.exception.ccpp.FileManagement;
 import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.GUI.FileExplorer;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -110,6 +112,8 @@ public class FileWatcher implements Runnable {
                 }
             }
         }
+
+        SwingUtilities.invokeLater(FileExplorer::reloadTree);
         // TODO ETHAN: Trigger a UI refresh event here
     }
     private void handleDelete(Path deletedPath) {
@@ -128,6 +132,7 @@ public class FileWatcher implements Runnable {
             System.out.println("FileWatcher.handleDelete: FileRM: " + deletedPath.getFileName());
         }
         // TODO ETHAN: Trigger a UI refresh event here
+        SwingUtilities.invokeLater(FileExplorer::reloadTree);
     }
 
     public void closeAndCleanup() throws IOException {

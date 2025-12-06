@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class FileExplorer extends JPanel {
-    private JTree fe_tree;
-    private FileManager fileManager;
+    private static JTree fe_tree;
+    private static FileManager fileManager;
     private JTextArea dTextArea;
     private JPopupMenu contextMenu;
     private JMenuItem renameItem;
@@ -30,10 +30,11 @@ public class FileExplorer extends JPanel {
     private TextEditor textEditor;
     private SFile selectedFile;
     private SFile testcaseFile;
-    private SFile dummyExportFile;
+    private static FileExplorer fe_instance;
 
     // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
+        fe_instance = FileExplorer.this;
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
         initializeBackend(rootDir); // Calls initializeBackend without language argument
@@ -51,13 +52,11 @@ public class FileExplorer extends JPanel {
         this.buildFileTree();
     }
 
-    // Updated initializeBackend to fetch language from TextEditor
     private void initializeBackend(String rootDir) {
         try {
             fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
             testcaseFile = null;
-            dummyExportFile = new SFile("C:\\Users\\Ethan\\Desktop\\OOP-Capstone\\testcase.ccpp");
         } catch (NotDirException e) {
             JOptionPane.showMessageDialog(this, "Invalid directory: " + e.getMessage());
         }
@@ -201,7 +200,7 @@ public class FileExplorer extends JPanel {
                     dTextArea.setText(content);
                     System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
-                    // some error here
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -378,7 +377,7 @@ public class FileExplorer extends JPanel {
 
     }
 
-    public void buildFileTree() {
+    public static void buildFileTree() {
         if (fileManager == null) return;
 
         Path rootPath = fileManager.getRootdir();
@@ -396,9 +395,30 @@ public class FileExplorer extends JPanel {
         // Expand the root node by default
         fe_tree.expandPath(new TreePath(rootNode));
     }
+    public static void reloadTree() {
+        FileExplorer explorer = getInstance();
 
+        if (explorer == null) {
+            System.err.println("FileExplorer not initialized or instance is null.");
+            return;
+        }
 
-    private void recursivelyAddNodes(DefaultMutableTreeNode parentNode, Path parentPath) {
+        if (explorer.textEditor != null) {
+            explorer.textEditor.saveCurrentFileContent();
+        }
+
+        explorer.selectedFile = null;
+
+        explorer.dTextArea.setText("File explorer view refreshed due to external changes. No file selected.");
+        explorer.textEditor.setTextArea(false);
+
+        FileExplorer.buildFileTree();
+
+        fe_tree.revalidate();
+        fe_tree.repaint();
+    }
+
+    private static void recursivelyAddNodes(DefaultMutableTreeNode parentNode, Path parentPath) {
         try {
             List<Path> contents = new ArrayList<>();
             try (Stream<Path> stream = Files.list(parentPath)) {
@@ -480,12 +500,6 @@ public class FileExplorer extends JPanel {
     public void setTestcaseFile(SFile newFile) {
         this.testcaseFile = newFile;
     }
-    public SFile getDummyExportFile() {
-        return this.dummyExportFile;
-    }
-    public void setDummyExportFile(SFile newFile) {
-        this.dummyExportFile = newFile;
-    }
 
     public DefaultMutableTreeNode getSelectedNode() {
         return (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
@@ -493,5 +507,8 @@ public class FileExplorer extends JPanel {
 
     public JTree getFeTree() {
         return fe_tree;
+    }
+    public static FileExplorer getInstance() {
+        return fe_instance;
     }
 }

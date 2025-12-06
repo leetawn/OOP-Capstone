@@ -1010,8 +1010,6 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             SubmissionRecord[] results = Judge.judge(fm, new TestcaseFile("datafile3.ccpp"));
 
-
-
             if (results.length > 0) {
                 SubmissionRecord rec = results[0];
                 final String actual = Helpers.stripCRLines(rec.output());
@@ -1031,9 +1029,6 @@ public class TextEditor extends JPanel {
                     else System.out.print(c);
                 }
             }
-
-
-
         }
     }
     /* --------------- Button Handlers --------------- */
