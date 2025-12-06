@@ -8,6 +8,8 @@ import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.*;
+import jdk.incubator.vector.VectorOperators;
+
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.*;
@@ -24,7 +26,6 @@ import java.nio.file.StandardOpenOption;
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
     private JButton addFileButton;
-    private JButton createButton;
     private JButton openFolderButton;
     private JButton createFolderButton;
     private JButton submitCodeButton;
@@ -35,7 +36,7 @@ public class TextEditor extends JPanel {
     private JTextPane actualOutputArea;
     private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
-    private JButton exportTestcaseButton;
+    private JButton manageTestcaseButton;
 
     private SimpleAttributeSet matchStyle;
     private SimpleAttributeSet mismatchStyle;
@@ -52,9 +53,8 @@ public class TextEditor extends JPanel {
     }
 
     public TextEditor(String folderPath, MainMenu mainMenu) {
-        this(); // call the original no-arg constructor that builds your UI
+        this();
 
-        // Close the MainMenu immediately when TextEditor starts
         if (mainMenu != null) {
             mainMenu.setVisible(false);
         }
@@ -160,7 +160,7 @@ public class TextEditor extends JPanel {
         });
         setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
         importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
-        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+        manageTestcaseButton.addActionListener(new ManageTestcaseButtonHandler(this));
 
     }
 
@@ -177,9 +177,6 @@ public class TextEditor extends JPanel {
         submitCodeButton.setForeground(Color.WHITE);
         submitCodeButton.setBorderPainted(false);
         submitCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
-
-
-        createButton = new JButton("Add Folder");
 
         addFileButton = new RoundedButton("", 15);
         URL urlAddFileButton = TextEditor.class.getResource("/assets/add_file.png");
@@ -248,19 +245,17 @@ public class TextEditor extends JPanel {
         createFolderButton.setToolTipText("Create Folder");
         ToolTipManager.sharedInstance().setInitialDelay(800);
 
-        // NEW: Import Testcase button
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBorderPainted(false);
         importTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
-        // NEW: Export Testcase button
-        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
-        exportTestcaseButton.setBackground(Color.decode("#568afc"));
-        exportTestcaseButton.setForeground(Color.WHITE);
-        exportTestcaseButton.setBorderPainted(false);
-        exportTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+        manageTestcaseButton = new RoundedButton("Manage Testcases", 15);
+        manageTestcaseButton.setBackground(Color.decode("#568afc"));
+        manageTestcaseButton.setForeground(Color.WHITE);
+        manageTestcaseButton.setBorderPainted(false);
+        manageTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
         dTextArea = new JTextArea();
         dTextArea.setBackground(Color.decode("#1f2335"));
@@ -516,7 +511,7 @@ public class TextEditor extends JPanel {
         createFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
         fileButtonsPanel.add(createFolderButton);
         fileButtonsPanel.add(importTestcaseButton);
-        fileButtonsPanel.add(exportTestcaseButton);
+        fileButtonsPanel.add(manageTestcaseButton);
         panel.add(fileButtonsPanel, gbc);
 
         // Spacer
@@ -971,8 +966,8 @@ public class TextEditor extends JPanel {
             System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
         }
     }
-    public static class ExportTestcaseButtonHandler extends ComponentHandler {
-        public ExportTestcaseButtonHandler(TextEditor editor) {
+    public static class ManageTestcaseButtonHandler extends ComponentHandler {
+        public ManageTestcaseButtonHandler(TextEditor editor) {
             super(editor);
         }
 
@@ -981,26 +976,22 @@ public class TextEditor extends JPanel {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm =  fe.getFileManager();
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            fileChooser.setDialogTitle("Export to");
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setDialogTitle("Manage Testcase");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
             if (result == JFileChooser.APPROVE_OPTION) {
-                File selectedDirectory = fileChooser.getSelectedFile();
-                SFile toSave = fe.getDummyExportFile(); // this will be changed once testcase generation is possible
-                if (selectedDirectory != null && selectedDirectory.isDirectory()) {
+                File selectedFile = fileChooser.getSelectedFile();
+                // SFile toSave = fe.getDummyExportFile();
+                if (selectedFile.getName().toLowerCase().endsWith(".ccpp")) {
                     try {
-                        Path dest = selectedDirectory.toPath();
-                        Path fileName = toSave.getPath().getFileName();
-                        Path finalDest = dest.resolve(fileName);
-
-                        String content = Files.readString(toSave.getPath());
-                        Files.writeString(finalDest, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                        System.out.println("Exported to: " + finalDest);
-
-                    } catch (IOException ex) { // we don't have to catch NotDir because we only display directories anyway
+                        Path selectedPath = selectedFile.toPath();
+                        TestcaseFile tf = new TestcaseFile(selectedPath);
+                        TestcaseManagerDialog tf_dialog = new TestcaseManagerDialog(SwingUtilities.getWindowAncestor(getTextEditor()), tf);
+                        tf_dialog.setVisible(true);
+                    } catch (Exception ex) { // we don't have to catch NotDir because we only display directories anyway
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
@@ -1015,7 +1006,6 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            // TODO: INTEGRATE COMPILER OUTPUT HERE
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm = fe.getFileManager();
             getTextEditor().saveCurrentFileContent();

@@ -1,12 +1,12 @@
 #include <stdio.h>
 
-int main(void)
-{
-    int x,y;
-    printf("Enter a number:          ");
+int main() {
+    int x, y;
+    printf("Enter x: "); 
     scanf("%d", &x);
-    printf("Enter a number y: ");
+
+    printf("Enter y: "); 
     scanf("%d", &y);
-    printf("Sum: %d\n", x+y);
-    printf("DIDDY!!!");
+
+    printf("Sum: %d", x + y);
 }
