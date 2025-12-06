@@ -1,14 +1,11 @@
 package com.exception.ccpp.GUI;
 
-import com.exception.ccpp.CCJudge.TerminalApp;
+import com.exception.ccpp.CCJudge.Testcase;
 import com.exception.ccpp.CCJudge.TestcaseFile;
-import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.ArrayList;
+import java.util.Map;
 
 public class TestcaseManagerDialog extends JDialog {
     private final TestcaseFile tf;
@@ -54,24 +51,24 @@ public class TestcaseManagerDialog extends JDialog {
     }
     private void loadTestcases() {
         listModel.clear();
-        ArrayList<String[]> inputs = tf.getInputs();
-        ArrayList<String> expectedOutputs = tf.getExpectedOutputs();
+        Map<Testcase, String> testcases = tf.getTestcases();
 
-        if (inputs.isEmpty()) {
+        if (testcases.isEmpty()) {
             listModel.addElement("No testcases found.");
             return;
         }
 
-        for (int i = 0; i < inputs.size(); i++) {
+        int i=0;
+        for (Testcase tc : testcases.keySet()) {
             // Display a summary of the input and expected output
-            String inputSummary = inputs.get(i).length > 0 ?
-                    String.join(", ", inputs.get(i)) : "[]";
+            String inputSummary = tc.getInputs().length > 0 ?
+                    String.join(", ", tc.getInputs()) : "[]";
 
-            String output = expectedOutputs.get(i);
+            String output = tc.getExpectedOutput();
             String outputSummary = (output != null && !output.isBlank()) ?
                     output.substring(0, Math.min(output.length(), 30)).replace("\n", " ") + "..." : "[No Expected Output]";
 
-            listModel.addElement(String.format("TC %d: Input: %s | Output: %s", i + 1, inputSummary, outputSummary));
+            listModel.addElement(String.format("TC %d: Input: %s | Output: %s", ++i, inputSummary, outputSummary));
         }
     }
     private void handleAddTestcase() {
