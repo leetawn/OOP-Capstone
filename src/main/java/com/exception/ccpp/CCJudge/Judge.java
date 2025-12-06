@@ -122,7 +122,7 @@ public class Judge {
             do {
                 if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
                     process.destroyForcibly();
-                    return new SubmissionRecord(JudgeVerdict.TLE, transcript.toString().trim(), expected_output);
+                    return new SubmissionRecord(JudgeVerdict.TLE, Helpers.stripAnsiCRLines(transcript.toString()).trim(), expected_output);
                 }
 
                 Thread.sleep(50);
@@ -152,9 +152,11 @@ public class Judge {
                 process.destroyForcibly();
                 return new SubmissionRecord(
                         JudgeVerdict.RE,
-                        transcript
+                        Helpers.stripAnsiCRLines(
+                            transcript
                                 .append("\nTLE (Time Limit Exceeded)\n")
-                                .toString().trim(),
+                                .toString()
+                        ).trim(),
                         expected_output
                 );
             } else if (process.exitValue() != 0) {
@@ -164,16 +166,18 @@ public class Judge {
                 process.destroy();
                 return new SubmissionRecord(
                         JudgeVerdict.RE,
-                        transcript
+                        Helpers.stripAnsiCRLines(
+                            transcript
                                 .append("RTE (Runtime Error) - Exit Code: ")
                                 .append(process.exitValue())
                                 .append("\n")
-                                .toString().trim(),
+                                .toString()
+                            ).trim(),
                         expected_output
                 );
             } else {
                 process.destroy();
-                return new SubmissionRecord(JudgeVerdict.NONE, Helpers.stripAnsi(transcript.toString()).trim(), expected_output);
+                return new SubmissionRecord(JudgeVerdict.NONE, Helpers.stripAnsiCRLines(transcript.toString()).trim(), expected_output);
             }
 
         } catch (Exception e) {

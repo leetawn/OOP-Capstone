@@ -4,6 +4,7 @@ import com.exception.ccpp.CCJudge.Judge;
 import com.exception.ccpp.CCJudge.SubmissionRecord;
 import com.exception.ccpp.CCJudge.TerminalApp;
 import com.exception.ccpp.CCJudge.TestcaseFile;
+import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.*;
@@ -1018,15 +1019,28 @@ public class TextEditor extends JPanel {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm = fe.getFileManager();
             getTextEditor().saveCurrentFileContent();
-            SubmissionRecord[] results = Judge.judge(fm, new TestcaseFile("testcase.ccpp"));
+            SubmissionRecord[] results = Judge.judge(fm, new TestcaseFile("datafile3.ccpp"));
+
+
 
             if (results.length > 0) {
                 SubmissionRecord rec = results[0];
-                String actual = rec.output();
+                final String actual = Helpers.stripCRLines(rec.output());
                 String expected = rec.expected_output();
                 getTextEditor().displayActualDiff(actual, expected);
                 getTextEditor().displayExpectedDiff(actual, expected);
-
+                System.out.println("ORIGINAL ------------------------");
+                for (char c : rec.output().toCharArray()) {
+                    if (c == '\r') System.out.print("\\r");
+                    else if (c == '\n') System.out.print("\\n");
+                    else System.out.print(c);
+                }
+                System.out.println("\nSTRIPED ------------------------");
+                for (char c : actual.toCharArray()) {
+                    if (c == '\r') System.out.print("\\r");
+                    else if (c == '\n') System.out.print("\\n");
+                    else System.out.print(c);
+                }
             }
 
 

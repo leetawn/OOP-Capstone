@@ -71,6 +71,18 @@
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
+//
+//                    String output = outputArea.getText();
+//                    System.out.print("Full Received [");
+//                    int j=1;
+//                    for (int c : output.getBytes()) {
+//                        System.out.printf("%d, ", c);
+//                        if (j%10==0) System.out.println();
+//                        j++;
+//                    }
+//                    if (output.getBytes().length > 0) System.out.print("\b\b");
+//                    System.out.println("]");
+
                     System.out.println("windowClosing");
                     Judge.cleanup(fm);
                 }
@@ -105,11 +117,12 @@
                         .setEnvironment(env)
                         .setRedirectErrorStream(true)
                         .setDirectory(fm.getRootdir().toString())
-                        .setConsole(true)
+                        .setConsole(false)
                         .start();
 
                 // TERMINAL WILL EXIT HERE
                 terminalProcess.onExit().thenApply( p -> {
+
                     System.out.println("Process exited with: " + p.exitValue());
 
                     String[] inputs_arr = inputs.toArray(new String[0]);
@@ -155,15 +168,9 @@
                 // SEND TO TERMINAL
                 System.out.printf("Entered: [%s]\n", command);
                 inputs.add(command);
-                if (!language.equals("python"))
-                {
-                    SwingUtilities.invokeLater(() -> {
-                        outputArea.append(command);
-                    });
-                }
 
                 try {
-                    processWriter.write(command + "\n");
+                    processWriter.write(command + "\r\n");
                     processWriter.flush();
                 } catch (IOException ex) {
                     outputArea.append("Error sending command to process: " + ex.getMessage() + "\n");
@@ -195,9 +202,22 @@
                         if (reader.ready()) {
                             readChars = reader.read(buffer);
                             if (readChars > 0) {
-                                final String output = new String(buffer, 0, readChars);
+                                final String output = (new String(buffer, 0, readChars));
+
+//                                System.out.print("Recieved [");
+//                                int j = 1;
+//                                for (int c : output.getBytes())
+//                                {
+//                                    System.out.printf("%d, ", c);
+//                                    if (j%10==0) System.out.println();
+//                                    j++;
+//                                }
+//                                if (output.getBytes().length > 0) System.out.print("\b\b");
+//                                System.out.println("]");
+
                                 SwingUtilities.invokeLater(() -> {
-                                    outputArea.append(output);
+                                    outputArea.append(Helpers.stripAnsi(output));
+                                    outputArea.setText(Helpers.stripCRLines(outputArea.getText()));
                                     outputArea.setCaretPosition(outputArea.getDocument().getLength());
                                 });
                             }
@@ -234,7 +254,7 @@
             // TEST VARIABLES
             final String TEST_LANG = "CPP";
             final String TEST_FILE = files[1];
-            final int TEST_TYPE = 1;
+            final int TEST_TYPE = 0;
 
             switch (TEST_TYPE) {
                 case 1: // TEST SUBMIT CODE
@@ -261,6 +281,7 @@
             }
 
             // Start the GUI on the Event Dispatch Thread (EDT)
+            System.out.println(System.getenv("PROJECT_DIR"));
             String directoryPath =  System.getenv("PROJECT_DIR") + "/COMPILER_TEST/"+TEST_LANG.toUpperCase();
             TestcaseFile tf;
             FileManager fm = null;
