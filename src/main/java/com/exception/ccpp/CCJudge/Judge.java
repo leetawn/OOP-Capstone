@@ -197,8 +197,10 @@ public class Judge {
         String[] compileCommand = null;
         switch (fm.getLanguage().toLowerCase()) {
             case "java": {
-                logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
-                return startJavaCompilation(fm);
+                compileCommand = ExecutionConfig.getCompileCommand(fm);
+                break;
+//                logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
+//                return startJavaCompilation(fm);
             }
             case "c","cpp", "c++": {
                 compileCommand = ExecutionConfig.getCompileCommand(fm);

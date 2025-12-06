@@ -8,7 +8,6 @@ import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.*;
-import jdk.incubator.vector.VectorOperators;
 
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
