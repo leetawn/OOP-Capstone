@@ -26,7 +26,7 @@ public class TextEditor extends JPanel {
     private JButton createButton; // Appears unused, but keeping it
     private JButton openFolderButton;
     private JButton createFolderButton;
-    private JButton setEntryPointButton;
+    private RoundedButton setEntryPointButton;
     private JTextArea dTextArea;
     private JComboBox<String> languageSelectDropdown;
     private com.exception.ccpp.GUI.FileExplorer fileExplorerPanel;
@@ -56,7 +56,7 @@ public class TextEditor extends JPanel {
         initializeBackend();
         initializeStyles();
         setupLayout();
-//        setupEventListeners();
+        setupEventListeners();
         setupTabToSpaces();
         setVisible(true);
     }
@@ -133,17 +133,17 @@ public class TextEditor extends JPanel {
 
         // --- PANEL 1: Left Sidebar (Purple) ---
         gbc.gridx = 0;  // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.11; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.20; // STRICTLY DO NOT EDIT THIS!
         add(create_first_panel(), gbc);
 
         // --- PANEL 2: Center (Green) ---
         gbc.gridx = 1; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.59; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.25; // STRICTLY DO NOT EDIT THIS!
         add(create_second_panel(), gbc);
 
         // --- PANEL 3: Right Sidebar (Red) ---
         gbc.gridx = 2; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.30; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.55; // STRICTLY DO NOT EDIT THIS!
         add(create_third_panel(), gbc);
     }
 
@@ -324,14 +324,14 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.92;
+        gbc.weighty = 0.91;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.06;
+        gbc.weighty = 0.07;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_2_3_panel(), gbc);
 
@@ -339,25 +339,20 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_1_panel(){
-        // Using a realistic height (e.g., 30 pixels tall) to contain the components.
-        // The width (1) lets the parent GridBagLayout control horizontal stretching.
         JPanel panel = new FixedSizePanel(1, 20);
         panel.setBackground(Color.decode("#1f2335"));
+        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 
-        // Set the main panel to use BorderLayout to anchor left and right groups
         panel.setLayout(new BorderLayout());
 
-        // --- Define Colors for Consistency ---
         Color panelBgColor = Color.decode("#1f2335");
         Color foreColor = Color.WHITE;
 
-        // --- LEFT SIDE (Text Editor Label) ---
         JLabel label1 = new JLabel();
         label1.setText("Text Editor");
         label1.setForeground(foreColor);
         label1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
-        // Add margin/padding to the left label (10px on the left)
         label1.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
         // Add label1 to the WEST (left) region
@@ -442,60 +437,154 @@ public class TextEditor extends JPanel {
         }
     }
 
-    private JPanel create_2_3_panel(){
-        // --- 1. Outer Panel (Fixed Size, Uses BorderLayout for Centering) ---
-        // You MUST choose the correct width and height. (1, 1 will be too small)
-        JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+    private JPanel create_2_3_panel() {
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.decode("#1f2335"));
+        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        GridBagConstraints gbc = new GridBagConstraints();
 
-        // Set the OUTER panel to BorderLayout
-        panel.setLayout(new BorderLayout());
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.weighty = 1.0;
 
-        // --- 2. Inner Panel (FlowLayout for Button Arrangement) ---
-        // Use a separate panel to hold the buttons with the desired gaps (hgap=20, vgap=0)
-        JPanel buttonContainer = new JPanel();
-        buttonContainer.setBackground(Color.decode("#1f2335")); // Match parent background
-        buttonContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 40, 6));
+        // --- LEFT PANEL (30% with min width) ---
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.3; // 30%
+        JPanel p1 = create_2_3_1_panel();
+        p1.setMinimumSize(new Dimension(150, 60)); // Minimum width
+        panel.add(p1, gbc);
 
-        // ... (Your button initializations and font settings go here, as they were) ...
-        // Note: I'm omitting button code for brevity, but you put it here.
+        // --- MIDDLE PANEL (20% with min width) ---
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.2; // 20%
+        JPanel p2 = create_2_3_2_panel();
+        p2.setMinimumSize(new Dimension(80, 60)); // Minimum width
+        panel.add(p2, gbc);
 
-        importTestcaseButton = new JButton("Import Testcase");
+        // --- RIGHT PANEL (50%) ---
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5; // 50%
+        panel.add(create_2_3_3_panel(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_2_3_1_panel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#1f2335"));
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        importTestcaseButton = new RoundedButton("Import Testcase", 15);
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
+        importTestcaseButton.setPreferredSize(new Dimension(135, 40));
 
-        exportTestcaseButton = new JButton("Export Testcase");
+        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
         exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
+        exportTestcaseButton.setPreferredSize(new Dimension(135, 40));
 
-        setEntryPointButton = new RoundedButton("Set Entry Point", 30);
-        setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        // Import button
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(importTestcaseButton, gbc);
+
+        // Export button
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
+        panel.add(exportTestcaseButton, gbc);
+
+        return panel;
+    }
+
+    private JPanel create_2_3_2_panel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#1f2335"));
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        setEntryPointButton = new RoundedButton("Set Entry Point", 15);
+        setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         setEntryPointButton.setForeground(Color.WHITE);
         setEntryPointButton.setBackground(Color.decode("#568afc"));
 
-        runCodeButton = new RoundedButton("Run Code", 30);
-        runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        Dimension fixedSize = new Dimension(135, 40);
+        setEntryPointButton.setMinimumSize(fixedSize);
+        setEntryPointButton.setMaximumSize(fixedSize);
+        setEntryPointButton.setPreferredSize(fixedSize);
+
+        // Hide initially but keep space
+        setEntryPointButton.setVisible(false);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(0, 0, 0, -25);
+        panel.add(setEntryPointButton, gbc);
+
+        // CRITICAL: Add an invisible placeholder that takes the same space
+        JLabel placeholder = new JLabel("");
+        placeholder.setPreferredSize(fixedSize);
+        placeholder.setMinimumSize(fixedSize);
+        placeholder.setMaximumSize(fixedSize);
+        placeholder.setOpaque(false);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 0, -25);
+        panel.add(placeholder, gbc); // Add placeholder behind button
+
+        // Use JLayeredPane or keep button on top
+        panel.setComponentZOrder(setEntryPointButton, 0); // Button on top
+        panel.setComponentZOrder(placeholder, 1); // Placeholder behind
+
+        return panel;
+    }
+
+    private JPanel create_2_3_3_panel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#1f2335"));
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // Smaller font sizes and minimal padding
+
+        runCodeButton = new RoundedButton("Run Code", 15);
+        runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         runCodeButton.setForeground(Color.WHITE);
         runCodeButton.setBackground(Color.decode("#568afc"));
+        runCodeButton.setPreferredSize(new Dimension(145, 50));
 
-        submitCodeButton = new RoundedButton("Submit Code", 30);
-        submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        submitCodeButton = new RoundedButton("Submit Code", 15);
+        submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         submitCodeButton.setForeground(Color.WHITE);
-        submitCodeButton.setBackground(Color.decode("#0cf500"));
+        submitCodeButton.setBackground(Color.decode("#39ca79"));
+        submitCodeButton.setPreferredSize(new Dimension(145, 50));
 
-        // 3. Add JButtons to the INNER container
-        buttonContainer.add(importTestcaseButton);
-        buttonContainer.add(exportTestcaseButton);
-        buttonContainer.add(setEntryPointButton);
-        buttonContainer.add(runCodeButton);
-        buttonContainer.add(submitCodeButton);
+        // Run code button
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.33;
+        gbc.insets = new Insets(0, 0, 0, -25);
+        panel.add(runCodeButton, gbc);
 
-        // 4. Add the INNER container to the CENTER of the OUTER panel
-        // BorderLayout.CENTER automatically centers the component within the available space.
-        panel.add(buttonContainer, BorderLayout.CENTER);
+        // Submit code button
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.34;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        panel.add(submitCodeButton, gbc);
 
         return panel;
     }
@@ -637,34 +726,33 @@ public class TextEditor extends JPanel {
     // END OF FRONT END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // START OF BACK END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-//    private void setupEventListeners() {
-//        dTextArea.addKeyListener(new KeyAdapter() {
-//            @Override
-//            public void keyPressed(KeyEvent e) {
-//                if ((e.getKeyCode() == KeyEvent.VK_S) &&
-//                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
-//
-//                    e.consume();
-//                    saveCurrentFileContent();
-//                    actualOutputArea.setText("File saved successfully.");
-//                }
-//            }
-//        });
-//
-//        openFolderButton.addActionListener((ActionListener) new OpenFolderButtonHandler(this));
-//        addFileButton.addActionListener(new AddFileButtonHandler(this));
-//        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
+    private void setupEventListeners() {
+        dTextArea.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if ((e.getKeyCode() == KeyEvent.VK_S) &&
+                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
+
+                    e.consume();
+                    saveCurrentFileContent();
+                    actualOutputArea.setText("File saved successfully.");
+                }
+            }
+        });
+
+        openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
+        addFileButton.addActionListener(new AddFileButtonHandler(this));
+        languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
 //        runCodeButton.addActionListener(new RunButtonHandler(this));
-//        createFolderButton.addActionListener(e -> {
-//            fileExplorerPanel.handleCreateFolderAction();
-//        });
-//        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
-//        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
-//        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
-//    }
+        createFolderButton.addActionListener(e -> {
+            fileExplorerPanel.handleCreateFolderAction();
+        });
+        setEntryPointButton.addActionListener(new SetEntryPointButtonHandler(this));
+        importTestcaseButton.addActionListener(new ImportTestcaseButtonHandler(this));
+        exportTestcaseButton.addActionListener(new ExportTestcaseButtonHandler(this));
+    }
 
     private void initializeBackend() {
-
         dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
         dTextArea.setText("No selected file. Select a file to start editing.");
         dTextArea.setEditable(false);
@@ -1059,23 +1147,28 @@ public class TextEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fileManager = fe.getFileManager();
+            if (fileManager == null) return;
+
             String newLanguage = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
+            if (newLanguage == null) return;
 
-            if (newLanguage.equalsIgnoreCase("Java") || newLanguage.equalsIgnoreCase("Python")) {
-                getTextEditor().setEntryPointButton.setVisible(true);
-            } else {
-                getTextEditor().setEntryPointButton.setVisible(false);
-            }
+            boolean showEntryButton = newLanguage.equalsIgnoreCase("Java") ||
+                    newLanguage.equalsIgnoreCase("Python");
+
+            // DON'T touch opaque or contentAreaFilled - just use visibility
+            getTextEditor().setEntryPointButton.setVisible(showEntryButton);
+
             fileManager.setLanguage(newLanguage);
-
             fileManager.setCurrentFile(null);
 
             getTextEditor().setEntryPointButton.setText("Set Entry Point");
-
             getTextEditor().actualOutputArea.setText("");
             getTextEditor().expectedOutputArea.setText("");
 
-            System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
+            getTextEditor().revalidate();
+            getTextEditor().repaint();
+
+            System.out.println("Project language changed to: " + newLanguage);
         }
     }
 
