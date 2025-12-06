@@ -40,9 +40,9 @@
         private TerminalCallback exitCallback;
         private UpdateGUICallback guiCallback;
 
-        private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
-        private static final String[] TERMINAL_START_COMMAND;
 
+        static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+        static final String[] TERMINAL_START_COMMAND;
         static {
             if (OS_NAME.contains("nix") || OS_NAME.contains("mac")) {
                 // Linux/macOS-specific path

@@ -986,18 +986,25 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
-                JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
-                return; // CANNOT SUBMIT NULL FILES
+            boolean is_java_python = false;
+            FileManager fm = FileManager.getInstance();
+            String sel_lang = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
+            SFile sel_file = FileExplorer.getInstance().getSelectedFile();
+            if (sel_lang != null) is_java_python = sel_lang.equalsIgnoreCase("python") || sel_lang.equalsIgnoreCase("java");
+            if (is_java_python) {
 
-            }
-            // W ONE LINER HAHAHAHAHAHAHAHA
-            if (FileExplorer.getInstance().getSelectedFile() != null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
-                if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage()))) {
+                if (sel_file == null)
+                {
+                    JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                else if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage())))
+                {
                     JOptionPane.showMessageDialog(getTextEditor(), "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
+
             if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
                 getTextEditor().saveCurrentFileContent();
             }

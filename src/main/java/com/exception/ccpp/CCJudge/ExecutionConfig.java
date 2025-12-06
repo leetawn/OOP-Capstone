@@ -58,7 +58,7 @@ public class ExecutionConfig {
         return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", fm.getCurrentFileStringPath().replace(".java","").replaceAll("[\\\\/]",".")}; // idk if com.exception.ccpp.Main is in all program
             case "cpp", "c++", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
-            case "python" -> new String[]{ (isCommandAvailable("python3")) ? "python3" : "python", fm.getCurrentFileStringPath()};
+            case "python" -> new String[]{ TerminalApp.TERMINAL_START_COMMAND[0], TerminalApp.TERMINAL_START_COMMAND[1], (isCommandAvailable("python3")) ? "python3" : "python", fm.getCurrentFileStringPath()};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
     }

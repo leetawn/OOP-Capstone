@@ -107,7 +107,7 @@ public class Judge {
                     .setEnvironment(env)
                     .setRedirectErrorStream(true) // Redirects stderr to stdout stream
                     .setDirectory(fm.getRootdir().toString())
-                    .setConsole(false)
+                    .setConsole(fm.getLanguage().equals("python"))
                     .start();
 
 
@@ -119,8 +119,9 @@ public class Judge {
 
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
-            String cmd_newline = "\r\n";
-            if (fm.getLanguage().equals("python")) cmd_newline = "\n";
+            String cmd_newline = "\n";
+//            if (fm.getLanguage().equals("python")) cmd_newline = "\n";
+
 
             System.out.printf("input size: %d\n",testInputs.length);
             do {
@@ -131,13 +132,10 @@ public class Judge {
 
                 Thread.sleep(50);
 
-                // Send the next input line
-
                 if (inputIndex < testInputs.length) {
                     String inputLine = testInputs[inputIndex++];
                     logger.logln("-> Judge providing input: " + inputLine);
                     processInputWriter.write(inputLine + cmd_newline);
-//                    processInputWriter.newLine();
                 }
 
                 processInputWriter.flush();

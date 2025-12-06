@@ -1,5 +1,7 @@
 package com.exception.ccpp.Common;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class Helpers {
@@ -41,7 +43,37 @@ public class Helpers {
         return stripCRLines(stripAnsi(input));
     }
 
-    public static void main(String[] args) {
+
+    public static String getPythonLineSeparator() throws IOException, InterruptedException {
+        // Command to execute: python -c "import os; print(repr(os.linesep))"
+        // Adjust "python" if your interpreter is named "python3"
+        ProcessBuilder pb = new ProcessBuilder("python", "-c", "import os; print(repr(os.linesep))");
+
+        // Start the process
+        Process p = pb.start();
+
+        // Use a BufferedReader to capture the standard output (stdout)
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(p.getInputStream()))) {
+
+            // Read the single line of output from the Python script
+            String line = reader.readLine();
+
+            // Wait for the process to finish
+            int exitCode = p.waitFor();
+
+            if (exitCode == 0 && line != null) {
+                // The output will be something like "'\r\n'" or "'\n'".
+                // We strip the surrounding single quotes to get the pure sequence.
+                return line.replace("'", "").replace("\"", "");
+            } else {
+                // If Python failed or returned no output, throw an error
+                throw new IOException("Python command failed with exit code: " + exitCode);
+            }
+        }
+    }
+
+    public static void main2(String[] args) {
         // 1. Your specific byte array
         byte[] bytes = {
             27, 91, 48, 109, 27, 91, 48, 75, 69, 110,
@@ -103,5 +135,13 @@ public class Helpers {
         }
     }
 
+    public static void main(String[] args) {
+        try {
+            String lineSep = getPythonLineSeparator();
+            System.out.println("The Python os.linesep value is: " + lineSep);
 
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error accessing Python: " + e.getMessage());
+        }
+    }
 }
