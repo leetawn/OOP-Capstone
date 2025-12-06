@@ -986,17 +986,21 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (FileExplorer.getInstance().getSelectedFile() == null) {
+            if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
                 JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
                 return; // CANNOT SUBMIT NULL FILES
 
             }
             // W ONE LINER HAHAHAHAHAHAHAHA
-            if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage()))) {
-                JOptionPane.showMessageDialog(getTextEditor(), "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (FileExplorer.getInstance().getSelectedFile() != null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
+                if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage()))) {
+                    JOptionPane.showMessageDialog(getTextEditor(), "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
-            getTextEditor().saveCurrentFileContent();
+            if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
+                getTextEditor().saveCurrentFileContent();
+            }
             SubmissionRecord[] results = Judge.judge(FileManager.getInstance(), new TestcaseFile("datafile3.ccpp"));
 
             if (results.length > 0) {
