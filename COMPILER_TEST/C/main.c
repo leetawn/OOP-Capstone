@@ -2,11 +2,11 @@
 
 int main() {
     int x, y;
-    printf("Enter x: "); 
-    scanf("%d", &x);
-
-    printf("Enter y: "); 
+    printf("Enter a number:          ");
+    scanf("%d", &x);       
+    printf("Enter a number y: ");
     scanf("%d", &y);
-
-    printf("Sum: %d", x + y);
+    printf("Sum: %d\n", x + y);
+    printf("DIDDY!!!");
+    return 0;
 }

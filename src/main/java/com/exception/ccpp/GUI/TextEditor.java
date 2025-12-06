@@ -683,7 +683,7 @@ public class TextEditor extends JPanel {
     public String getCurrentSelectedLanguage() {
         if (languageSelectDropdown.getSelectedItem().equals("C++")) return "cpp";
         if (languageSelectDropdown.getSelectedItem().equals("Python")) return "py";
-        return (String) languageSelectDropdown.getSelectedItem();
+        return ((String) languageSelectDropdown.getSelectedItem()).toLowerCase();
     }
 
     public void setTextArea(boolean ok) {
