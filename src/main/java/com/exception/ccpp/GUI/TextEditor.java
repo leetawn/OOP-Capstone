@@ -91,25 +91,6 @@ public class TextEditor extends JPanel {
 
     /* --------------- Setup --------------- */
 
-//    private void setupTabToSpaces() {
-//        final String fourSpaces = "    ";
-//
-//        Action insertSpacesAction = new AbstractAction() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                codeArea.replaceSelection(fourSpaces);
-//            }
-//        };
-//
-//        KeyStroke tabKey = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
-//
-//        Object actionKey = "insert-four-spaces";
-//
-//        InputMap inputMap = codeArea.getInputMap(JComponent.WHEN_FOCUSED);
-//        inputMap.put(tabKey, actionKey);
-//
-//        codeArea.getActionMap().put(actionKey, insertSpacesAction);
-//    }
 
     private void initializeStyles() {
         defaultStyle = new SimpleAttributeSet();
@@ -157,35 +138,31 @@ public class TextEditor extends JPanel {
         add(create_third_panel(), gbc);
     }
 
-// --- PANEL CREATION METHODS ---
-
     private JPanel create_first_panel() {
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.decode("#000000"));
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
-
-        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(0, 0, 0, 0);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.0125;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_1_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.0325;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_2_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1;
-        gbc.weighty = 0.955;
+        gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_1_3_panel(), gbc);
 
@@ -193,14 +170,15 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_1_1_panel(){
-        JPanel panel = new FixedSizePanel(1, 20);
+        JPanel panel = new JPanel(); // Don't use FixedSizePanel here either!
         panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 7));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
 
-        JLabel label = new JLabel();
-        label.setText("File Explorer");
+        panel.setPreferredSize(new Dimension(0, 30));
+
+        JLabel label = new JLabel("File Explorer");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
         panel.add(label);
 
@@ -250,12 +228,10 @@ public class TextEditor extends JPanel {
         button.setMaximumSize(fixedSize);
     }
 
-    // Helper method definition (place this as a private method in your class)
     private JPanel create_1_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(); // Don't use FixedSizePanel here!
         panel.setBackground(Color.decode("#191c2a"));
-        // Keep FlowLayout.LEFT and hgap/vgap settings
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5)); // Add some vertical padding
 
         Class<?> contextClass = this.getClass();
 
@@ -265,8 +241,6 @@ public class TextEditor extends JPanel {
         URL openFolderUrl = contextClass.getResource("/assets/open_folder.png");
         URL addFileUrl = contextClass.getResource("/assets/add_file.png");
         URL createFolderUrl = contextClass.getResource("/assets/create_folder.png");
-
-        // 1. Create the JButtons using the scaled icons
 
         // Get the scaled icons
         ImageIcon openFolderIcon = getScaledIcon(openFolderUrl, ICON_SIZE, ICON_SIZE);
@@ -278,39 +252,49 @@ public class TextEditor extends JPanel {
         addFileButton = new JButton(addFileIcon);
         createFolderButton = new JButton(createFolderIcon);
 
+        openFolderButton.setToolTipText("Open Folder");
+        addFileButton.setToolTipText("Add File");
+        createFolderButton.setToolTipText("Create Folder");
+
+        // Set tooltip delay ONCE for all components
+        ToolTipManager.sharedInstance().setInitialDelay(500);
+
         openFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         addFileButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         createFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // 2. Configure the Buttons to look like Icons (Crucial for a toolbar)
+        // Configure the Buttons to look like Icons
         configureToolbarButton(openFolderButton);
         configureToolbarButton(addFileButton);
         configureToolbarButton(createFolderButton);
 
-        // 3. Add JButtons to the Panel
+        // Add JButtons to the Panel
         panel.add(openFolderButton);
         panel.add(addFileButton);
         panel.add(createFolderButton);
+
+        // Set a minimum height for the panel
+        panel.setPreferredSize(new Dimension(0, 30)); // Height of 30 pixels
 
         return panel;
     }
 
     private JPanel create_1_3_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
-        panel.setBackground(Color.decode("#191c2a"));
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        // Use GridBagLayout like your working branch
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#191c2a")); // Match FileExplorer background
 
-        Class<?> contextClass = this.getClass();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 0, 0);
 
-        URL folderDropdownrUrl = contextClass.getResource("/assets/folder_dropdown.png");
-
-        ImageIcon folderDropdownIcon = getScaledIcon(folderDropdownrUrl, 48, 20);
-
-        folderDropdownButton = new JButton(folderDropdownIcon);
-        folderDropdownButton.setOpaque(false);
-        folderDropdownButton.setContentAreaFilled(false);
-
-        panel.add(folderDropdownButton);
+        // Set preferred size for the FileExplorer like in working branch
+        fileExplorerPanel.setPreferredSize(new Dimension(175, Integer.MAX_VALUE));
+        panel.add(fileExplorerPanel, gbc);
 
         return panel;
     }
@@ -396,8 +380,6 @@ public class TextEditor extends JPanel {
         // Add label1 to the WEST (left) region
         panel.add(label1, BorderLayout.WEST);
 
-        // --- RIGHT SIDE (Language Label + Dropdown) ---
-
         // Create an INNER panel to hold the two right-side components
         JPanel rightPanel = new JPanel();
         rightPanel.setBackground(panelBgColor); // Match parent background
@@ -445,8 +427,16 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_2_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.decode("#1f2335"));
+
+        // Add the text editor with scroll pane
+        dTextArea.setBackground(Color.decode("#1f2335"));
+        dTextArea.setForeground(Color.WHITE);
+        JScrollPane editorScroll = new JScrollPane(dTextArea);
+        editorScroll.setBorder(null);
+        editorScroll.setBackground(Color.decode("#1f2335"));
+        panel.add(editorScroll, BorderLayout.CENTER);
 
         return panel;
     }
@@ -516,12 +506,14 @@ public class TextEditor extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
 
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
+        importTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
         importTestcaseButton.setPreferredSize(new Dimension(135, 40));
 
         exportTestcaseButton = new RoundedButton("Export Testcase", 15);
+        exportTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
@@ -551,6 +543,7 @@ public class TextEditor extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
 
         setEntryPointButton = new RoundedButton("Set Entry Point", 15);
+        setEntryPointButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setEntryPointButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         setEntryPointButton.setForeground(Color.WHITE);
         setEntryPointButton.setBackground(Color.decode("#568afc"));
@@ -599,12 +592,14 @@ public class TextEditor extends JPanel {
         // Smaller font sizes and minimal padding
 
         runCodeButton = new RoundedButton("Run Code", 15);
+        runCodeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         runCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         runCodeButton.setForeground(Color.WHITE);
         runCodeButton.setBackground(Color.decode("#568afc"));
         runCodeButton.setPreferredSize(new Dimension(145, 50));
 
         submitCodeButton = new RoundedButton("Submit Code", 15);
+        submitCodeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         submitCodeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         submitCodeButton.setForeground(Color.WHITE);
         submitCodeButton.setBackground(Color.decode("#39ca79"));
@@ -653,51 +648,51 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_3_1_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-
-        // 1. Set the panel to use BorderLayout for anchoring
-        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Actual Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
-
-        // Optional: Add a small margin/padding around the text
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-
-        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
         label.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // 2. Add the label to the top (NORTH) region
         panel.add(label, BorderLayout.NORTH);
+
+        // Add the actual output area
+        actualOutputArea.setBackground(Color.decode("#1f2335"));
+        actualOutputArea.setForeground(Color.WHITE);
+        JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setBackground(Color.decode("#1f2335"));
+        actualScroll.setBorder(null);
+        panel.add(actualScroll, BorderLayout.CENTER);
 
         return panel;
     }
 
     private JPanel create_3_2_panel(){
-        JPanel panel = new FixedSizePanel(1, 1);
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
         panel.setBackground(Color.decode("#1f2335"));
-
-        // 1. Set the panel to use BorderLayout for anchoring
-        panel.setLayout(new BorderLayout());
 
         JLabel label = new JLabel();
         label.setText("Expected Output");
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Font.SANS_SERIF", Font.BOLD, 13));
-
-        // Optional: Add a small margin/padding around the text
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-
-        // Crucial: Set the label's content alignment to left (it will stretch in NORTH)
         label.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // 2. Add the label to the top (NORTH) region
         panel.add(label, BorderLayout.NORTH);
+
+        // Add the expected output area
+        expectedOutputArea.setBackground(Color.decode("#1f2335"));
+        expectedOutputArea.setForeground(Color.WHITE);
+        JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setBackground(Color.decode("#1f2335"));
+        expectedScroll.setBorder(null);
+        panel.add(expectedScroll, BorderLayout.CENTER);
 
         return panel;
     }
