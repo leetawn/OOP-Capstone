@@ -1,12 +1,8 @@
 #include <stdio.h>
 
 int main() {
-    int x, y;
-    printf("Enter a number:          ");
-    scanf("%d", &x);       
-    printf("Enter a number y: ");
-    scanf("%d", &y);
-    printf("Sum: %d\n", x + y);
-    printf("DIDDY!!!");
+    for (int i = 0; i < 10000000; i++) {
+        printf("%d\n", i);
+    }
     return 0;
 }
