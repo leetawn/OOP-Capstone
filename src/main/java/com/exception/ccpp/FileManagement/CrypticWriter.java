@@ -1,6 +1,7 @@
 package com.exception.ccpp.FileManagement;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -18,12 +19,14 @@ public class CrypticWriter {
     // --- Header Definition ---
     // A 12-byte "magic number" to identify the file format.
     // This is the first thing written to the file.
-    private static final byte[] FILE_HEADER = {0, 'C', 'C', 'P', 'P', 0, 'A', 'B', 'B', 'D', 'L', 12, (byte)0x07, (byte)0xE9};
+    private static final byte[] FILE_HEADER = {0, 'C', 'C', 'P', 'P', 3, 'A', 'B', 'B', 'D', 'L', 12, (byte)0x07, (byte)0xE9};
     private static final int IV_SIZE = 16;
     private static final int MIN_FILE_SIZE = FILE_HEADER.length + IV_SIZE + 1; // Header + IV + minimum 1 byte of data
 
     // --- Key Derivation Logic ---
     private static final String APP_UNIQUE_SECRET = "pleasetaluninnatinangfeutechpleaselang-G0dzPro1sG@Y";
+    private static final String MAC_ALGORITHM = "HmacSHA256"; // 🚨 New constant for MAC algorithm
+    private static final int MAC_TAG_SIZE = 32;
 
     public static SecretKey getDerivedSecretKey() throws Exception {
         MessageDigest sha = MessageDigest.getInstance("SHA-256");
@@ -44,7 +47,7 @@ public class CrypticWriter {
         SecretKey key = getDerivedSecretKey();
         IvParameterSpec iv = generateIV();
 
-        // 1. Setup Cipher & Serialize Data
+        // Setup Cipher & Serialize Data
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key, iv);
 
@@ -56,15 +59,19 @@ public class CrypticWriter {
             serializedData = bos.toByteArray();
         }
 
-        // 2. Encrypt
         byte[] encryptedData = cipher.doFinal(serializedData);
 
-        // 3. Write Header, IV, and Encrypted Data to File
+        Mac mac = Mac.getInstance(MAC_ALGORITHM);
+        mac.init(new SecretKeySpec(key.getEncoded(), MAC_ALGORITHM));
+
+        byte[] macTag = mac.doFinal(encryptedData);
+
         try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
-            fos.write(FILE_HEADER); // Write the file identifier header first
+            fos.write(FILE_HEADER);
             fos.write(iv.getIV());
             fos.write(encryptedData);
-            System.out.println("Data written, encrypted, and file header included.");
+            fos.write(macTag);
+            System.out.println("Data written, encrypted, header, and HMAC Tag included.");
         }
     }
 
@@ -73,21 +80,19 @@ public class CrypticWriter {
     @SuppressWarnings("unchecked")
     public static List<Object> readEncryptedData(Path path) throws Exception {
 
-        // Check 1: File existence and minimum size
-        if (!Files.exists(path) || Files.size(path) < MIN_FILE_SIZE) {
+        final int MIN_READABLE_FILE_SIZE = FILE_HEADER.length + IV_SIZE + MAC_TAG_SIZE + 1;
+        if (!Files.exists(path) || Files.size(path) < MIN_READABLE_FILE_SIZE) {
             System.out.println("File not found or too small.");
             return new ArrayList<>();
         }
 
         SecretKey key = getDerivedSecretKey();
 
-        // Read the full file
         byte[] fileBytes;
         try (FileInputStream fis = new FileInputStream(path.toFile())) {
             fileBytes = fis.readAllBytes();
         }
 
-        // Check 2: Header Validation
         byte[] retrievedHeader = new byte[FILE_HEADER.length];
         System.arraycopy(fileBytes, 0, retrievedHeader, 0, FILE_HEADER.length);
 
@@ -96,21 +101,35 @@ public class CrypticWriter {
             return new ArrayList<>();
         }
 
-        // --- If Header is Valid, Proceed with Decryption ---
-
-        // Calculate start index for IV after the header
         int ivStartIndex = FILE_HEADER.length;
         int encryptedDataStartIndex = ivStartIndex + IV_SIZE;
 
-        // Extract IV (next 16 bytes)
+        int macTagStartIndex = fileBytes.length - MAC_TAG_SIZE;
+
+        // Extract IV
         byte[] ivBytes = new byte[IV_SIZE];
         System.arraycopy(fileBytes, ivStartIndex, ivBytes, 0, IV_SIZE);
         IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
-        // Extract Encrypted Data
-        int encryptedDataLength = fileBytes.length - encryptedDataStartIndex;
+        int encryptedDataLength = macTagStartIndex - encryptedDataStartIndex;
         byte[] encryptedData = new byte[encryptedDataLength];
         System.arraycopy(fileBytes, encryptedDataStartIndex, encryptedData, 0, encryptedDataLength);
+
+        byte[] storedMacTag = new byte[MAC_TAG_SIZE];
+        System.arraycopy(fileBytes, macTagStartIndex, storedMacTag, 0, MAC_TAG_SIZE);
+
+
+        // INTEGRITY CHECK
+        Mac mac = Mac.getInstance(MAC_ALGORITHM);
+        mac.init(new SecretKeySpec(key.getEncoded(), MAC_ALGORITHM));
+
+        byte[] calculatedMacTag = mac.doFinal(encryptedData);
+
+        if (!Arrays.equals(storedMacTag, calculatedMacTag)) {
+            System.out.println("File has been corrupted or tampered with!");
+            return new ArrayList<>();
+        }
+        System.out.println("DATA IS THE GOAT");
 
         // Setup Cipher for Decryption
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");

@@ -32,22 +32,24 @@ public class Judge {
         DebugLog logger = DebugLog.getInstance();
         SubmissionRecord judge_res;
 
-        List<String[]> inputs = tf.getInputs();
-        List<String> ex_out = tf.getExpectedOutputs();
-        SubmissionRecord[] verdicts = new SubmissionRecord[ex_out.size()];
-        for (int i = 0; i < verdicts.length; i++) {
-            verdicts[i] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", ex_out.get(i));
+        Map<Testcase, String> testcases = tf.getTestcases();
+        int testcases_size = testcases.size();
+        int i = 0;
+        SubmissionRecord[] verdicts = new SubmissionRecord[testcases_size];
+        for (Testcase tc : testcases.keySet()) {
+            verdicts[i++] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", tc.getExpectedOutput());
         }
         try {
             judge_res = compile(fm);
             if (judge_res.verdict() == JudgeVerdict.CE) {
-                recordCopy(verdicts, judge_res, ex_out.size());
+                recordCopy(verdicts, judge_res, testcases_size);
                 return verdicts;
             };
 
-            for (int i = 0; i < ex_out.size(); i++) {
-                judge_res = judgeInteractively(fm, inputs.get(i), ex_out.get(i));
-                verdicts[i]
+            i = 0;
+            for (Testcase tc : testcases.keySet()) {
+                judge_res = judgeInteractively(fm, tc.getInputs(), tc.getExpectedOutput());
+                verdicts[i++]
                         .setVerdict(judge_res.verdict())
                         .setOutput(judge_res.output());
             }
@@ -57,13 +59,13 @@ public class Judge {
             logger.logf("%s:\n",fmsg);
             e.printStackTrace();
             judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg, null);
-            recordCopy(verdicts, judge_res, ex_out.size());
+            recordCopy(verdicts, judge_res, testcases_size);
         } finally {
             logger.logln("\n--- FINISHED RUNNING TESTCASES ---");
             if (DebugLog.DEBUG_ENABLED)
             {
-                for (int i = 0; i < verdicts.length; i++) {
-                    logger.logf("Testcase %d exit code: %s\n", i, verdicts[i].verdict().name());
+                for (int j = 0; j < verdicts.length; j++) {
+                    logger.logf("Testcase %d exit code: %s\n", j, verdicts[j].verdict().name());
                 }
             }
             logger.logln("\n--- Cleanup ---\n");

@@ -4,7 +4,7 @@
       <env name="PROJECT_DIR" value="$PROJECT_DIR$" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="com.exception.ccpp.CCJudge.TerminalApp" />
-    <module name="OOP-Capstone" />
+    <module name="ccpp" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
