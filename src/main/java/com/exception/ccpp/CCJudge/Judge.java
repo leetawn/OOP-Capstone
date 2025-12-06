@@ -132,10 +132,13 @@ public class Judge {
 
                 Thread.sleep(50);
 
+                // Send the next input line
+
                 if (inputIndex < testInputs.length) {
                     String inputLine = testInputs[inputIndex++];
                     logger.logln("-> Judge providing input: " + inputLine);
                     processInputWriter.write(inputLine + cmd_newline);
+//                    processInputWriter.newLine();
                 }
 
                 processInputWriter.flush();
