@@ -97,7 +97,7 @@ public class FileWatcher implements Runnable {
 
             if (isAllowed) {
                 filePaths.add(path);
-                fmInstance.addFile(path);
+                FileManager.addFile(fmInstance,path);
                 System.out.println("FileWatcher.handleCreate: File : " + path.getFileName());
             }
         } else if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
@@ -116,14 +116,14 @@ public class FileWatcher implements Runnable {
         if (Files.isDirectory(deletedPath, LinkOption.NOFOLLOW_LINKS)) {
             synchronized (filePaths) {
                 filePaths.removeIf(p -> p.startsWith(deletedPath));
-                fmInstance.removeDir(deletedPath);
+                fmInstance.removeDir(fmInstance,deletedPath);
             }
 
             keys.entrySet().removeIf(entry -> entry.getValue().startsWith(deletedPath));
             System.out.println("FileWatcher.handleDelete: DirRM: " + deletedPath.getFileName());
 
         } else {
-            fmInstance.removeFile(deletedPath);
+            fmInstance.removeFile(fmInstance,deletedPath);
             filePaths.remove(deletedPath);
             System.out.println("FileWatcher.handleDelete: FileRM: " + deletedPath.getFileName());
         }

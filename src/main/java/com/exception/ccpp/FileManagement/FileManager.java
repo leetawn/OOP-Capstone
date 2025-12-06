@@ -141,19 +141,19 @@ public class FileManager {
     /****************** File Manager ******************/
     // alll of these functions by FileWatcher
     // TODO @ETHAN: you add function CALLS here to refresh your fileExplorer
-    public void addFile(Path file) {
-        all_files.add(new SFile(file));
+    public static void addFile(FileManager fm, Path file) {
+        fm.all_files.add(new SFile(file));
     }
-    public void removeFile(Path file) {
-        for (SFile sfile : all_files) {
+    public static void removeFile(FileManager fm, Path file) {
+        for (SFile sfile : fm.all_files) {
             if (sfile.getPath().equals(file)) {
-                all_files.remove(sfile);
+                fm.all_files.remove(sfile);
                 return;
             }
         }
     }
-    public void removeDir(Path dir) {
-        all_files.removeIf(p -> p.getPath().startsWith(dir));
+    public static void removeDir(FileManager fm, Path dir) {
+        fm.all_files.removeIf(p -> p.getPath().startsWith(dir));
     }
 
     /****************** INITIALIZERS/BUILDERS ******************/
