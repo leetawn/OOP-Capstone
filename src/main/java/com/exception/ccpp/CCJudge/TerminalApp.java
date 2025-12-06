@@ -125,6 +125,7 @@
                         .setConsole(false)
                         .start();
 
+
                 // TERMINAL WILL EXIT HERE
                 terminalProcess.onExit().thenApply( p -> {
 
@@ -140,11 +141,11 @@
                         if (exitCallback != null) {
                             exitCallback.onTerminalExit(inputs_arr, verdict.output());
                             outputArea.append("\nContinue adding testcases [y/n]?\n");
-                            prompt_again = true; // Set flag to divert the *next* input
-                        } else {
-                            // If no callback, just dispose if terminal_loop is false
-                            TerminalApp.this.dispose();
                         }
+                        else{
+                            outputArea.append("\nEnter any key to continue...\n");
+                        }
+                        prompt_again = true; // Set flag to divert the *next* input
                     });
 
                     return p.exitValue();
@@ -177,11 +178,14 @@
 
                     if (command.length() > 0 && Character.toLowerCase(command.charAt(0)) == 'y') {
                         outputArea.append(command + "\n");
-                        startTerminalProcess();
-                        outputArea.setText("");
-                    } else {
-                        SwingUtilities.invokeLater(TerminalApp.this::dispose);
+                        if (exitCallback != null)
+                        {
+                            startTerminalProcess();
+                            outputArea.setText("");
+                            return;
+                        }
                     }
+                    SwingUtilities.invokeLater(TerminalApp.this::dispose);
                     return;
                 }
 
@@ -216,7 +220,6 @@
                     char[] buffer = new char[1024];
                     int readChars;
 
-                    // Loop as long as the process is alive or we can still read from the stream
                     while (terminalProcess.isAlive() || inputStream.available() > 0) {
                         if (reader.ready()) {
                             readChars = reader.read(buffer);
@@ -231,13 +234,12 @@
                             }
                         }
 
-                        // Wait briefly to prevent the thread from consuming excessive CPU
                         Thread.sleep(50);
                     }
                 } catch (IOException e) {
                     SwingUtilities.invokeLater(() -> {
-                        System.out.println("External process terminated or connection lost (IOException).");
-                        System.out.println("Error: " + e.getMessage());
+                        System.err.println("TerminalApp Error: " + e.getMessage());
+                        // e.printStackTrace();
                     });
                 } catch (InterruptedException e) {
                     SwingUtilities.invokeLater(() -> System.out.println("Console output reader interrupted."));
@@ -262,7 +264,7 @@
             // TEST VARIABLES
             final String TEST_LANG = "CPP";
             final String TEST_FILE = files[0];
-            final int TEST_TYPE = 1;
+            final int TEST_TYPE = 0;
 
             switch (TEST_TYPE) {
                 case 1: // TEST SUBMIT CODE
@@ -315,6 +317,7 @@
                 // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished
                 try {
+                    Thread.sleep(10000);
                     while (ta.isDisplayable()) Thread.sleep(100);
                 } catch (InterruptedException e) {}
                 System.out.printf("CONTINUING AFTER TerminalApp DISPOSAL.\n");

@@ -16,12 +16,9 @@ import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.sql.SQLOutput;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
