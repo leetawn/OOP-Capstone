@@ -505,7 +505,7 @@ public class FileExplorer extends JPanel {
     public static FileExplorer getInstance() {
         return fe_instance;
     }
-    public static String getFileExtension(Path filePath) {
+    public static String getFileExtension(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
             return "";
         }
