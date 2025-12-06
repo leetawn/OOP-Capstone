@@ -36,6 +36,7 @@
         private String[] terminal_command;
         private boolean prompt_again;
         private boolean terminal_loop;
+        private Thread output_thread;
 
         private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         private static final String[] TERMINAL_START_COMMAND;
@@ -75,9 +76,10 @@
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
-
                     System.out.println("windowClosing");
-                    Judge.cleanup(fm);
+                    if (output_thread.isAlive()) output_thread.interrupt();
+                    if (terminalProcess.isAlive()) terminalProcess.destroyForcibly();
+                    SwingUtilities.invokeLater(() -> Judge.cleanup(fm));
                 }
             });
             setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -108,7 +110,7 @@
 
             String[] execCmd = ExecutionConfig.getExecuteCommand(fm);
             System.out.println(String.join(" ", execCmd));
-            terminal_command = Helpers.concatStringArrays(execCmd);
+            terminal_command = execCmd;
             return true;
         }
 
@@ -130,6 +132,8 @@
                 terminalProcess.onExit().thenApply( p -> {
 
                     System.out.println("Process exited with: " + p.exitValue());
+                    if (p.exitValue() != 0) return p.exitValue();
+
 
                     String[] inputs_arr = inputs.toArray(new String[0]);
                     inputs.clear();
@@ -155,7 +159,8 @@
                 processWriter = new BufferedWriter(new OutputStreamWriter(terminalProcess.getOutputStream()));
 
                 // Start a thread to continuously read the process's output (stdout and stderr)
-                new Thread(new ConsoleOutputReader(terminalProcess.getInputStream())).start();
+                output_thread = new Thread(new ConsoleOutputReader(terminalProcess.getInputStream()));
+                output_thread.start();
             } catch (Exception e) {
                 outputArea.append("Error starting external process:\n" + e.getMessage() + "\n");
                 e.printStackTrace();
@@ -264,7 +269,7 @@
             // TEST VARIABLES
             final String TEST_LANG = "CPP";
             final String TEST_FILE = files[0];
-            final int TEST_TYPE = 0;
+            final int TEST_TYPE = 2;
 
             switch (TEST_TYPE) {
                 case 1: // TEST SUBMIT CODE

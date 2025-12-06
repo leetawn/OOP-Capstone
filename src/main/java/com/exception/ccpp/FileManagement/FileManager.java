@@ -103,7 +103,7 @@ public class FileManager {
             System.err.println("Failed to create directory: " + newDirPath + ". Error: " + e.getMessage());
             return false;
         }
-    }
+}
     public boolean deleteFolder(Path directoryPath) {
         if (!Files.exists(directoryPath)) {
             System.out.println("Directory does not exist: " + directoryPath);
