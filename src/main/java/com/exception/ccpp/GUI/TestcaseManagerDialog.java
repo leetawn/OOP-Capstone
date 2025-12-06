@@ -2,15 +2,19 @@ package com.exception.ccpp.GUI;
 
 import com.exception.ccpp.CCJudge.Testcase;
 import com.exception.ccpp.CCJudge.TestcaseFile;
+import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.List;
 
 public class TestcaseManagerDialog extends JDialog {
     private final TestcaseFile tf;
     private JList<String> testcaseList;
     private DefaultListModel<String> listModel;
+    private List<Testcase> tList;
 
     public TestcaseManagerDialog(Window owner, TestcaseFile tf) {
         super(owner instanceof Dialog ? (Dialog) owner : (Frame) owner);
@@ -58,8 +62,9 @@ public class TestcaseManagerDialog extends JDialog {
             return;
         }
 
+        tList = new ArrayList<>(testcases.keySet());
         int i=0;
-        for (Testcase tc : testcases.keySet()) {
+        for (Testcase tc : tList) {
             // Display a summary of the input and expected output
             String inputSummary = tc.getInputs().length > 0 ?
                     String.join(", ", tc.getInputs()) : "[]";
@@ -73,10 +78,28 @@ public class TestcaseManagerDialog extends JDialog {
     }
     private void handleAddTestcase() {
         // api call
+        tf.addTestcase(FileManager.getInstance());
+        loadTestcases();
     }
 
     private void handleDeleteTestcase() {
         // api call
+        int selectedIndex = testcaseList.getSelectedIndex();
+
+        if (selectedIndex == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a testcase to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (tList != null && selectedIndex < tList.size()) {
+            Testcase tcToDelete = tList.get(selectedIndex);
+
+            tf.deleteTestcase(tcToDelete);
+
+            loadTestcases();
+        } else {
+            JOptionPane.showMessageDialog(this, "Error finding the selected testcase.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void handleSetPassword() {
