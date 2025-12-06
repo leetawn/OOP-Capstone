@@ -4,6 +4,7 @@
     import com.exception.ccpp.Common.Helpers;
     import com.exception.ccpp.CustomExceptions.NotDirException;
     import com.exception.ccpp.FileManagement.FileManager;
+    import com.exception.ccpp.GUI.UpdateGUICallback;
     import com.pty4j.PtyProcessBuilder;
     import com.sun.source.doctree.SummaryTree;
 
@@ -32,11 +33,12 @@
         private BufferedWriter processWriter;
         private final FileManager fm;
         private ArrayList<String> inputs;
-        private TerminalCallback exitCallback;
         private String[] terminal_command;
         private boolean prompt_again;
         private boolean terminal_loop;
         private Thread output_thread;
+        private TerminalCallback exitCallback;
+        private UpdateGUICallback guiCallback;
 
         private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         private static final String[] TERMINAL_START_COMMAND;
@@ -51,10 +53,11 @@
             }
         }
 
-        public TerminalApp(FileManager fm, TerminalCallback exitCallback) {
+        public TerminalApp(FileManager fm, TerminalCallback exitCallback, UpdateGUICallback guiCallback) {
             super("Java Swing Command Console");
             this.fm = fm;
             this.exitCallback = exitCallback;
+            this.guiCallback = guiCallback;
             terminal_loop = false;
             inputs = new ArrayList<>();
 
@@ -149,6 +152,7 @@
                         else{
                             outputArea.append("\nEnter any key to continue...\n");
                         }
+                        if (guiCallback != null) { guiCallback.updateGUI(); }
                         prompt_again = true; // Set flag to divert the *next* input
                     });
 
@@ -316,8 +320,8 @@
             if (OPEN_TERMINAL)
             {
                 TerminalApp ta  = null;
-                if (APPEND_TESTCASES) ta = new TerminalApp(finalFm, tf);
-                else ta = new TerminalApp(finalFm, null);
+                if (APPEND_TESTCASES) ta = new TerminalApp(finalFm, tf, null);
+                else ta = new TerminalApp(finalFm, null, null);
 
                 // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished

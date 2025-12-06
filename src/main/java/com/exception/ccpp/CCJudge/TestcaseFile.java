@@ -3,7 +3,9 @@ package com.exception.ccpp.CCJudge;
 import com.exception.ccpp.FileManagement.CCFile;
 import com.exception.ccpp.FileManagement.CrypticWriter;
 import com.exception.ccpp.FileManagement.FileManager;
+import com.exception.ccpp.GUI.UpdateGUICallback;
 
+import javax.swing.*;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -29,8 +31,8 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     public void deleteTestcase(Testcase tc) {
         testcases.remove(tc);
     }
-    public void addTestcase(FileManager fm) {
-        new TerminalApp(fm,this);
+    public void addTestcase(FileManager fm, UpdateGUICallback gui_cb) {
+        new TerminalApp(fm,this, gui_cb);
     }
 
     /************ I/O *******************/

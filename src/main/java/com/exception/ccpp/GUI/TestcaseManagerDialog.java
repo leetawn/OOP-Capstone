@@ -6,11 +6,12 @@ import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 
-public class TestcaseManagerDialog extends JDialog {
+public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback {
     private final TestcaseFile tf;
     private JList<String> testcaseList;
     private DefaultListModel<String> listModel;
@@ -78,9 +79,9 @@ public class TestcaseManagerDialog extends JDialog {
     }
     private void handleAddTestcase() {
         // api call
-        tf.addTestcase(FileManager.getInstance());
-        loadTestcases();
+        tf.addTestcase(FileManager.getInstance(), this);
     }
+
 
     private void handleDeleteTestcase() {
         // api call
@@ -104,5 +105,10 @@ public class TestcaseManagerDialog extends JDialog {
 
     private void handleSetPassword() {
         // api call
+    }
+
+    @Override
+    public void updateGUI() {
+        loadTestcases();
     }
 }

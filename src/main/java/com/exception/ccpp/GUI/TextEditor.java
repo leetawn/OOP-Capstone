@@ -860,7 +860,7 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
             SwingUtilities.invokeLater(() -> {
-                new TerminalApp(fm, null);
+                new TerminalApp(fm, null, null);
             });
         }
     }
