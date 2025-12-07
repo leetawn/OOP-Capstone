@@ -18,7 +18,7 @@ public class RoundedComboBox<E> extends JComboBox<E> {
 
     private void setupRoundedStyle() {
         setOpaque(false);
-        setBackground(Color.decode("#568afc"));
+        setBackground(Color.decode("#2a2c34"));
         setForeground(Color.WHITE);
 
         // Custom UI with rounded corners
@@ -32,7 +32,7 @@ public class RoundedComboBox<E> extends JComboBox<E> {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 setHorizontalAlignment(CENTER);
                 setOpaque(false); // Make items transparent
-                setBackground(Color.decode("#568afc"));
+                setBackground(Color.decode("#2a2c34"));
                 setForeground(Color.WHITE);
                 return this;
             }
@@ -85,7 +85,7 @@ public class RoundedComboBox<E> extends JComboBox<E> {
 
                     // Draw arrow
                     g2.setColor(getForeground());
-                    g2.setFont(new Font("Arial", Font.BOLD, 10));
+                    g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
                     FontMetrics fm = g2.getFontMetrics();
                     int textX = (getWidth() - fm.stringWidth("▼")) / 2;
                     int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
@@ -117,7 +117,7 @@ public class RoundedComboBox<E> extends JComboBox<E> {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            g2.setColor(Color.decode("#568afc").darker());
+            g2.setColor(Color.decode("#2a2c34").darker());
             g2.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius / 2, radius / 2);
 
             g2.dispose();

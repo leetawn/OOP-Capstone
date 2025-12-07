@@ -9,8 +9,6 @@
     import com.pty4j.PtyProcessBuilder;
 
     import javax.swing.*;
-    import javax.swing.event.DocumentEvent;
-    import javax.swing.event.DocumentListener;
     import javax.swing.text.*;
     import java.awt.*;
     import java.awt.event.ActionEvent;
@@ -40,7 +38,7 @@
         private ArrayList<String> inputs;
         private String[] terminal_command;
         private boolean prompt_again;
-        private TerminalCallback exitCallback;
+        private TerminalCallback returnCallback;
         private UpdateGUICallback guiCallback;
         private String[] execCmd;
         private JTextLogger output_logger;
@@ -71,10 +69,10 @@
             this.fm = fm;
             return this;
         }
-        public TerminalApp setExitCallback(TerminalCallback exitCallback)
+        public TerminalApp setReturnCallback(TerminalCallback returnCallback)
         {
             if (is_processing) return this;
-            this.exitCallback = exitCallback;
+            this.returnCallback = returnCallback;
             return this;
         }
         public TerminalApp setUpdateCallback(UpdateGUICallback guiCallback)
@@ -87,7 +85,7 @@
         {
             if (is_processing) return this;
             this.fm = fm;
-            this.exitCallback = exitCallback;
+            this.returnCallback = exitCallback;
             this.guiCallback = guiCallback;
             return this;
         }
@@ -230,17 +228,17 @@
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
 
-                    Judge.judgeInteractively(execCmd, fm, inputs_arr, results -> {
-                        SwingUtilities.invokeLater(() -> {
-                            // Only prompt if a callback handler is present (for testcase generation)
-                            if (exitCallback != null) {
-                                exitCallback.onTerminalExit(inputs_arr, results[0].output());
+                    if (returnCallback != null) {
+                        Judge.judgeInteractively(execCmd, fm, inputs_arr, results -> {
+                            SwingUtilities.invokeLater(() -> {
+                                // Only prompt if a callback handler is present (for testcase generation)
+                                returnCallback.onTerminalExit(inputs_arr, results[0].output());
                                 outputArea.append("\nContinue adding testcases [y/n]?\n");
-                            }
-                            prompt_again = true;
-                            if (guiCallback != null) { guiCallback.updateGUI(); }
-                        });
-                    }, output_logger);
+                                if (guiCallback != null) { guiCallback.updateGUI(); }
+                                prompt_again = true;
+                            });
+                        }, output_logger);
+                    } else { }
 
                     return p.exitValue();
                 });
@@ -271,7 +269,7 @@
                     prompt_again = false;
                     if (command.length() > 0 && Character.toLowerCase(command.charAt(0)) == 'y') {
                         outputArea.append(command + "\n");
-                        if (exitCallback != null)
+                        if (returnCallback != null)
                         {
                             startTerminalProcess();
                             outputArea.setText("");
