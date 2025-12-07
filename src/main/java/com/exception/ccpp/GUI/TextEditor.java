@@ -16,6 +16,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -303,6 +304,12 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setCaretColor(Color.WHITE);
         expectedOutputArea.setForeground(Color.WHITE);
 
+        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        caret = (DefaultCaret) expectedOutputArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+
+
         fileExplorerPanel = new FileExplorer(".", codeArea, this);
     }
 
@@ -329,6 +336,9 @@ public class TextEditor extends JPanel {
     private int BUFFER_MAX_CHARS = 10000;
     private void displayActualDiff(String[] actualLines, String[] expectedLines) {
         StyledDocument doc = actualOutputArea.getStyledDocument();
+        actualOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
         try {
             doc.remove(0, doc.getLength());
@@ -399,10 +409,17 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
+
+//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
+        actualOutputArea.getParent().getParent().setIgnoreRepaint(false);
+        actualOutputArea.setCaretPosition(doc.getLength());
     }
     private void displayExpectedDiff(String[] actualLines, String[] expectedLines) {
         // Note: We are using expectedOutputArea for this.
         StyledDocument doc = expectedOutputArea.getStyledDocument();
+        expectedOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        DefaultCaret caret = (DefaultCaret) expectedOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
         try {
             doc.remove(0, doc.getLength());
@@ -470,6 +487,10 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
+
+//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
+        expectedOutputArea.setCaretPosition(doc.getLength());
+        expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -911,7 +932,8 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
             SwingUtilities.invokeLater(() -> {
-                new TerminalApp(fm, null, null);
+                TerminalApp.getInstance().setAll(fm, null, null).start();
+//                new TerminalApp(fm, null, null);
             });
         }
     }
@@ -976,6 +998,18 @@ public class TextEditor extends JPanel {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Select Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setFileFilter(new  FileFilter() {
+                @Override
+                public boolean accept(File f) {
+                    if (f.isDirectory()) return true;
+                    return f.getName().toLowerCase().endsWith(".ccpp");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "CC++ Testcase File";
+                }
+            });
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1010,6 +1044,18 @@ public class TextEditor extends JPanel {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Manage Testcase");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setFileFilter(new  FileFilter() {
+                @Override
+                public boolean accept(File f) {
+                    if (f.isDirectory()) return true;
+                    return f.getName().toLowerCase().endsWith(".ccpp");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "CC++ Testcase File";
+                }
+            });
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1060,7 +1106,6 @@ public class TextEditor extends JPanel {
                 getTextEditor().saveCurrentFileContent();
             }
 
-            // FIXED: BLOCKS MAIN THREAD
             TestcaseFile tf = new TestcaseFile("datafile3.ccpp");
             System.out.println("TF has " + tf.getTestcases().size() + " testcases");
             Judge.judge(FileManager.getInstance(), tf, results -> {
@@ -1081,6 +1126,7 @@ public class TextEditor extends JPanel {
                         final String[] actualLines = future_actual.get();
                         slaveWorkers.submit(() -> getTextEditor().displayActualDiff(actualLines, expectedLines));
                         getTextEditor().displayExpectedDiff(actualLines, expectedLines);
+
                     }
                     catch (InterruptedException ex) {}
                     catch (ExecutionException ex) {}

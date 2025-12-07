@@ -31,11 +31,12 @@
      */
     public class TerminalApp extends JFrame {
 
+        private boolean is_processing;
         private JTextArea outputArea;
         private JTextField inputField;
         private Process terminalProcess;
         private BufferedWriter processWriter;
-        private final FileManager fm;
+        private FileManager fm;
         private ArrayList<String> inputs;
         private String[] terminal_command;
         private boolean prompt_again;
@@ -43,6 +44,7 @@
         private UpdateGUICallback guiCallback;
         private String[] execCmd;
         private JTextLogger output_logger;
+        static TerminalApp instance;
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -56,11 +58,45 @@
             }
         }
 
-        public TerminalApp(FileManager fm, TerminalCallback exitCallback, UpdateGUICallback guiCallback) {
-            super("Java Swing Command Console");
+        public static TerminalApp getInstance() {
+            if (instance == null) {
+                instance = new TerminalApp();
+            }
+            return instance;
+        }
+
+        public TerminalApp setFileManager(FileManager fm)
+        {
+            if (is_processing) return this;
+            this.fm = fm;
+            return this;
+        }
+        public TerminalApp setExitCallback(TerminalCallback exitCallback)
+        {
+            if (is_processing) return this;
+            this.exitCallback = exitCallback;
+            return this;
+        }
+        public TerminalApp setUpdateCallback(UpdateGUICallback guiCallback)
+        {
+            if (is_processing) return this;
+            this.guiCallback = guiCallback;
+            return this;
+        }
+        public TerminalApp setAll(FileManager fm, TerminalCallback exitCallback,  UpdateGUICallback guiCallback)
+        {
+            if (is_processing) return this;
             this.fm = fm;
             this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
+            return this;
+        }
+
+        public void start()
+        {
+            if (is_processing) return;
+            is_processing = true;
+            setTitle("Java Swing Command Console");
             inputs = new ArrayList<>();
 
             outputArea = new JTextArea();
@@ -82,8 +118,10 @@
                 @Override
                 public void windowClosing(WindowEvent e) {
                     System.out.println("windowClosing");
-                    if (terminalProcess.isAlive()) terminalProcess.destroyForcibly();
-                    SwingUtilities.invokeLater(() -> Judge.cleanup(fm));
+                    if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
+                    slaveWorkers.submit(()->Judge.cleanup(fm));
+                    instance = null;
+                    is_processing = false;
                 }
             });
 
@@ -94,7 +132,6 @@
 
             setLocationRelativeTo(null);
             setVisible(true);
-
 
             AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
             doc.setDocumentFilter(new TerminalDocumentFilter());
@@ -107,6 +144,10 @@
                     Judge.cleanup(fm);
                 }
             });
+        }
+
+        private TerminalApp() {
+            is_processing = false;
         }
 
         static class TerminalDocumentFilter extends DocumentFilter {
@@ -143,8 +184,7 @@
             }
         };
 
-        private boolean initTerminalProcess()
-        {
+        private boolean initTerminalProcess() {
             SubmissionRecord sr = null;
             try {
                 sr = Judge.compile(fm, output_logger);
@@ -306,9 +346,6 @@
                         terminalProcess.destroy();
                     }
                 }
-
-
-
             }
         }
 
@@ -365,9 +402,9 @@
             FileManager finalFm = fm;
             if (OPEN_TERMINAL)
             {
-                TerminalApp ta  = null;
-                if (APPEND_TESTCASES) ta = new TerminalApp(finalFm, tf, null);
-                else ta = new TerminalApp(finalFm, null, null);
+                TerminalApp ta  = TerminalApp.getInstance();
+                if (APPEND_TESTCASES) ta.setAll(finalFm, tf, null).start();
+                else ta.setAll(finalFm, null, null).start();
 
                 // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished
