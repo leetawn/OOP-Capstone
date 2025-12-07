@@ -9,8 +9,6 @@
     import com.pty4j.PtyProcessBuilder;
 
     import javax.swing.*;
-    import javax.swing.event.DocumentEvent;
-    import javax.swing.event.DocumentListener;
     import javax.swing.text.*;
     import java.awt.*;
     import java.awt.event.ActionEvent;
@@ -151,13 +149,13 @@
         }
 
         static class TerminalDocumentFilter extends DocumentFilter {
-            int lastInsertionEnd = 0;
+            int lastInsertionStart = 0;
 
             @Override
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
                     throws BadLocationException {
 
-                int start = Math.min(lastInsertionEnd, offset);
+                int start = Math.min(lastInsertionStart, offset);
                 int length = offset - start;
 
                 String prevText = "";
@@ -166,20 +164,27 @@
                 }
 
                 String combined = prevText + string;
+                System.out.print("[ ");
+                for (char c : combined.toCharArray()) {
+                    if (c == '\r') System.out.print("\\r");
+                    else System.out.print(c);
+                }
+                System.out.println(" ]");
                 String filtered = Helpers.stripCRLines(combined);
                 fb.replace(start, length, filtered, attr);
-                lastInsertionEnd = start + filtered.length();
+                lastInsertionStart = offset;
             }
 
             @Override
             public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
                     throws BadLocationException {
-                insertString(fb, offset, text, attrs);
+                fb.replace(offset, length, text, attrs);
             }
 
             @Override
             public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-                lastInsertionEnd = offset;
+//                lastInsertionEnd = offset;
+//                fb.remove(offset, length);
                 fb.remove(offset, length);
             }
         };
