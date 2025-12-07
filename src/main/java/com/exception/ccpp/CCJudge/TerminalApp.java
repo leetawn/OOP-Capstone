@@ -3,22 +3,26 @@
     import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
     import com.exception.ccpp.Common.Helpers;
     import com.exception.ccpp.CustomExceptions.NotDirException;
+    import com.exception.ccpp.Debug.JTextLogger;
     import com.exception.ccpp.FileManagement.FileManager;
     import com.exception.ccpp.GUI.UpdateGUICallback;
     import com.pty4j.PtyProcessBuilder;
-    import com.sun.source.doctree.SummaryTree;
 
     import javax.swing.*;
+    import javax.swing.event.DocumentEvent;
+    import javax.swing.event.DocumentListener;
+    import javax.swing.text.*;
     import java.awt.*;
     import java.awt.event.ActionEvent;
     import java.awt.event.ActionListener;
     import java.awt.event.WindowAdapter;
     import java.awt.event.WindowEvent;
     import java.io.*;
-    import java.nio.MappedByteBuffer;
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.Map;
+
+    import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
     /**
      * A Java Swing application that acts as a console for an external command-line process (e.g., cmd.exe or bash).
@@ -35,11 +39,10 @@
         private ArrayList<String> inputs;
         private String[] terminal_command;
         private boolean prompt_again;
-        private boolean terminal_loop;
-        private Thread output_thread;
         private TerminalCallback exitCallback;
         private UpdateGUICallback guiCallback;
-
+        private String[] execCmd;
+        private JTextLogger output_logger;
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -58,7 +61,6 @@
             this.fm = fm;
             this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
-            terminal_loop = false;
             inputs = new ArrayList<>();
 
             outputArea = new JTextArea();
@@ -80,30 +82,75 @@
                 @Override
                 public void windowClosing(WindowEvent e) {
                     System.out.println("windowClosing");
-                    if (output_thread.isAlive()) output_thread.interrupt();
                     if (terminalProcess.isAlive()) terminalProcess.destroyForcibly();
                     SwingUtilities.invokeLater(() -> Judge.cleanup(fm));
                 }
             });
+
+            output_logger = new JTextLogger(outputArea);
+
             setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             pack();
 
             setLocationRelativeTo(null);
             setVisible(true);
 
-            if (initTerminalProcess())
-            {
-                startTerminalProcess();
-            }
+
+            AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
+            doc.setDocumentFilter(new TerminalDocumentFilter());
+
+
+            slaveWorkers.submit(() -> {
+                if (initTerminalProcess())
+                    startTerminalProcess();
+                else {
+                    Judge.cleanup(fm);
+                }
+            });
         }
+
+        static class TerminalDocumentFilter extends DocumentFilter {
+            int lastInsertionEnd = 0;
+
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws BadLocationException {
+
+                int start = Math.min(lastInsertionEnd, offset);
+                int length = offset - start;
+
+                String prevText = "";
+                if (length > 0) {
+                    prevText = fb.getDocument().getText(start, length);
+                }
+
+                String combined = prevText + string;
+                String filtered = Helpers.stripCRLines(combined);
+                fb.replace(start, length, filtered, attr);
+                lastInsertionEnd = start + filtered.length();
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                insertString(fb, offset, text, attrs);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                lastInsertionEnd = offset;
+                fb.remove(offset, length);
+            }
+        };
 
         private boolean initTerminalProcess()
         {
             SubmissionRecord sr = null;
             try {
-                sr = Judge.compile(fm);
+                sr = Judge.compile(fm, output_logger);
             } catch (Exception e) {
                 System.err.println("Compilation error:\n" + e.getMessage());
+                return false;
             }
 
             if (sr.verdict() == JudgeVerdict.CE)  {
@@ -111,7 +158,8 @@
                 return false;
             }
 
-            String[] execCmd = ExecutionConfig.getExecuteCommand(fm);
+            outputArea.setText("");
+            execCmd = ExecutionConfig.getExecuteCommand(fm);
             System.out.println(String.join(" ", execCmd));
             terminal_command = execCmd;
             return true;
@@ -141,20 +189,18 @@
                     String[] inputs_arr = inputs.toArray(new String[0]);
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
-                    SubmissionRecord verdict = Judge.judgeInteractively(fm, inputs_arr, null);
 
-                    SwingUtilities.invokeLater(() -> {
-                        // Only prompt if a callback handler is present (for testcase generation)
-                        if (exitCallback != null) {
-                            exitCallback.onTerminalExit(inputs_arr, verdict.output());
-                            outputArea.append("\nContinue adding testcases [y/n]?\n");
-                        }
-                        else{
-                            outputArea.append("\nEnter any key to continue...\n");
-                        }
-                        if (guiCallback != null) { guiCallback.updateGUI(); }
-                        prompt_again = true; // Set flag to divert the *next* input
-                    });
+                    Judge.judgeInteractively(execCmd, fm, inputs_arr, results -> {
+                        SwingUtilities.invokeLater(() -> {
+                            // Only prompt if a callback handler is present (for testcase generation)
+                            if (exitCallback != null) {
+                                exitCallback.onTerminalExit(inputs_arr, results[0].output());
+                                outputArea.append("\nContinue adding testcases [y/n]?\n");
+                            }
+                            prompt_again = true;
+                            if (guiCallback != null) { guiCallback.updateGUI(); }
+                        });
+                    }, output_logger);
 
                     return p.exitValue();
                 });
@@ -162,9 +208,8 @@
                 // Setup the writer for sending commands to the process's input (stdin)
                 processWriter = new BufferedWriter(new OutputStreamWriter(terminalProcess.getOutputStream()));
 
-                // Start a thread to continuously read the process's output (stdout and stderr)
-                output_thread = new Thread(new ConsoleOutputReader(terminalProcess.getInputStream()));
-                output_thread.start();
+                slaveWorkers.submit(new ConsoleOutputReader(terminalProcess.getInputStream()));
+
             } catch (Exception e) {
                 outputArea.append("Error starting external process:\n" + e.getMessage() + "\n");
                 e.printStackTrace();
@@ -184,7 +229,6 @@
 
                 if (prompt_again) {
                     prompt_again = false;
-
                     if (command.length() > 0 && Character.toLowerCase(command.charAt(0)) == 'y') {
                         outputArea.append(command + "\n");
                         if (exitCallback != null)
@@ -216,7 +260,8 @@
 
         private class ConsoleOutputReader implements Runnable {
             private final InputStream inputStream;
-
+            private int prev;
+            private int curr;
             public ConsoleOutputReader(InputStream inputStream) {
                 this.inputStream = inputStream;
             }
@@ -235,9 +280,11 @@
                             if (readChars > 0) {
                                 final String output = (new String(buffer, 0, readChars));
 
+                                prev = curr;
+                                curr = outputArea.getCaretPosition();
+
                                 SwingUtilities.invokeLater(() -> {
                                     outputArea.append(Helpers.stripAnsi(output));
-                                    outputArea.setText(Helpers.stripCRLines(outputArea.getText()));
                                     outputArea.setCaretPosition(outputArea.getDocument().getLength());
                                 });
                             }
@@ -248,7 +295,6 @@
                 } catch (IOException e) {
                     SwingUtilities.invokeLater(() -> {
                         System.err.println("TerminalApp Error: " + e.getMessage());
-                        // e.printStackTrace();
                     });
                 } catch (InterruptedException e) {
                     SwingUtilities.invokeLater(() -> System.out.println("Console output reader interrupted."));
@@ -268,12 +314,12 @@
 
         public static void main(String[] args) {
             boolean OPEN_TERMINAL, APPEND_TESTCASES, RUN_TESTCASES;
-            String[] files = {"datafile3.ccpp", "datafile2.ccpp"};
+            String[] files = {"datafile3.ccpp", "datafile3.ccpp"};
 
             // TEST VARIABLES
             final String TEST_LANG = "CPP";
             final String TEST_FILE = files[0];
-            final int TEST_TYPE = 2;
+            final int TEST_TYPE = 1;
 
             switch (TEST_TYPE) {
                 case 1: // TEST SUBMIT CODE
@@ -326,29 +372,29 @@
                 // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished
                 try {
-                    Thread.sleep(10000);
                     while (ta.isDisplayable()) Thread.sleep(100);
                 } catch (InterruptedException e) {}
-                System.out.printf("CONTINUING AFTER TerminalApp DISPOSAL.\n");
+                System.out.println("No longer displayable");
+
                 if (APPEND_TESTCASES) tf.writeOut();
             }
 
             if (RUN_TESTCASES)
             {
-                // this is how you call judge
-                SubmissionRecord[] sr_arr= Judge.judge(fm,tf);
+                // this is how you call multithreaded judge
+                Judge.judge(fm,tf, results -> {
+                    int i = 0;
+                    for (SubmissionRecord sr : results) {
+                        System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
+                        System.out.println(sr.output()); // actual output
+                        System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", i);
+                        System.out.println(sr.expected_output()); // expected output
+                        System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
+                    }
 
-                // print test cases
-                int i = 0;
-                for (SubmissionRecord sr : sr_arr) {
-                    System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
-                    System.out.println(sr.output()); // actual output
-                    System.out.printf("-------------- EXPECTED OUT Testcase %d---------------\n", i);
-                    System.out.println(sr.expected_output()); // expected output
-                    System.out.printf("------------- END Testcase %d---------------]]]\n\n", i);
-                }
+                    slaveWorkers.shutdown();
+                });
             }
-
 
 
         }

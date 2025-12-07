@@ -1,6 +1,5 @@
 package com.exception.ccpp;
 
-import com.exception.ccpp.CCJudge.TerminalApp;
 import com.exception.ccpp.GUI.TextEditor;
 
 // TODO: DO NOT REMOVE THIS CLASS THIS WILL BE OUR ENTRY POINT FOR THE APP

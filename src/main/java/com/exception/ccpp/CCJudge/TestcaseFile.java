@@ -10,8 +10,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class TestcaseFile extends CCFile implements TerminalCallback{
-    private ArrayList<String[]> inputs = new ArrayList<>();
-    private ArrayList<String> expected_outputs = new ArrayList<>();
     Map<Testcase, String> testcases = new LinkedHashMap<>();
 
     public TestcaseFile(String filepath) {
@@ -21,6 +19,12 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     public TestcaseFile(Path path) {
         super(path);
         load();
+    }
+    // TerminalApp USAGE ONLY
+    TestcaseFile(String[] inputs) {
+        super((Path)null);
+        testcases = new LinkedHashMap<>();
+        testcases.put(new Testcase(inputs,""), "SINGLE_INSTANCE");
     }
 
     /************ GETTERS *******************/
@@ -52,6 +56,7 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
             System.err.println("TestcaseFile.load() error loading " + path);
             e.printStackTrace();
         }
+        if (testcases.size() <= 0) testcases.put(new Testcase(new String[]{},""), "FIRST_TESTCASE");
     }
 
     @Override

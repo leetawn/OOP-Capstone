@@ -7,6 +7,7 @@ import com.exception.ccpp.CCJudge.TestcaseFile;
 import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.Debug.PerfTimer;
 import com.exception.ccpp.FileManagement.*;
 
 import java.awt.event.*;
@@ -19,6 +20,8 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class TextEditor extends JPanel {
     private JButton runCodeButton;
@@ -302,6 +305,7 @@ public class TextEditor extends JPanel {
 
     /* --------------- Util --------------- */
     private void displayActualDiff(String actualText, String expectedText) {
+        PerfTimer timer = new PerfTimer("displayActualDiff").start();
         StyledDocument doc = actualOutputArea.getStyledDocument();
 
         try {
@@ -353,20 +357,28 @@ public class TextEditor extends JPanel {
                     charToDisplay = String.valueOf(charToProcess);
                 }
 
-                try {
-                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-                } catch (BadLocationException ignored) {}
+                SwingUtilities.invokeLater( () ->
+                {
+                    try {
+                        doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+                    } catch (BadLocationException ignored) {}
+                });
             }
 
             if (i < maxLines - 1) {
-                try {
-                    doc.insertString(doc.getLength(), "\n", defaultStyle);
-                } catch (BadLocationException ignored) {}
+                SwingUtilities.invokeLater( () ->
+                {
+                    try {
+                        doc.insertString(doc.getLength(), "\n", defaultStyle);
+                    } catch (BadLocationException ignored) {}
+                });
             }
         }
+        timer.stop();
     }
     private void displayExpectedDiff(String actualText, String expectedText) {
         // Note: We are using expectedOutputArea for this.
+        PerfTimer timer = new PerfTimer("displayExpectedDiff").start();
         StyledDocument doc = expectedOutputArea.getStyledDocument();
 
         try {
@@ -409,18 +421,26 @@ public class TextEditor extends JPanel {
                 } else {
                     charToDisplay = String.valueOf(charToProcess);
                 }
+                SwingUtilities.invokeLater( () ->
+                {
+                    try {
+                        doc.insertString(doc.getLength(), charToDisplay, styleToApply);
+                    } catch (BadLocationException ignored) {}
+                });
 
-                try {
-                    doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-                } catch (BadLocationException ignored) {}
             }
 
             if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
-                try {
-                    doc.insertString(doc.getLength(), "\n", defaultStyle);
-                } catch (BadLocationException ignored) {}
+                SwingUtilities.invokeLater( () ->
+                {
+                    try {
+                        doc.insertString(doc.getLength(), "\n", defaultStyle);
+
+                    } catch (BadLocationException ignored) {}
+                });
             }
         }
+        timer.stop();
     }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -1008,15 +1028,24 @@ public class TextEditor extends JPanel {
             if (FileExplorer.getInstance().getSelectedFile() == null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
                 getTextEditor().saveCurrentFileContent();
             }
-            SubmissionRecord[] results = Judge.judge(FileManager.getInstance(), new TestcaseFile("datafile3.ccpp"));
 
-            if (results.length > 0) {
-                SubmissionRecord rec = results[0];
-                final String actual = Helpers.stripCRLines(rec.output());
-                String expected = rec.expected_output();
-                getTextEditor().displayActualDiff(actual, expected);
-                getTextEditor().displayExpectedDiff(actual, expected);
-            }
+            // FIXED: BLOCKS MAIN THREAD
+            TestcaseFile tf = new TestcaseFile("datafile3.ccpp");
+            System.out.println("TF has " + tf.getTestcases().size() + " testcases");
+            Judge.judge(FileManager.getInstance(), tf, results -> {
+                System.out.println("[TextEditor] RECEIVED");
+                if (results.length > 0) {
+                    System.out.println("[TextEditor] RESULTS HAS LENGTH");
+                    SubmissionRecord rec = results[0];
+                    final String actual = (rec.output());
+                    String expected = rec.expected_output();
+                    System.out.println("Exit code : " + rec.verdict());
+
+                    getTextEditor().displayActualDiff(actual, expected);
+                    getTextEditor().displayExpectedDiff(actual, expected);
+                }
+            });
+
         }
     }
     /* --------------- Button Handlers --------------- */
@@ -1050,6 +1079,13 @@ public class TextEditor extends JPanel {
                     }
                 }
             }
+
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    slaveWorkers.shutdown();
+                }
+            });
 
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1400, 800);
