@@ -16,6 +16,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -931,7 +932,8 @@ public class TextEditor extends JPanel {
             getTextEditor().saveCurrentFileContent();
             FileManager fm = fe.getFileManager();
             SwingUtilities.invokeLater(() -> {
-                new TerminalApp(fm, null, null);
+                TerminalApp.getInstance().setAll(fm, null, null).start();
+//                new TerminalApp(fm, null, null);
             });
         }
     }
@@ -996,6 +998,18 @@ public class TextEditor extends JPanel {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Select Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setFileFilter(new  FileFilter() {
+                @Override
+                public boolean accept(File f) {
+                    if (f.isDirectory()) return true;
+                    return f.getName().toLowerCase().endsWith(".ccpp");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "CC++ Testcase File";
+                }
+            });
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1030,6 +1044,18 @@ public class TextEditor extends JPanel {
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Manage Testcase");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setFileFilter(new  FileFilter() {
+                @Override
+                public boolean accept(File f) {
+                    if (f.isDirectory()) return true;
+                    return f.getName().toLowerCase().endsWith(".ccpp");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "CC++ Testcase File";
+                }
+            });
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1080,7 +1106,6 @@ public class TextEditor extends JPanel {
                 getTextEditor().saveCurrentFileContent();
             }
 
-            // FIXED: BLOCKS MAIN THREAD
             TestcaseFile tf = new TestcaseFile("datafile3.ccpp");
             System.out.println("TF has " + tf.getTestcases().size() + " testcases");
             Judge.judge(FileManager.getInstance(), tf, results -> {
