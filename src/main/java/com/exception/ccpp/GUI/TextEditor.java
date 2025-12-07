@@ -9,6 +9,7 @@ import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.Debug.PerfTimer;
 import com.exception.ccpp.FileManagement.*;
+import com.exception.ccpp.Gang.SlaveManager;
 
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
@@ -20,6 +21,8 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
@@ -304,143 +307,150 @@ public class TextEditor extends JPanel {
     /* --------------- Setup --------------- */
 
     /* --------------- Util --------------- */
-    private void displayActualDiff(String actualText, String expectedText) {
-        PerfTimer timer = new PerfTimer("displayActualDiff").start();
+    private int BUFFER_MAX_CHARS = 10000;
+    private void displayActualDiff(String[] actualLines, String[] expectedLines) {
         StyledDocument doc = actualOutputArea.getStyledDocument();
 
         try {
             doc.remove(0, doc.getLength());
         } catch (BadLocationException ignored) {}
 
-        String[] actualLines = actualText.split("\\R", -1);
-        String[] expectedLines = expectedText.split("\\R", -1);
-
         int maxLines = Math.max(actualLines.length, expectedLines.length);
 
+        AttributeSet prevStyle;
+        AttributeSet styleToApply = null;
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < maxLines; i++) {
             String actualLine = (i < actualLines.length) ? actualLines[i] : "";
             String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
 
             int maxLength = Math.max(actualLine.length(), expectedLine.length());
 
+            // full line, char by char
             for (int j = 0; j < maxLength; j++) {
                 char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
                 char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
 
-                AttributeSet styleToApply;
                 char charToProcess = actualChar; // Start with the actual character
 
-
+                prevStyle = styleToApply;
                 if (expectedChar == 0 && actualChar != 0) {
-                    styleToApply = excessStyle; // Yellow
-
-                } else if (expectedChar != 0 && actualChar == expectedChar) {
+                    styleToApply = excessStyle;
+                }
+                else if (expectedChar != 0 && actualChar == expectedChar) {
                     styleToApply = matchStyle; // Green
+                }
+                else {
+                    styleToApply = mismatchStyle;
+                    if (actualChar == 0) charToProcess = ' ';
+                }
 
-                } else {
-                    styleToApply = mismatchStyle; // Red
-
-                    if (actualChar == 0) {
-                        charToProcess = ' ';
+                // flush first
+                if (prevStyle != null && !buffer.isEmpty())
+                    if (prevStyle != styleToApply || buffer.length() > BUFFER_MAX_CHARS) {
+                        final AttributeSet final_style = prevStyle;
+                        final String final_str = buffer.toString();
+                        SwingUtilities.invokeLater(() ->
+                        {
+                            try {
+                                doc.insertString(doc.getLength(), final_str, final_style);
+                            } catch (BadLocationException ignored) {}
+                        });
+                        buffer.delete(0, buffer.length());
                     }
-                }
 
-                String charToDisplay;
-
-                if (charToProcess == '\t') {
-                    charToDisplay = "    "; // 4 spaces for Tab
-                } else if (charToProcess == '\r' || charToProcess == '\n') {
-                    charToDisplay = "\u2424"; // Symbol for Newline
-                } else if (charToProcess == 0 || charToProcess == ' ') {
-                    charToDisplay = " ";
-                } else {
-                    charToDisplay = String.valueOf(charToProcess);
-                }
-
-                SwingUtilities.invokeLater( () ->
-                {
-                    try {
-                        doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-                    } catch (BadLocationException ignored) {}
-                });
+                if (charToProcess == '\t') buffer.append("    "); // 4 spaces for Tab
+                else if (charToProcess == '\r' || charToProcess == '\n') buffer.append("\u2424"); // Symbol for Newline
+                else if (charToProcess == 0 || charToProcess == ' ') buffer.append(" ");
+                else buffer.append(charToProcess);
             }
 
+            // newline if not the last line
             if (i < maxLines - 1) {
-                SwingUtilities.invokeLater( () ->
-                {
-                    try {
-                        doc.insertString(doc.getLength(), "\n", defaultStyle);
-                    } catch (BadLocationException ignored) {}
-                });
+                buffer.append("\n");
             }
         }
-        timer.stop();
+        if (!buffer.isEmpty()) {
+            final AttributeSet final_style = styleToApply;
+            final String final_str = buffer.toString();
+            SwingUtilities.invokeLater( () ->
+            {
+                try {
+                    doc.insertString(doc.getLength(), final_str, final_style);
+                } catch (BadLocationException ignored) {}
+            });
+        }
     }
-    private void displayExpectedDiff(String actualText, String expectedText) {
+    private void displayExpectedDiff(String[] actualLines, String[] expectedLines) {
         // Note: We are using expectedOutputArea for this.
-        PerfTimer timer = new PerfTimer("displayExpectedDiff").start();
         StyledDocument doc = expectedOutputArea.getStyledDocument();
 
         try {
             doc.remove(0, doc.getLength());
         } catch (BadLocationException ignored) {}
 
-        String[] actualLines = actualText.split("\\R", -1);
-        String[] expectedLines = expectedText.split("\\R", -1);
-
         int maxLines = Math.max(actualLines.length, expectedLines.length);
 
+        AttributeSet prevStyle;
+        AttributeSet styleToApply = null;
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < maxLines; i++) {
             String actualLine = (i < actualLines.length) ? actualLines[i] : "";
             String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
 
-            int maxLength = Math.max(actualLine.length(), expectedLine.length());
-
-            for (int j = 0; j < maxLength; j++) {
+            for (int j = 0; j < expectedLine.length(); j++) {
                 char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
                 char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
 
-                AttributeSet styleToApply;
                 char charToProcess = expectedChar; // Focus on the expected character
 
                 if (expectedChar == 0) {
                     continue;
                 }
 
+                prevStyle = styleToApply;
                 if (actualChar == expectedChar) {
                     styleToApply = matchStyle; // Green
                 } else {
                     styleToApply = mismatchStyle; // Red
                 }
 
-                String charToDisplay;
-                if (charToProcess == '\t') {
-                    charToDisplay = "    "; // 4 spaces for Tab
-                } else if (charToProcess == '\r' || charToProcess == '\n') {
-                    charToDisplay = "\u2424"; // Symbol for Newline
-                } else {
-                    charToDisplay = String.valueOf(charToProcess);
-                }
-                SwingUtilities.invokeLater( () ->
-                {
-                    try {
-                        doc.insertString(doc.getLength(), charToDisplay, styleToApply);
-                    } catch (BadLocationException ignored) {}
-                });
+                if (prevStyle != null && !buffer.isEmpty())
+                    if (prevStyle != styleToApply || buffer.length() > BUFFER_MAX_CHARS) {
+                        final AttributeSet final_style = prevStyle;
+                        final String final_str = buffer.toString();
+                        SwingUtilities.invokeLater(() ->
+                        {
+                            try {
+                                doc.insertString(doc.getLength(), final_str, final_style);
+                            } catch (BadLocationException ignored) {}
+                        });
+                        buffer.delete(0, buffer.length());
+                    }
 
+                if (charToProcess == '\t') {
+                    buffer.append("    "); // 4 spaces for Tab
+                } else if (charToProcess == '\r' || charToProcess == '\n') {
+                    buffer.append("\u2424"); // Symbol for Newline
+                } else {
+                    buffer.append(charToProcess);
+                }
             }
 
             if (i < maxLines - 1 && i < expectedLines.length) { // Only add newline if Expected has more lines
-                SwingUtilities.invokeLater( () ->
-                {
-                    try {
-                        doc.insertString(doc.getLength(), "\n", defaultStyle);
-
-                    } catch (BadLocationException ignored) {}
-                });
+                buffer.append("\n");
             }
         }
-        timer.stop();
+        if (!buffer.isEmpty()) {
+            final AttributeSet final_style = styleToApply;
+            final String final_str = buffer.toString();
+            SwingUtilities.invokeLater( () ->
+            {
+                try {
+                    doc.insertString(doc.getLength(), final_str, final_style);
+                } catch (BadLocationException ignored) {}
+            });
+        }
     }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -1037,12 +1047,24 @@ public class TextEditor extends JPanel {
                 if (results.length > 0) {
                     System.out.println("[TextEditor] RESULTS HAS LENGTH");
                     SubmissionRecord rec = results[0];
-                    final String actual = (rec.output());
-                    String expected = rec.expected_output();
+
+                    final String actual = rec.output();
+                    final String expected = rec.expected_output();
                     System.out.println("Exit code : " + rec.verdict());
 
-                    getTextEditor().displayActualDiff(actual, expected);
-                    getTextEditor().displayExpectedDiff(actual, expected);
+
+                    PerfTimer pt = new PerfTimer("REGEX DIFF").start();
+                    pt.stop();
+                    Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
+                    String[] expectedLines = expected.split("\\R", -1);
+
+                    try {
+                        final String[] actualLines = future_actual.get();
+                        slaveWorkers.submit(() -> getTextEditor().displayActualDiff(actualLines, expectedLines));
+                        getTextEditor().displayExpectedDiff(actualLines, expectedLines);
+                    }
+                    catch (InterruptedException ex) {}
+                    catch (ExecutionException ex) {}
                 }
             });
 
