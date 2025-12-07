@@ -6,6 +6,7 @@ import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
 import java.awt.event.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.*;
 import javax.swing.tree.*;
@@ -129,26 +130,26 @@ public class TextEditor extends JPanel {
         gbc.gridy = 0; // STRICTLY DO NOT EDIT THIS!
         gbc.weighty = 1.0; // STRICTLY DO NOT EDIT THIS!
 
-        // --- PANEL 1: Left Sidebar (Purple) ---
+        // --- PANEL 1: Left Sidebar ---
         gbc.gridx = 0;  // STRICTLY DO NOT EDIT THIS!
         gbc.weightx = 0.20; // STRICTLY DO NOT EDIT THIS!
         add(create_first_panel(), gbc);
 
-        // --- PANEL 2: Center (Green) ---
+        // --- PANEL 2: Center  ---
         gbc.gridx = 1; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.25; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 0.35; // STRICTLY DO NOT EDIT THIS!
         add(create_second_panel(), gbc);
 
-        // --- PANEL 3: Right Sidebar (Red) ---
+        // --- PANEL 3: Right Sidebar ---
         gbc.gridx = 2; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.55; // STRICTLY DO NOT EDIT THIS!
-        add(create_third_panel(), gbc);
+        gbc.weightx = 0.44; // STRICTLY DO NOT EDIT THIS!
+        add(create_third_panel_Container(), gbc);
     }
 
     private JPanel create_first_panel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.decode("#000000"));
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+//        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 1));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(0, 0, 0, 0);
 
@@ -309,7 +310,10 @@ public class TextEditor extends JPanel {
     private JPanel create_second_panel() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.decode("#1f2335"));
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBorder(BorderFactory.createMatteBorder(
+                1, 1, 1, 1, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
 
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -341,12 +345,15 @@ public class TextEditor extends JPanel {
 
     private JPanel create_2_1_panel(){
         JPanel panel = new FixedSizePanel(1, 20);
-        panel.setBackground(Color.decode("#1f2335"));
-        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        panel.setBackground(Color.decode("#191c2a"));
+        panel.setBorder(BorderFactory.createMatteBorder(
+                0, 0, 1, 0, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
 
         panel.setLayout(new BorderLayout());
 
-        Color panelBgColor = Color.decode("#1f2335");
+        Color panelBgColor = Color.decode("#191c2a");
         Color foreColor = Color.WHITE;
 
         JLabel label1 = new JLabel();
@@ -446,42 +453,49 @@ public class TextEditor extends JPanel {
 
     private JPanel create_2_3_panel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#1f2335"));
-        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        panel.setBackground(Color.decode("#191c2a"));
+        panel.setBorder(BorderFactory.createMatteBorder(
+                1, 0, 0, 0, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
 
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(0, 0, 0, 0);
         gbc.weighty = 1.0;
 
-        // --- LEFT PANEL (30% with min width) ---
+        // --- LEFT PANEL ---
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.3; // 30%
+        gbc.weightx = 0.22;
         JPanel p1 = create_2_3_1_panel();
         p1.setMinimumSize(new Dimension(150, 60)); // Minimum width
+//        p1.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
         panel.add(p1, gbc);
 
-        // --- MIDDLE PANEL (20% with min width) ---
+        // --- MIDDLE PANEL  ---
         gbc.gridx = 1;
         gbc.gridy = 0;
-        gbc.weightx = 0.2; // 20%
+        gbc.weightx = 0.37;
         JPanel p2 = create_2_3_2_panel();
         p2.setMinimumSize(new Dimension(80, 60)); // Minimum width
+//        p2.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
         panel.add(p2, gbc);
 
-        // --- RIGHT PANEL (50%) ---
+        // --- RIGHT PANEL ---
         gbc.gridx = 2;
         gbc.gridy = 0;
-        gbc.weightx = 0.5; // 50%
-        panel.add(create_2_3_3_panel(), gbc);
+        gbc.weightx = 0.40;
+        JPanel p3 = create_2_3_3_panel();
+//        p3.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
+        panel.add(p3, gbc);
 
         return panel;
     }
 
     private JPanel create_2_3_1_panel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#1f2335"));
+        panel.setBackground(Color.decode("#191c2a"));
         GridBagConstraints gbc = new GridBagConstraints();
 
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
@@ -489,14 +503,14 @@ public class TextEditor extends JPanel {
         importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
-        importTestcaseButton.setPreferredSize(new Dimension(135, 40));
+        importTestcaseButton.setPreferredSize(new Dimension(120, 40));
 
         exportTestcaseButton = new RoundedButton("Export Testcase", 15);
         exportTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         exportTestcaseButton.setForeground(Color.WHITE);
         exportTestcaseButton.setBackground(Color.decode("#568afc"));
-        exportTestcaseButton.setPreferredSize(new Dimension(135, 40));
+        exportTestcaseButton.setPreferredSize(new Dimension(120, 40));
 
         // Import button
         gbc.gridx = 0;
@@ -518,7 +532,7 @@ public class TextEditor extends JPanel {
 
     private JPanel create_2_3_2_panel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#1f2335"));
+        panel.setBackground(Color.decode("#191c2a"));
         GridBagConstraints gbc = new GridBagConstraints();
 
         setEntryPointButton = new RoundedButton("Set Entry Point", 15);
@@ -527,7 +541,7 @@ public class TextEditor extends JPanel {
         setEntryPointButton.setForeground(Color.WHITE);
         setEntryPointButton.setBackground(Color.decode("#568afc"));
 
-        Dimension fixedSize = new Dimension(135, 40);
+        Dimension fixedSize = new Dimension(110, 40);
         setEntryPointButton.setMinimumSize(fixedSize);
         setEntryPointButton.setMaximumSize(fixedSize);
         setEntryPointButton.setPreferredSize(fixedSize);
@@ -549,6 +563,7 @@ public class TextEditor extends JPanel {
         placeholder.setPreferredSize(fixedSize);
         placeholder.setMinimumSize(fixedSize);
         placeholder.setMaximumSize(fixedSize);
+        placeholder.setBackground(Color.decode("#191c2a"));
         placeholder.setOpaque(false);
 
         gbc.gridx = 0;
@@ -565,7 +580,7 @@ public class TextEditor extends JPanel {
 
     private JPanel create_2_3_3_panel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#1f2335"));
+        panel.setBackground(Color.decode("#191c2a"));
         GridBagConstraints gbc = new GridBagConstraints();
 
         // Smaller font sizes and minimal padding
@@ -587,21 +602,282 @@ public class TextEditor extends JPanel {
         // Run code button
         gbc.gridx = 1;
         gbc.gridy = 0;
-        gbc.weightx = 0.33;
-        gbc.insets = new Insets(0, 0, 0, -25);
+        gbc.weightx = 0.36;
+        gbc.insets = new Insets(0, 0, 0, -10);
         panel.add(runCodeButton, gbc);
 
         // Submit code button
         gbc.gridx = 2;
         gbc.gridy = 0;
-        gbc.weightx = 0.34;
+        gbc.weightx = 0.31;
         gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(submitCodeButton, gbc);
 
         return panel;
     }
 
-    private JPanel create_third_panel() {
+    // Container for both TestcasePanel and DiffPanel
+    private JPanel create_third_panel_Container(){
+        JPanel cardPanel = new JPanel(new CardLayout());
+        cardPanel.setBorder(BorderFactory.createMatteBorder(
+                0, 1, 0, 0, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
+
+        // TODO: himo pa oga action listener, show / hide which one
+        cardPanel.add(create_third_panel_Testcase(), "TESTCASE_VIEW");
+        cardPanel.add(create_third_panel_Diff(), "DIFF_VIEW");
+
+        return cardPanel;
+    }
+
+    // For TestcaseListPanel ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    private JPanel create_third_panel_Testcase(){
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#1a1c2a"));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.insets = new Insets(20, 20, 20, 20);
+
+        panel.add(create_third_panel_Testcase_content(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_third_panel_Testcase_content(){
+        RoundedPanel panel = new RoundedPanel(new GridBagLayout(), 100, "#1f2335");
+        panel.setBorderThickness(1);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 0;
+
+        // TITLE SECTION
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0,0,0,0);
+        panel.add(create_title_section(), gbc);
+
+        // Scrollable content section
+        gbc.gridy = 1;
+        gbc.weighty = 0.9;
+        gbc.insets = new Insets(0,0,0,0);
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(create_scrollable_section(), gbc);
+
+        return panel;
+    }
+
+    private JPanel create_title_section(){
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.decode("#1f2335"));
+
+        JLabel label = new JLabel("Testcases");
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+        label.setForeground(Color.WHITE);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        // Left empty label
+        gbc.gridx = 0;
+        gbc.weightx = 0.5;
+        panel.add(new JLabel(" "), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        panel.add(label, gbc);
+
+        // Right empty label
+        gbc.gridx = 2;
+        gbc.weightx = 0.5;
+        panel.add(new JLabel(" "), gbc);
+
+        return panel;
+    }
+
+//    private JPanel create_scrollable_section(){
+//        JPanel wrapper = new JPanel(new GridBagLayout());
+//        wrapper.setBackground(Color.decode("#1f2335"));
+//        wrapper.setBorder(BorderFactory.createMatteBorder(
+//                2, 0, 0, 0,
+//                Color.decode("#4a77dc")
+//        ));
+//
+//        // Panel to hold buttons
+//        JPanel contentPanel = new JPanel(new GridBagLayout());
+//        contentPanel.setBackground(Color.decode("#1f2335"));
+//
+//        GridBagConstraints gbc = new GridBagConstraints();
+//        gbc.gridx = 0;
+//        gbc.fill = GridBagConstraints.BOTH;
+//        // Para mo gana for cross monitors
+//        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+//        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+//        System.out.println("MONITOR WIDTH: " + monitorWidth + " MONITOR HEIGHT: " + monitorHeight);
+//        gbc.insets = new Insets((int)(monitorHeight * 0.02), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011)); // Horizontal padding for all monitors
+//
+//        // Try 5 og 20
+//        for(int i = 1; i <= 20; i++) {
+//            gbc.gridy = i-1;
+//            gbc.weighty = 0.0;
+//
+//            JButton button = new RoundedButton("Test case " + i, 30);
+////            button.addActionListener(e -> openTestcase(testcaseNumber));
+//            button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+//            button.setBackground(Color.decode("#1a1c2a"));
+//            button.setForeground(Color.WHITE);
+//            button.setFocusPainted(false);
+//            button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+//            int tempW = (int) (monitorWidth * 0.12);
+//            int tempH = (int) (monitorHeight * 0.05);
+//            button.setPreferredSize(new Dimension(tempW, tempH));
+//            contentPanel.add(button, gbc);
+//
+//            gbc.insets = new Insets((int)(monitorHeight * 0.014), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
+//        }
+//
+//        // Add filler to push buttons to top (if gamay ra ang buttons)
+//        gbc.gridy = 5;
+//        gbc.weighty = 1.0;
+//        contentPanel.add(Box.createGlue(), gbc);
+//
+//        JScrollPane scrollPane = new JScrollPane(contentPanel);
+//        scrollPane.setBackground(Color.decode("#1f2335"));
+//        scrollPane.getViewport().setBackground(Color.decode("#1f2335"));
+//        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+//        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+//        scrollPane.getVerticalScrollBar().setUnitIncrement(20);
+//
+//        GridBagConstraints wrapperGbc = new GridBagConstraints();
+//        wrapperGbc.weightx = 1.0;
+//        wrapperGbc.weighty = 1.0;
+//        wrapperGbc.fill = GridBagConstraints.BOTH;
+//
+//        wrapper.add(scrollPane, wrapperGbc);
+//
+//        return wrapper;
+//    }
+
+    private JPanel create_scrollable_section(){
+        JPanel wrapper = new JPanel(new GridBagLayout());
+        wrapper.setBackground(Color.decode("#1f2335"));
+        wrapper.setBorder(BorderFactory.createMatteBorder(
+                2, 0, 0, 0,
+                Color.decode("#4a77dc")
+        ));
+
+        // Panel to hold buttons
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(Color.decode("#1f2335"));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+
+        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+        System.out.println("MONITOR WIDTH: " + monitorWidth + " MONITOR HEIGHT: " + monitorHeight);
+        gbc.insets = new Insets((int)(monitorHeight * 0.02), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
+
+        for(int i = 1; i <= 20; i++) {
+            gbc.gridy = i-1;
+            gbc.weighty = 0.0;
+
+            JPanel testcasePanel = createTestcaseButtonPanel(i);
+            contentPanel.add(testcasePanel, gbc);
+
+            gbc.insets = new Insets((int)(monitorHeight * 0.014), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
+        }
+
+        // Add filler to push buttons to top (if gamay ra ang buttons)
+        gbc.gridy = 20;
+        gbc.weighty = 1.0;
+        contentPanel.add(Box.createGlue(), gbc);
+
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setBackground(Color.decode("#1f2335"));
+        scrollPane.getViewport().setBackground(Color.decode("#1f2335"));
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(20);
+
+        GridBagConstraints wrapperGbc = new GridBagConstraints();
+        wrapperGbc.weightx = 1.0;
+        wrapperGbc.weighty = 1.0;
+        wrapperGbc.fill = GridBagConstraints.BOTH;
+
+        wrapper.add(scrollPane, wrapperGbc);
+
+        return wrapper;
+    }
+
+    private JPanel createTestcaseButtonPanel(int testcaseNumber) {
+        // 1. Create the RoundedButton
+        RoundedButton buttonWrapper = new RoundedButton("", 30);
+        buttonWrapper.setBackground(Color.decode("#1a1c2a"));
+        buttonWrapper.setForeground(Color.WHITE);
+        buttonWrapper.setFocusPainted(false);
+        buttonWrapper.setBorder(BorderFactory.createEmptyBorder());
+        buttonWrapper.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbcInternal = new GridBagConstraints();
+        gbcInternal.insets = new Insets(10, 15, 10, 15);
+
+        // --- 1. Left Icon/Image Panel ---
+        RoundedPanel imagePanel = new RoundedPanel(new GridBagLayout(), 30, "#1a1c2a");
+        /* todo: i think kada submit code kay e store array which index ang correct or wrong,
+            then e setBackground lang, i think implementation-based nani sooo
+         **/
+        imagePanel.setBackground(Color.decode("#1a1c2a")); // default color
+        imagePanel.setBorderColor(Color.WHITE);
+        imagePanel.setBorderThickness(1);
+        imagePanel.setPreferredSize(new Dimension(20, 20));
+        imagePanel.setMinimumSize(new Dimension(20, 20));
+
+        gbcInternal.gridx = 0;
+        gbcInternal.gridy = 0;
+        gbcInternal.weightx = 0.0;
+        gbcInternal.anchor = GridBagConstraints.WEST;
+        buttonWrapper.add(imagePanel, gbcInternal);
+
+        // --- 2. Text Label ---
+        JLabel textLabel = new JLabel("Test case " + testcaseNumber);
+        textLabel.setForeground(Color.WHITE);
+        textLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+
+        gbcInternal.gridx = 1;
+        gbcInternal.weightx = 1.0;
+        gbcInternal.anchor = GridBagConstraints.WEST;
+        gbcInternal.insets = new Insets(10, 5, 10, 15);
+        buttonWrapper.add(textLabel, gbcInternal);
+
+        // Add click action
+    //    buttonWrapper.addActionListener(e -> openTestcase(testcaseNumber));
+
+        // Set size based on monitor (ADD THESE LINES)
+        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+        int tempW = (int) (monitorWidth * 0.12);
+        int tempH = (int) (monitorHeight * 0.05);
+        buttonWrapper.setPreferredSize(new Dimension(tempW, tempH));
+
+        // Wrap in JPanel
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(Color.decode("#1f2335"));
+        wrapper.setOpaque(false);
+        wrapper.add(buttonWrapper, BorderLayout.CENTER);
+        wrapper.setPreferredSize(buttonWrapper.getPreferredSize());
+
+        return wrapper;
+    }
+
+    // For DiffPanel ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    private JPanel create_third_panel_Diff() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.decode("#1f2335"));
 
@@ -628,19 +904,34 @@ public class TextEditor extends JPanel {
 
     private JPanel create_3_1_panel(){
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBorder(BorderFactory.createMatteBorder(
+                0, 0, 0, 0, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
         panel.setBackground(Color.decode("#1f2335"));
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.decode("#1f2335"));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
+
+        JButton backButton = new JButton("X");
+        backButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        backButton.setForeground(Color.WHITE);
+        backButton.setBackground(Color.decode("#1f2335"));
+        backButton.setFocusPainted(false);
+        headerPanel.add(backButton, BorderLayout.WEST);
 
         JLabel label = new JLabel();
         label.setText("Actual Output");
         label.setForeground(Color.WHITE);
         label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-        label.setHorizontalAlignment(SwingConstants.LEFT);
+        label.setBorder(BorderFactory.createEmptyBorder(-5, -50, 0, 0));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
 
-        panel.add(label, BorderLayout.NORTH);
+        headerPanel.add(label, BorderLayout.CENTER);
 
-        // Add the actual output area
+        panel.add(headerPanel, BorderLayout.NORTH);
+
         actualOutputArea.setBackground(Color.decode("#1f2335"));
         actualOutputArea.setForeground(Color.WHITE);
         JScrollPane actualScroll = new JScrollPane(actualOutputArea);
@@ -653,15 +944,18 @@ public class TextEditor extends JPanel {
 
     private JPanel create_3_2_panel(){
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.decode("#000000"), 2));
+        panel.setBorder(BorderFactory.createMatteBorder(
+                1, 0, 0, 0, // top, left, bottom, right thickness
+                Color.decode("#000000")
+        ));
         panel.setBackground(Color.decode("#1f2335"));
 
         JLabel label = new JLabel();
         label.setText("Expected Output");
         label.setForeground(Color.WHITE);
         label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        label.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 0));
-        label.setHorizontalAlignment(SwingConstants.LEFT);
+        label.setBorder(BorderFactory.createEmptyBorder(15, 5, 0, 0));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
 
         panel.add(label, BorderLayout.NORTH);
 
