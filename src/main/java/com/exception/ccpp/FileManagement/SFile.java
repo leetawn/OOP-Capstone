@@ -1,9 +1,9 @@
 package com.exception.ccpp.FileManagement;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public final class SFile extends CCFile {
     private String content = "";
@@ -42,6 +42,7 @@ public final class SFile extends CCFile {
         SFile s = new SFile("TODO");
         System.out.println(s.getContent());
         s.writeOut();
+        slaveWorkers.shutdown();
     }
 
 }

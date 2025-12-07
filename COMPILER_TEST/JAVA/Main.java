@@ -1,5 +1,1 @@
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
-    }
-}
+No file selected. Please open a project or select a file to begin editing.

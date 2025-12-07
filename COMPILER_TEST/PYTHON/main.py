@@ -1,7 +1,1 @@
-x = input("Enter a number:          ")
-x = int(x)
-y = int(input("Enter a number y: "))
-res = x + y
-
-print(f"Sum: {res}")
-print("DIDDY!!!", end="")
+No file selected. Please open a project or select a file to begin editing.

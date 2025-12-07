@@ -11,9 +11,13 @@ TODO ETHAN:
 - IDK ADD MORE
 
 TODO GLENSH:
-- JUDGE: Diff, Score
-- TEST_CASE_GEN: Create and Input
-- C Judge is throwing
++ JUDGE: Diff, Score
++ TEST_CASE_GEN: Create and Input
++ C Judge is throwing
+
+- Optimize Judge
+- fix terminalApp outputArea getting setText(Helpers.stripCRLines()) everytime, which is slow af
+
 
 TODO GODSPRO:
 - Integrate Diff (just "Actual Output")

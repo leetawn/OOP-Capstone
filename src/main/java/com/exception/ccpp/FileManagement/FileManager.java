@@ -7,6 +7,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
+
 public class FileManager {
     public static final Set<String> IGNORED_FOLDERS = Set.of(".git", ".svn", ".vscode", "target", "out", "bin", "vendor", "System32", "Windows");
     public static final Set<String> ALL_ALLOWED_EXTENSIONS = Set.of(".c", ".cpp", ".h", ".hpp",".java",".py");
@@ -340,6 +342,7 @@ public class FileManager {
             Path p = fm.getRelativePath(s);
             System.out.println("RELATIVE PATH: " + p);
         } catch (Exception ignored) {}
+        slaveWorkers.shutdown();
     }
 
 }

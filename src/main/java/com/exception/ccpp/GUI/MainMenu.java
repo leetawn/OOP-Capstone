@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
+
 public class MainMenu extends JPanel {
 
     private JLabel title = new JLabel("CodeChum++");
