@@ -1016,18 +1016,6 @@ public class TextEditor extends JPanel {
                 String expected = rec.expected_output();
                 getTextEditor().displayActualDiff(actual, expected);
                 getTextEditor().displayExpectedDiff(actual, expected);
-                System.out.println("ORIGINAL ------------------------");
-                for (char c : rec.output().toCharArray()) {
-                    if (c == '\r') System.out.print("\\r");
-                    else if (c == '\n') System.out.print("\\n");
-                    else System.out.print(c);
-                }
-                System.out.println("\nSTRIPED ------------------------");
-                for (char c : actual.toCharArray()) {
-                    if (c == '\r') System.out.print("\\r");
-                    else if (c == '\n') System.out.print("\\n");
-                    else System.out.print(c);
-                }
             }
         }
     }
