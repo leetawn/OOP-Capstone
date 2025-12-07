@@ -3,6 +3,8 @@ package com.exception.ccpp.GUI;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -21,7 +23,7 @@ import java.util.stream.Stream;
 public class FileExplorer extends JPanel {
     private static JTree fe_tree;
     private static FileManager fileManager;
-    private JTextArea dTextArea;
+    private RSyntaxTextArea dTextArea;
     private JPopupMenu contextMenu;
     private JMenuItem renameItem;
     private JMenuItem createFolderItem;
@@ -33,7 +35,7 @@ public class FileExplorer extends JPanel {
     private static FileExplorer fe_instance;
 
     // Updated constructor signature: No longer accepts language
-    public FileExplorer(String rootDir, JTextArea editorTextArea, TextEditor textEditor){
+    public FileExplorer(String rootDir, RSyntaxTextArea editorTextArea, TextEditor textEditor){
         fe_instance = FileExplorer.this;
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
@@ -486,7 +488,18 @@ public class FileExplorer extends JPanel {
         return selectedFile;
     }
     public void setSelectedFile(SFile newFile) {
+        setSyntaxHightlighting(newFile.getStringPath());
         this.selectedFile = newFile;
+    }
+    public void setSyntaxHightlighting(String path) {
+        String ext = getFileExtension(path);
+        switch(ext) {
+            case "java" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+            case "py" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+            case "cpp", "hpp" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
+            case "c", "h" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
+            default ->  dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        }
     }
     public SFile getTestcaseFile() {
         return this.testcaseFile;
