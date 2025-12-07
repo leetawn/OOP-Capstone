@@ -15,6 +15,7 @@ import org.fife.ui.rtextarea.LineNumberList;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.event.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
@@ -42,7 +43,7 @@ public class TextEditor extends JPanel {
     private JButton openFolderButton;
     private JButton createFolderButton;
     private JButton submitCodeButton;
-    private JButton setEntryPointButton;
+    private RoundedButton setEntryPointButton;
     private RSyntaxTextArea codeArea;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
@@ -51,6 +52,7 @@ public class TextEditor extends JPanel {
     private JButton importTestcaseButton;
     private JButton manageTestcaseButton;
     private JButton exportTestcaseButton;
+    private JButton submitCodeButton;
     private JButton folderDropdownButton;
 
     private SimpleAttributeSet matchStyle;
@@ -150,7 +152,7 @@ public class TextEditor extends JPanel {
         gbc.weightx = 1;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;
-        panel.add(create_1_1_panel(), gbc);
+        gbc.insets = new Insets(3, 3, 3, 3);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -957,7 +959,7 @@ public class TextEditor extends JPanel {
 
             for (int j = 0; j < expectedLine.length(); j++) {
                 char actualChar = (j < actualLine.length()) ? actualLine.charAt(j) : 0;
-                char expectedChar = (j < expectedLine.length()) ? expectedLine.charAt(j) : 0;
+                char expectedChar = (j < expectedLines.length) ? expectedLine.charAt(j) : 0;
 
                 char charToProcess = expectedChar; // Focus on the expected character
 
@@ -1013,6 +1015,7 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setCaretPosition(doc.getLength());
         expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
+
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
@@ -1318,7 +1321,7 @@ public class TextEditor extends JPanel {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
-            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            fileChooser.setCurrentDirectory(fm != null ? fm.getRootdir().toFile() : null);
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
@@ -1438,11 +1441,13 @@ public class TextEditor extends JPanel {
             fileManager.setCurrentFile(null);
 
             getTextEditor().setEntryPointButton.setText("Set Entry Point");
-
             getTextEditor().actualOutputArea.setText("");
             getTextEditor().expectedOutputArea.setText("");
 
-            System.out.println("Project language changed to: " + newLanguage + ". Entry point reset.");
+            getTextEditor().revalidate();
+            getTextEditor().repaint();
+
+            System.out.println("Project language changed to: " + newLanguage);
         }
     }
 
@@ -1461,24 +1466,6 @@ public class TextEditor extends JPanel {
             });
         }
     }
-//    public static class RunButtonHandler extends ComponentHandler {
-//        public RunButtonHandler(TextEditor editor) {
-//            super(editor);
-//        }
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//            FileExplorer fe = getTextEditor().fileExplorerPanel;
-//            getTextEditor().saveCurrentFileContent();
-//            FileManager fm = fe.getFileManager();
-//            String out = Judge.judge(fm, new String[]{}).output();
-//            String dummyActual = "Hello World\nThis is line 2\twith a tab.\nExtra line.";
-//            String dummyExpected = "Hella World\nThis is line 2\rwith a tab.\n";
-//
-//            // Call the diff checker method
-//            getTextEditor().displayActualDiff(dummyActual, dummyExpected);
-//            getTextEditor().displayExpectedDiff(dummyActual, dummyExpected);
-//        }
-//    }
 
     public static class SetEntryPointButtonHandler extends ComponentHandler {
         public SetEntryPointButtonHandler(TextEditor editor) {
@@ -1508,7 +1495,6 @@ public class TextEditor extends JPanel {
                             "Invalid Entry Point", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-
             }
 
             if (getTextEditor().getCurrentSelectedLanguage().equalsIgnoreCase("py"))  {
@@ -1521,9 +1507,6 @@ public class TextEditor extends JPanel {
                 }
             }
             getTextEditor().setEntryPointButton.setText(String.valueOf(sfile.getPath().getFileName()));
-            // DEBUG SHIT
-            // System.out.println("Language: " + fileManager.getLanguage());
-            // System.out.println("Entry point file set to: " + fileManager.getCurrentFileStringPath());
         }
     }
 
@@ -1565,12 +1548,16 @@ public class TextEditor extends JPanel {
                             throw new InvalidFileException("Invalid file! Please select .ccpp files for testcases.");
                         }
 
-                   } catch (InvalidFileException ex) {
+                    } catch (InvalidFileException ex) {
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
-            System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+            if (fe.getTestcaseFile() != null) {
+                System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+            } else {
+                System.out.println("No testcase file selected.");
+            }
         }
     }
     public static class ManageTestcaseButtonHandler extends ComponentHandler {
