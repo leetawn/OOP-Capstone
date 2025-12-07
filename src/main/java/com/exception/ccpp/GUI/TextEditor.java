@@ -4,12 +4,15 @@ import com.exception.ccpp.CCJudge.Judge;
 import com.exception.ccpp.CCJudge.SubmissionRecord;
 import com.exception.ccpp.CCJudge.TerminalApp;
 import com.exception.ccpp.CCJudge.TestcaseFile;
-import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
-import com.exception.ccpp.Debug.PerfTimer;
 import com.exception.ccpp.FileManagement.*;
-import com.exception.ccpp.Gang.SlaveManager;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
+import org.fife.ui.rtextarea.FoldIndicatorStyle;
+import org.fife.ui.rtextarea.LineNumberList;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.event.*;
 import javax.swing.border.TitledBorder;
@@ -18,6 +21,8 @@ import javax.swing.tree.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +38,7 @@ public class TextEditor extends JPanel {
     private JButton createFolderButton;
     private JButton submitCodeButton;
     private JButton setEntryPointButton;
-    private JTextArea dTextArea;
+    private RSyntaxTextArea codeArea;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
     private JTextPane actualOutputArea;
@@ -54,7 +59,8 @@ public class TextEditor extends JPanel {
         initializeStyles();
         setupLayout();
         setupEventListeners();
-        setupTabToSpaces();
+//        setupTabToSpaces();
+
     }
 
     public TextEditor(String folderPath, MainMenu mainMenu) {
@@ -77,25 +83,26 @@ public class TextEditor extends JPanel {
 
     /* --------------- Setup --------------- */
 
-    private void setupTabToSpaces() {
-        final String fourSpaces = "    ";
+//    private void setupTabToSpaces() {
+//        final String fourSpaces = "    ";
+//
+//        Action insertSpacesAction = new AbstractAction() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                codeArea.replaceSelection(fourSpaces);
+//            }
+//        };
+//
+//        KeyStroke tabKey = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+//
+//        Object actionKey = "insert-four-spaces";
+//
+//        InputMap inputMap = codeArea.getInputMap(JComponent.WHEN_FOCUSED);
+//        inputMap.put(tabKey, actionKey);
+//
+//        codeArea.getActionMap().put(actionKey, insertSpacesAction);
+//    }
 
-        Action insertSpacesAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dTextArea.replaceSelection(fourSpaces);
-            }
-        };
-
-        KeyStroke tabKey = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
-
-        Object actionKey = "insert-four-spaces";
-
-        InputMap inputMap = dTextArea.getInputMap(JComponent.WHEN_FOCUSED);
-        inputMap.put(tabKey, actionKey);
-
-        dTextArea.getActionMap().put(actionKey, insertSpacesAction);
-    }
     private void initializeStyles() {
         defaultStyle = new SimpleAttributeSet();
         StyleConstants.setForeground(defaultStyle, Color.BLACK);
@@ -142,16 +149,16 @@ public class TextEditor extends JPanel {
 
 
     private void setupEventListeners() {
-        dTextArea.addKeyListener(new KeyAdapter() {
+        codeArea.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if ((e.getKeyCode() == KeyEvent.VK_S) &&
-                        ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
-
+                if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
                     e.consume();
                     saveCurrentFileContent();
                     actualOutputArea.setText("File saved successfully.");
+                    return;
                 }
+                super.keyPressed(e);
             }
         });
 
@@ -262,10 +269,22 @@ public class TextEditor extends JPanel {
         manageTestcaseButton.setBorderPainted(false);
         manageTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
-        dTextArea = new JTextArea();
-        dTextArea.setBackground(Color.decode("#1f2335"));
-        dTextArea.setCaretColor(Color.WHITE);
-        dTextArea.setForeground(Color.WHITE);
+        codeArea = new RSyntaxTextArea(20, 60);
+        codeArea.setCodeFoldingEnabled(true);
+        codeArea.setAntiAliasingEnabled(true);
+        codeArea.setFractionalFontMetricsEnabled(false);
+        codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+
+        InputStream in = getClass().getClassLoader()
+                .getResourceAsStream("org/fife/ui/rsyntaxtextarea/themes/monokai.xml");
+        try {
+            // Keep the text area's font since it has our e.g. ligature hints
+            Theme theme = Theme.load(in, codeArea.getFont());
+            theme.apply(codeArea);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
 
         languageSelectDropdown = new RoundedComboBox<>(new String[]{"C", "C++", "Java", "Python"});
 
@@ -284,15 +303,15 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setCaretColor(Color.WHITE);
         expectedOutputArea.setForeground(Color.WHITE);
 
-        fileExplorerPanel = new FileExplorer(".", dTextArea, this);
+        fileExplorerPanel = new FileExplorer(".", codeArea, this);
     }
-
 
     private void initializeBackend() {
 
-        dTextArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 16));
-        dTextArea.setText("No selected file. Select a file to start editing.");
-        dTextArea.setEditable(false);
+        Font font = codeArea.getFont();
+        codeArea.setFont(codeArea.getFont().deriveFont(font.getStyle(),16));
+        codeArea.setText("No selected file. Select a file to start editing.");
+        codeArea.setEditable(false);
 
         oldLanguage = getCurrentSelectedLanguage();
         actualOutputArea.setEditable(false);
@@ -456,7 +475,7 @@ public class TextEditor extends JPanel {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
         String placeholderText = "No file selected. Select a file to start editing.";
-        String content = dTextArea.getText();
+        String content = codeArea.getText();
 
         if (currentFile != null && !content.equals(placeholderText)) {
             currentFile.setContent(content);
@@ -576,7 +595,7 @@ public class TextEditor extends JPanel {
         gbc.weighty = 1.0;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(5, 1, 5, 0);
-        JScrollPane editorScroll = new JScrollPane(dTextArea);
+        JScrollPane editorScroll = new RTextScrollPane(codeArea);
         editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
         editorScroll.setBackground(Color.decode("#1f2335"));
         TitledBorder titledBorder = (TitledBorder) editorScroll.getBorder();
@@ -689,7 +708,7 @@ public class TextEditor extends JPanel {
 
             fm.getFiles().add(newSFile);
             fm.setCurrentFile(newSFile);
-            dTextArea.setText(newSFile.getContent());
+            codeArea.setText(newSFile.getContent());
 
             DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
             DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
@@ -717,9 +736,9 @@ public class TextEditor extends JPanel {
     }
 
     public void setTextArea(boolean ok) {
-        this.dTextArea.setEditable(ok);
+        this.codeArea.setEditable(ok);
         if (!ok) {
-            this.dTextArea.setText("No file selected. Please open a project or select a file to begin editing.");
+            this.codeArea.setText("No file selected. Please open a project or select a file to begin editing.");
         }
     }
     public static void setNimbusLaf() {
@@ -835,7 +854,7 @@ public class TextEditor extends JPanel {
                 newSFile.writeOut();
                 fileManager.getFiles().add(newSFile);
                 fileManager.setCurrentFile(newSFile);
-                getTextEditor().dTextArea.setText(newSFile.getContent());
+                getTextEditor().codeArea.setText(newSFile.getContent());
 
                 DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
                 DefaultTreeModel model = (DefaultTreeModel) fe.getFeTree().getModel();
@@ -1053,8 +1072,6 @@ public class TextEditor extends JPanel {
                     System.out.println("Exit code : " + rec.verdict());
 
 
-                    PerfTimer pt = new PerfTimer("REGEX DIFF").start();
-                    pt.stop();
                     Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
                     String[] expectedLines = expected.split("\\R", -1);
 

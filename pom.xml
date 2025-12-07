@@ -15,6 +15,11 @@
             <artifactId>pty4j</artifactId>
             <version>0.13.4</version>
         </dependency>
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>3.6.0</version>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>24</maven.compiler.source>
@@ -24,6 +29,7 @@
         <main.class>com.exception.ccpp.Main</main.class>
     </properties>
     <build>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -308,7 +308,7 @@ public class FileManager {
     public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
 
     /****************** File Watcher ******************/
-    public synchronized void openNewFolder() throws Exception {
+    public void openNewFolder() throws Exception {
         if (fileWatcher != null) {
             System.out.println("Stopping old watcher...");
 
