@@ -475,9 +475,11 @@ public class TextEditor extends JPanel {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
         String placeholderText = "No file selected. Select a file to start editing.";
+        String openFolderPlaceholderText = "No file selected. Please open a project or select a file to begin editing.";
+
         String content = codeArea.getText();
 
-        if (currentFile != null && !content.equals(placeholderText)) {
+        if (currentFile != null && !content.equals(placeholderText) && !content.equals(openFolderPlaceholderText)) {
             currentFile.setContent(content);
             currentFile.writeOut();
             System.out.println("File saved: " + currentFile.getStringPath());
