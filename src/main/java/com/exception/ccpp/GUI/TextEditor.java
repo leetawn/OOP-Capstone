@@ -6,19 +6,14 @@ import com.exception.ccpp.CCJudge.TerminalApp;
 import com.exception.ccpp.CCJudge.TestcaseFile;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
-import com.exception.ccpp.FileManagement.*;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rtextarea.FoldIndicatorStyle;
-import org.fife.ui.rtextarea.LineNumberList;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
 import java.awt.event.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
 import javax.swing.tree.*;
@@ -30,9 +25,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import com.exception.ccpp.GUI.RoundedButton; // Assuming this class is available
-import com.exception.ccpp.GUI.RoundedComboBox; // Assuming this class is available
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -45,7 +37,6 @@ public class TextEditor extends JPanel {
     private JButton openFolderButton;
     private JButton createFolderButton;
     private RoundedButton setEntryPointButton;
-    private JTextArea dTextArea;
     private JButton submitCodeButton;
     private RSyntaxTextArea codeArea;
     private JComboBox<String> languageSelectDropdown;
@@ -54,8 +45,7 @@ public class TextEditor extends JPanel {
     private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
     private JButton manageTestcaseButton;
-    private JButton exportTestcaseButton;
-    private JButton folderDropdownButton;
+//    private JButton folderDropdownButton;
 
     private SimpleAttributeSet matchStyle;
     private SimpleAttributeSet mismatchStyle;
@@ -94,25 +84,6 @@ public class TextEditor extends JPanel {
 
     /* --------------- Setup --------------- */
 
-    private void setupTabToSpaces() {
-        final String fourSpaces = "    ";
-
-        Action insertSpacesAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dTextArea.replaceSelection(fourSpaces);
-            }
-        };
-
-        KeyStroke tabKey = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
-
-        Object actionKey = "insert-four-spaces";
-
-        InputMap inputMap = dTextArea.getInputMap(JComponent.WHEN_FOCUSED);
-        inputMap.put(tabKey, actionKey);
-
-        dTextArea.getActionMap().put(actionKey, insertSpacesAction);
-    }
     private void initializeStyles() {
         defaultStyle = new SimpleAttributeSet();
         StyleConstants.setForeground(defaultStyle, Color.BLACK);
@@ -427,9 +398,9 @@ public class TextEditor extends JPanel {
         panel.setBackground(Color.decode("#1f2335"));
 
         // Add the text editor with scroll pane
-        dTextArea.setBackground(Color.decode("#1f2335"));
-        dTextArea.setForeground(Color.WHITE);
-        JScrollPane editorScroll = new JScrollPane(dTextArea);
+        codeArea.setBackground(Color.decode("#1f2335"));
+        codeArea.setForeground(Color.WHITE);
+        RTextScrollPane editorScroll = new RTextScrollPane(codeArea);
         editorScroll.setBorder(null);
         editorScroll.setBackground(Color.decode("#1f2335"));
         panel.add(editorScroll, BorderLayout.CENTER);
@@ -515,12 +486,12 @@ public class TextEditor extends JPanel {
         importTestcaseButton.setBackground(Color.decode("#568afc"));
         importTestcaseButton.setPreferredSize(new Dimension(120, 40));
 
-        exportTestcaseButton = new RoundedButton("Export Testcase", 15);
-        exportTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        exportTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        exportTestcaseButton.setForeground(Color.WHITE);
-        exportTestcaseButton.setBackground(Color.decode("#568afc"));
-        exportTestcaseButton.setPreferredSize(new Dimension(120, 40));
+        manageTestcaseButton = new RoundedButton("Export Testcase", 15);
+        manageTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        manageTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        manageTestcaseButton.setForeground(Color.WHITE);
+        manageTestcaseButton.setBackground(Color.decode("#568afc"));
+        manageTestcaseButton.setPreferredSize(new Dimension(120, 40));
 
         // Import button
         gbc.gridx = 0;
@@ -535,7 +506,7 @@ public class TextEditor extends JPanel {
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.weightx = 0.5;
-        panel.add(exportTestcaseButton, gbc);
+        panel.add(manageTestcaseButton, gbc);
 
         return panel;
     }
@@ -1098,12 +1069,6 @@ public class TextEditor extends JPanel {
         importTestcaseButton.setBorderPainted(false);
         importTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
 
-        manageTestcaseButton = new RoundedButton("Manage Testcases", 15);
-        manageTestcaseButton.setBackground(Color.decode("#568afc"));
-        manageTestcaseButton.setForeground(Color.WHITE);
-        manageTestcaseButton.setBorderPainted(false);
-        manageTestcaseButton.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
-
         codeArea = new RSyntaxTextArea(20, 60);
         codeArea.setCodeFoldingEnabled(true);
         codeArea.setAntiAliasingEnabled(true);
@@ -1340,175 +1305,6 @@ public class TextEditor extends JPanel {
             System.out.println("File saved: " + currentFile.getStringPath());
         }
     }
-
-    /* --------------- Util --------------- */
-
-    private JPanel createLeftPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        // Top Panel (buttons + language)
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(createTopPanel(), gbc);
-
-        // Editors Panel (file explorer + text editor)
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        panel.add(createEditorsPanel(), gbc);
-
-        // Bottom Panel (run code + set entry point)
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(createBottomPanel(), gbc);
-
-        return panel;
-    }
-
-    private JPanel createTopPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 0, 0, 0);
-
-        // File buttons
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.0;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
-
-        JPanel fileButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        fileButtonsPanel.setBackground(Color.decode("#28313b"));
-        openFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(openFolderButton);
-        addFileButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(addFileButton);
-        createFolderButton.setPreferredSize(new Dimension(30, 30)); // ang background sa buttons
-        fileButtonsPanel.add(createFolderButton);
-        fileButtonsPanel.add(importTestcaseButton);
-        fileButtonsPanel.add(manageTestcaseButton);
-        panel.add(fileButtonsPanel, gbc);
-
-        // Spacer
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(Box.createHorizontalGlue(), gbc);
-
-        // Language Label
-        gbc.gridx = 2;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel languageLabel = new JLabel("Language:  ");
-        languageLabel.setBackground(Color.decode("#28313b"));
-        languageLabel.setForeground(Color.WHITE);
-        languageLabel.setOpaque(true);
-        panel.add(languageLabel, gbc);
-
-        // Language Dropdown
-        gbc.gridx = 3;
-        gbc.weightx = 0.0;
-        languageSelectDropdown.setPreferredSize(new Dimension(120, 25));
-        panel.add(languageSelectDropdown, gbc);
-
-        return panel;
-    }
-
-    private JPanel createEditorsPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 0);
-
-        // File Explorer
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weighty = 1.0;
-        gbc.weightx = 0.0;
-        fileExplorerPanel.setPreferredSize(new Dimension(175, Integer.MAX_VALUE));
-        panel.add(fileExplorerPanel, gbc);
-
-        // Text Editor
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weighty = 1.0;
-        gbc.weightx = 1.0;
-        gbc.insets = new Insets(5, 1, 5, 0);
-        JScrollPane editorScroll = new RTextScrollPane(codeArea);
-        editorScroll.setBorder(BorderFactory.createTitledBorder("Text Editor"));
-        editorScroll.setBackground(Color.decode("#1f2335"));
-        TitledBorder titledBorder = (TitledBorder) editorScroll.getBorder();
-        titledBorder.setTitleColor(Color.WHITE);
-        panel.add(editorScroll, gbc);
-
-        return panel;
-    }
-
-    private JPanel createBottomPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        panel.setBackground(Color.decode("#28313b"));
-        panel.add(setEntryPointButton);
-        panel.add(runCodeButton);
-        panel.add(submitCodeButton);
-        return panel;
-    }
-
-    private JPanel createRightPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.decode("#28313b"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.5;
-        JScrollPane actualScroll = new JScrollPane(actualOutputArea);
-        actualScroll.setBackground(Color.decode("#1f2335"));
-        actualScroll.setBorder(BorderFactory.createTitledBorder("Actual Output"));
-        TitledBorder titledBorder3 = (TitledBorder) actualScroll.getBorder();
-        titledBorder3.setTitleColor(Color.WHITE);
-        panel.add(actualScroll, gbc);
-
-        gbc.gridy = 1;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        JSeparator tempSeparator = new JSeparator(JSeparator.HORIZONTAL);
-        panel.add(tempSeparator, gbc);
-
-        gbc.gridy = 2;
-        gbc.weighty = 0.5;
-        gbc.fill = GridBagConstraints.BOTH;
-        JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
-        expectedScroll.setBackground(Color.decode("#1f2335"));
-        expectedScroll.setBorder(BorderFactory.createTitledBorder("Expected Output"));
-        TitledBorder titledBorder2 = (TitledBorder) expectedScroll.getBorder();
-        titledBorder2.setTitleColor(Color.WHITE);
-        panel.add(expectedScroll, gbc);
-
-        return panel;
-    }
-
-
 
     public void handleAddFileAction() {
         FileManager fm = fileExplorerPanel.getFileManager();
