@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
+
 public class CrypticWriter {
 
     // --- Header Definition ---
@@ -176,5 +178,6 @@ public class CrypticWriter {
             System.err.println("An error occurred during file operation:");
             e.printStackTrace();
         }
+        slaveWorkers.shutdown();
     }
 }

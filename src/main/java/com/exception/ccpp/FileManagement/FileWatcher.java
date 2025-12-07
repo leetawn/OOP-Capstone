@@ -6,11 +6,12 @@ import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class FileWatcher implements Runnable {
 
@@ -149,6 +150,7 @@ public class FileWatcher implements Runnable {
         } catch (NotDirException e) {
 
         }
+        slaveWorkers.shutdown();
         while (true) {} // FOR TESTING, TRY RENAMING, ADDING, AND DELETING FILES IN COMPILER_TEST FOLDER
     }
 }
