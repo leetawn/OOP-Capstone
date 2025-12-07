@@ -303,6 +303,12 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setCaretColor(Color.WHITE);
         expectedOutputArea.setForeground(Color.WHITE);
 
+        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        caret = (DefaultCaret) expectedOutputArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+
+
         fileExplorerPanel = new FileExplorer(".", codeArea, this);
     }
 
@@ -329,6 +335,9 @@ public class TextEditor extends JPanel {
     private int BUFFER_MAX_CHARS = 10000;
     private void displayActualDiff(String[] actualLines, String[] expectedLines) {
         StyledDocument doc = actualOutputArea.getStyledDocument();
+        actualOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
         try {
             doc.remove(0, doc.getLength());
@@ -399,10 +408,17 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
+
+//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
+        actualOutputArea.getParent().getParent().setIgnoreRepaint(false);
+        actualOutputArea.setCaretPosition(doc.getLength());
     }
     private void displayExpectedDiff(String[] actualLines, String[] expectedLines) {
         // Note: We are using expectedOutputArea for this.
         StyledDocument doc = expectedOutputArea.getStyledDocument();
+        expectedOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        DefaultCaret caret = (DefaultCaret) expectedOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
         try {
             doc.remove(0, doc.getLength());
@@ -470,6 +486,10 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
+
+//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
+        expectedOutputArea.setCaretPosition(doc.getLength());
+        expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -1081,6 +1101,7 @@ public class TextEditor extends JPanel {
                         final String[] actualLines = future_actual.get();
                         slaveWorkers.submit(() -> getTextEditor().displayActualDiff(actualLines, expectedLines));
                         getTextEditor().displayExpectedDiff(actualLines, expectedLines);
+
                     }
                     catch (InterruptedException ex) {}
                     catch (ExecutionException ex) {}
