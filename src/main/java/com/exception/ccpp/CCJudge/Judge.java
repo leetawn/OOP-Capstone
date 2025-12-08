@@ -37,14 +37,17 @@ public class Judge {
     // will output an Array of SubmissionRecord, check the Submission Record definition
     // for TERMINAL USE ONLY
     static void judgeInteractively(String[] cmd, FileManager fm, String[] testInputs, Consumer<SubmissionRecord[]> callback, CCLogger logger) {
+        if (logger == null) logger = judge_logger;
+
+        final CCLogger f_logger = logger;
         slaveWorkers.submit(() -> {
-            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, logger));
+            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger));
             SubmissionRecord verdict = new SubmissionRecord(JudgeVerdict.RE, "Runtime Error Buddy", null);
             try {
                 verdict = f.get();
             } catch (InterruptedException e) {}
             catch (ExecutionException e) { /*Normal shit*/
-                logger.errln("[Judge.judge]: Execution Error!");
+                f_logger.errln("[Judge.judge]: Execution Error!");
             }
             callback.accept(new SubmissionRecord[]{verdict});
         });
@@ -158,6 +161,7 @@ public class Judge {
     }
 
     static SubmissionRecord compile(FileManager fm, CCLogger logger) throws IOException, InterruptedException {
+        if (logger == null) logger = judge_logger;
         String[] compileCommand = null;
         switch (fm.getLanguage().toLowerCase()) {
             case "java": {
@@ -293,6 +297,7 @@ public class Judge {
         }
 
         JudgeSlave(String[] cmd, String rootdir, String language, String[] inputs, String expected_output, int testcase_number, CCLogger logger) {
+            if (logger == null) logger = judge_logger;
             this.executeCommand = cmd;
             this.inputs = inputs;
             this.rootdir = rootdir;
