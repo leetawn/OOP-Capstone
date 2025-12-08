@@ -43,6 +43,8 @@
         private String[] execCmd;
         private JTextLogger output_logger;
         static TerminalApp instance;
+        static boolean bypassFilter;
+        private TerminalDocumentFilter outputAreaFilter;
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -55,6 +57,7 @@
                 TERMINAL_START_COMMAND = new String[]{"powershell.exe", "-c"}; //
             }
         }
+
 
         public static TerminalApp getInstance() {
             if (instance == null) {
@@ -92,7 +95,7 @@
 
         public void start()
         {
-            if (is_processing) return;
+            if (is_processing) return;;
             is_processing = true;
             setTitle("Java Swing Command Console");
             inputs = new ArrayList<>();
@@ -132,7 +135,8 @@
             setVisible(true);
 
             AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
-            doc.setDocumentFilter(new TerminalDocumentFilter());
+            outputAreaFilter = new TerminalDocumentFilter();
+            doc.setDocumentFilter(outputAreaFilter);
 
 
             slaveWorkers.submit(() -> {
@@ -148,12 +152,22 @@
             is_processing = false;
         }
 
+
+        void setBypassFilter(boolean shouldBypass) {
+            bypassFilter = shouldBypass;
+//            outputAreaFilter.lastInsertionStart = outputArea.getDocument().getLength();
+        }
+
         static class TerminalDocumentFilter extends DocumentFilter {
             int lastInsertionStart = 0;
 
             @Override
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
                     throws BadLocationException {
+                if (bypassFilter) {
+                    lastInsertionStart = offset;
+//                    return;
+                }
 
                 int start = Math.min(lastInsertionStart, offset);
                 int length = offset - start;
@@ -164,15 +178,10 @@
                 }
 
                 String combined = prevText + string;
-                System.out.print("[ ");
-                for (char c : combined.toCharArray()) {
-                    if (c == '\r') System.out.print("\\r");
-                    else System.out.print(c);
-                }
-                System.out.println(" ]");
                 String filtered = Helpers.stripCRLines(combined);
                 fb.replace(start, length, filtered, attr);
-                lastInsertionStart = offset;
+                lastInsertionStart = start;
+
             }
 
             @Override
@@ -190,6 +199,7 @@
         };
 
         private boolean initTerminalProcess() {
+            setBypassFilter(true);
             SubmissionRecord sr = null;
             try {
                 sr = Judge.compile(fm, output_logger);
@@ -207,6 +217,7 @@
             execCmd = ExecutionConfig.getExecuteCommand(fm);
             System.out.println(String.join(" ", execCmd));
             terminal_command = execCmd;
+            setBypassFilter(false);
             return true;
         }
 
@@ -230,22 +241,17 @@
                     System.out.println("Process exited with: " + p.exitValue());
                     if (p.exitValue() != 0) return p.exitValue();
 
-
                     String[] inputs_arr = inputs.toArray(new String[0]);
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
 
-                    Judge.judgeInteractively(execCmd, fm, inputs_arr, results -> {
-                        SwingUtilities.invokeLater(() -> {
-                            // Only prompt if a callback handler is present (for testcase generation)
-                            if (exitCallback != null) {
-                                exitCallback.onTerminalExit(inputs_arr, results[0].output());
-                                outputArea.append("\nContinue adding testcases [y/n]?\n");
-                            }
-                            prompt_again = true;
-                            if (guiCallback != null) { guiCallback.updateGUI(); }
-                        });
-                    }, output_logger);
+                    outputArea.append("");
+                    if (exitCallback != null) {
+                        exitCallback.onTerminalExit(inputs_arr, outputArea.toString());
+                        outputArea.append("\nContinue adding testcases [y/n]?\n");
+                        prompt_again = true;
+                        if (guiCallback != null) { guiCallback.updateGUI(); }
+                    }
 
                     return p.exitValue();
                 });
