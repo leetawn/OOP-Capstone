@@ -5,15 +5,16 @@ import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
 // expected output can be null, when a testcase file is not used
 public class SubmissionRecord {
     private JudgeVerdict v;
-    private String o, e;
-    public SubmissionRecord(JudgeVerdict verdict, String output, String expected_output) {
+    private String o;
+    Testcase testcase;
+    public SubmissionRecord(JudgeVerdict verdict, String output, Testcase testcase) {
         v = verdict;
         o = output;
-        e = expected_output;
+        this.testcase = testcase;
     }
 
-    public SubmissionRecord setExpectedOutput(String e) {
-        this.e = e;
+    public SubmissionRecord setTestcase(Testcase testcase) {
+        this.testcase = testcase;
         return this;
     }
 
@@ -33,7 +34,11 @@ public class SubmissionRecord {
     public String output() {
         return o;
     }
+    public Testcase testcase() {
+        return testcase;
+    }
     public String expected_output() {
-        return e;
+        if (testcase == null) return "";
+        return testcase.getExpectedOutput();
     }
 }

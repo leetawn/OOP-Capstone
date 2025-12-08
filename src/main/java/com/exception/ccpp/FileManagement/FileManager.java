@@ -26,15 +26,6 @@ public class FileManager {
     private FileWatcher fileWatcher;
     private Thread watcherThread;
 
-    // Opens a folder and make set it as rootdir, throws error when path is not dir
-    private FileManager() {
-        rootdir = null;
-        currentFile = null;
-        this.language = null;
-        s_files = new ArrayList<>();
-        all_files = new ArrayList<>();
-    }
-
 
     // NOTE: for RENAMING files just use Files.move(), the fileWatcher will do its job
     // file renaming and deleting forgot to fking add these xD
@@ -144,7 +135,7 @@ public class FileManager {
     // alll of these functions by FileWatcher
     // TODO @ETHAN: you add function CALLS here to refresh your fileExplorer
     public static void addFile(FileManager fm, Path file) {
-        fm.all_files.add(new SFile(file));
+        fm.all_files.add(SFile.open(file));
     }
     public static void removeFile(FileManager fm, Path file) {
         for (SFile sfile : fm.all_files) {
@@ -159,12 +150,6 @@ public class FileManager {
     }
 
     /****************** INITIALIZERS/BUILDERS ******************/
-    public static FileManager getInstance() {
-        if (instance == null) {
-            instance = new FileManager();
-        }
-        return instance;
-    }
     public FileManager setLanguage(String language) {
         if (language != null)
             this.language = language.toLowerCase();
@@ -286,7 +271,7 @@ public class FileManager {
                             .anyMatch(fileName::endsWith);
 
                     if (isAllowed) {
-                        SFile sfile = new SFile(file);
+                        SFile sfile = SFile.open(file);
                         all_files.add(sfile);
                         System.out.println("[FILE] " + file);
                     }
@@ -305,7 +290,7 @@ public class FileManager {
             System.err.println("Failed to open new folder: " + e.getMessage());
         }
     }
-    public void saveAll() { for (SFile sfile : s_files) sfile.writeOut(); }
+    public void saveAll() { for (SFile sfile : s_files) sfile.write(); }
 
     /****************** File Watcher ******************/
     public void openNewFolder() throws Exception {
@@ -334,6 +319,21 @@ public class FileManager {
         this.watcherThread.start();
     }
 
+
+    public static FileManager getInstance() {
+        if (instance == null) {
+            instance = new FileManager();
+        }
+        return instance;
+    }
+    private FileManager() {
+        rootdir = null;
+        currentFile = null;
+        this.language = null;
+        s_files = new ArrayList<>();
+        all_files = new ArrayList<>();
+    }
+
     public static void main(String[] args) {
 
         try {
@@ -344,5 +344,4 @@ public class FileManager {
         } catch (Exception ignored) {}
         slaveWorkers.shutdown();
     }
-
 }

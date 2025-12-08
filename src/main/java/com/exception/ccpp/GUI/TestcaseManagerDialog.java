@@ -6,7 +6,6 @@ import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
@@ -76,7 +75,7 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
 
             listModel.addElement(String.format("TC %d: Input: %s | Output: %s", ++i, inputSummary, outputSummary));
         }
-        tf.writeOut();
+        tf.write();
     }
     private void handleAddTestcase() {
         // api call
@@ -87,17 +86,13 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
     private void handleDeleteTestcase() {
         // api call
         int selectedIndex = testcaseList.getSelectedIndex();
-
         if (selectedIndex == -1) {
             JOptionPane.showMessageDialog(this, "Please select a testcase to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         if (tList != null && selectedIndex < tList.size()) {
             Testcase tcToDelete = tList.get(selectedIndex);
-
             tf.deleteTestcase(tcToDelete);
-
             loadTestcases();
         } else {
             JOptionPane.showMessageDialog(this, "Error finding the selected testcase.", "Error", JOptionPane.ERROR_MESSAGE);

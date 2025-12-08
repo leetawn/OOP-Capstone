@@ -245,13 +245,21 @@
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
 
+                    Judge.judgeInteractively(execCmd,fm,inputs_arr,res -> {
+                        if (exitCallback != null) {
+                            System.out.println(res[0].expected_output());
+                            exitCallback.onTerminalExit(inputs_arr, res[0].output());
+                            SwingUtilities.invokeLater(() -> {
+                                setBypassFilter(true);
+                                outputArea.append("\nContinue adding testcases [y/n]?\n");
+                                setBypassFilter(false);
+                            });
+                            prompt_again = true;
+                            if (guiCallback != null) { guiCallback.updateGUI(); }
+                        }
+                    }, null);
+
                     outputArea.append("");
-                    if (exitCallback != null) {
-                        exitCallback.onTerminalExit(inputs_arr, outputArea.toString());
-                        outputArea.append("\nContinue adding testcases [y/n]?\n");
-                        prompt_again = true;
-                        if (guiCallback != null) { guiCallback.updateGUI(); }
-                    }
 
                     return p.exitValue();
                 });
@@ -399,7 +407,7 @@
             TestcaseFile tf;
             FileManager fm = null;
 
-            if (APPEND_TESTCASES || RUN_TESTCASES) tf = new TestcaseFile(TEST_FILE);
+            if (APPEND_TESTCASES || RUN_TESTCASES) tf = TestcaseFile.open(TEST_FILE);
             else tf = null;
 
             try {
@@ -424,7 +432,7 @@
                 } catch (InterruptedException e) {}
                 System.out.println("No longer displayable");
 
-                if (APPEND_TESTCASES) tf.writeOut();
+                if (APPEND_TESTCASES) tf.write();
             }
 
             if (RUN_TESTCASES)

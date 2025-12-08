@@ -5,20 +5,16 @@ import com.exception.ccpp.FileManagement.CrypticWriter;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.GUI.UpdateGUICallback;
 
-import javax.swing.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class TestcaseFile extends CCFile implements TerminalCallback{
     Map<Testcase, String> testcases = new LinkedHashMap<>();
-
-    public TestcaseFile(String filepath) {
-        super(filepath);
-        load();
-    }
-    public TestcaseFile(Path path) {
+    TestcasesPanel testcasesPanel = null;
+    private TestcaseFile(Path path) {
         super(path);
-        load();
+        read();
     }
     // TerminalApp USAGE ONLY
     TestcaseFile(String[] inputs) {
@@ -34,15 +30,28 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     /************ BASIC OPS *******************/
     public void deleteTestcase(Testcase tc) {
         testcases.remove(tc);
+        if (testcasesPanel != null) {testcasesPanel.removeTestcaseCallback(tc); }
     }
     public void addTestcase(FileManager fm, UpdateGUICallback gui_cb) {
-        TerminalApp.getInstance().setAll(fm,this,gui_cb);
-//        new TerminalApp(fm,this, gui_cb);
+        TerminalApp.getInstance().setAll(fm,this, gui_cb).start();
     }
 
     /************ I/O *******************/
+
+    public static TestcaseFile open(String path) {
+        return open(Paths.get(path));
+    };
+    public static TestcaseFile open(Path path) {
+        CCFile f = getCached(path);
+        if (f == null) return new TestcaseFile(path);
+        assert f instanceof TestcaseFile;
+        return (TestcaseFile) f;
+    }
+
+
+
     @Override
-    protected void load() {
+    protected void read() {
         if (path == null) return;
 
         try {
@@ -61,7 +70,7 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     }
 
     @Override
-    public void writeOut() {
+    public void write() {
         if (path == null) return;
 
         List<Object> data = new ArrayList<>();
@@ -77,6 +86,8 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     /************ CALLBACKS *******************/
     @Override
     public void onTerminalExit(String[] inputs, String expected) {
-        testcases.put(new Testcase(inputs, expected), UUID.randomUUID().toString());
+        Testcase nTC = new Testcase(inputs, expected);
+        testcases.put(nTC, UUID.randomUUID().toString());
+        if (testcasesPanel != null) testcasesPanel.addTestcaseCallback(nTC);
     }
 }
