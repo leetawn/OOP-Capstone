@@ -38,11 +38,13 @@
         private ArrayList<String> inputs;
         private String[] terminal_command;
         private boolean prompt_again;
-        private TerminalCallback returnCallback;
+        private TerminalCallback exitCallback;
         private UpdateGUICallback guiCallback;
         private String[] execCmd;
         private JTextLogger output_logger;
         static TerminalApp instance;
+        static boolean bypassFilter;
+        private TerminalDocumentFilter outputAreaFilter;
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -55,6 +57,7 @@
                 TERMINAL_START_COMMAND = new String[]{"powershell.exe", "-c"}; //
             }
         }
+
 
         public static TerminalApp getInstance() {
             if (instance == null) {
@@ -69,10 +72,10 @@
             this.fm = fm;
             return this;
         }
-        public TerminalApp setReturnCallback(TerminalCallback returnCallback)
+        public TerminalApp setExitCallback(TerminalCallback exitCallback)
         {
             if (is_processing) return this;
-            this.returnCallback = returnCallback;
+            this.exitCallback = exitCallback;
             return this;
         }
         public TerminalApp setUpdateCallback(UpdateGUICallback guiCallback)
@@ -85,14 +88,14 @@
         {
             if (is_processing) return this;
             this.fm = fm;
-            this.returnCallback = exitCallback;
+            this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
             return this;
         }
 
         public void start()
         {
-            if (is_processing) return;
+            if (is_processing) return;;
             is_processing = true;
             setTitle("Java Swing Command Console");
             inputs = new ArrayList<>();
@@ -132,7 +135,8 @@
             setVisible(true);
 
             AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
-            doc.setDocumentFilter(new TerminalDocumentFilter());
+            outputAreaFilter = new TerminalDocumentFilter();
+            doc.setDocumentFilter(outputAreaFilter);
 
 
             slaveWorkers.submit(() -> {
@@ -148,14 +152,24 @@
             is_processing = false;
         }
 
+
+        void setBypassFilter(boolean shouldBypass) {
+            bypassFilter = shouldBypass;
+//            outputAreaFilter.lastInsertionStart = outputArea.getDocument().getLength();
+        }
+
         static class TerminalDocumentFilter extends DocumentFilter {
-            int lastInsertionEnd = 0;
+            int lastInsertionStart = 0;
 
             @Override
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
                     throws BadLocationException {
+                if (bypassFilter) {
+                    lastInsertionStart = offset;
+//                    return;
+                }
 
-                int start = Math.min(lastInsertionEnd, offset);
+                int start = Math.min(lastInsertionStart, offset);
                 int length = offset - start;
 
                 String prevText = "";
@@ -166,23 +180,26 @@
                 String combined = prevText + string;
                 String filtered = Helpers.stripCRLines(combined);
                 fb.replace(start, length, filtered, attr);
-                lastInsertionEnd = start + filtered.length();
+                lastInsertionStart = start;
+
             }
 
             @Override
             public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
                     throws BadLocationException {
-                insertString(fb, offset, text, attrs);
+                fb.replace(offset, length, text, attrs);
             }
 
             @Override
             public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-                lastInsertionEnd = offset;
+//                lastInsertionEnd = offset;
+//                fb.remove(offset, length);
                 fb.remove(offset, length);
             }
         };
 
         private boolean initTerminalProcess() {
+            setBypassFilter(true);
             SubmissionRecord sr = null;
             try {
                 sr = Judge.compile(fm, output_logger);
@@ -200,6 +217,7 @@
             execCmd = ExecutionConfig.getExecuteCommand(fm);
             System.out.println(String.join(" ", execCmd));
             terminal_command = execCmd;
+            setBypassFilter(false);
             return true;
         }
 
@@ -223,22 +241,25 @@
                     System.out.println("Process exited with: " + p.exitValue());
                     if (p.exitValue() != 0) return p.exitValue();
 
-
                     String[] inputs_arr = inputs.toArray(new String[0]);
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
 
-                    if (returnCallback != null) {
-                        Judge.judgeInteractively(execCmd, fm, inputs_arr, results -> {
+                    Judge.judgeInteractively(execCmd,fm,inputs_arr,res -> {
+                        if (exitCallback != null) {
+                            System.out.println(res[0].expected_output());
+                            exitCallback.onTerminalExit(inputs_arr, res[0].output());
                             SwingUtilities.invokeLater(() -> {
-                                // Only prompt if a callback handler is present (for testcase generation)
-                                returnCallback.onTerminalExit(inputs_arr, results[0].output());
+                                setBypassFilter(true);
                                 outputArea.append("\nContinue adding testcases [y/n]?\n");
-                                if (guiCallback != null) { guiCallback.updateGUI(); }
-                                prompt_again = true;
+                                setBypassFilter(false);
                             });
-                        }, output_logger);
-                    } else { }
+                            prompt_again = true;
+                            if (guiCallback != null) { guiCallback.updateGUI(); }
+                        }
+                    }, null);
+
+                    outputArea.append("");
 
                     return p.exitValue();
                 });
@@ -269,7 +290,7 @@
                     prompt_again = false;
                     if (command.length() > 0 && Character.toLowerCase(command.charAt(0)) == 'y') {
                         outputArea.append(command + "\n");
-                        if (returnCallback != null)
+                        if (exitCallback != null)
                         {
                             startTerminalProcess();
                             outputArea.setText("");
@@ -386,7 +407,7 @@
             TestcaseFile tf;
             FileManager fm = null;
 
-            if (APPEND_TESTCASES || RUN_TESTCASES) tf = new TestcaseFile(TEST_FILE);
+            if (APPEND_TESTCASES || RUN_TESTCASES) tf = TestcaseFile.open(TEST_FILE);
             else tf = null;
 
             try {
@@ -411,7 +432,7 @@
                 } catch (InterruptedException e) {}
                 System.out.println("No longer displayable");
 
-                if (APPEND_TESTCASES) tf.writeOut();
+                if (APPEND_TESTCASES) tf.write();
             }
 
             if (RUN_TESTCASES)

@@ -37,22 +37,25 @@ public class Judge {
     // will output an Array of SubmissionRecord, check the Submission Record definition
     // for TERMINAL USE ONLY
     static void judgeInteractively(String[] cmd, FileManager fm, String[] testInputs, Consumer<SubmissionRecord[]> callback, CCLogger logger) {
+        if (logger == null) logger = judge_logger;
+
+        final CCLogger f_logger = logger;
         slaveWorkers.submit(() -> {
-            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, logger));
+            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger));
             SubmissionRecord verdict = new SubmissionRecord(JudgeVerdict.RE, "Runtime Error Buddy", null);
             try {
                 verdict = f.get();
             } catch (InterruptedException e) {}
             catch (ExecutionException e) { /*Normal shit*/
-                logger.errln("[Judge.judge]: Execution Error!");
+                f_logger.errln("[Judge.judge]: Execution Error!");
             }
             callback.accept(new SubmissionRecord[]{verdict});
         });
-
     }
 
     /******************** MULTI-THREADED *************************/
     // PARALLEL JUDGE
+
     public static void judge(FileManager fm, TestcaseFile tf, Consumer<SubmissionRecord[]> callback)  {
         slaveWorkers.submit(() -> {
             SubmissionRecord judge_res;
@@ -64,7 +67,7 @@ public class Judge {
             int i = 0;
             SubmissionRecord[] verdicts = new SubmissionRecord[testcases_size];
             for (Testcase tc : testcases.keySet()) {
-                verdicts[i++] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", tc.getExpectedOutput());
+                verdicts[i++] = new SubmissionRecord(JudgeVerdict.UE, "Unknown Error", tc);
             }
             // COMPILE
             judge_logger.logln("[Judge.judge]: Compiling...");
@@ -97,7 +100,7 @@ public class Judge {
 
                 judge_logger.logf("[Judge.judge]: Running Testcase %d...\n", i);
                 futures.add(slaveWorkers.submit(
-                    new JudgeSlave(cmd, rootdir, language, tc.getInputs(), tc.getExpectedOutput(), i++, judge_logger)
+                    new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger)
                 ));
             }
 
@@ -158,6 +161,7 @@ public class Judge {
     }
 
     static SubmissionRecord compile(FileManager fm, CCLogger logger) throws IOException, InterruptedException {
+        if (logger == null) logger = judge_logger;
         String[] compileCommand = null;
         switch (fm.getLanguage().toLowerCase()) {
             case "java": {
@@ -281,25 +285,27 @@ public class Judge {
     // TESTCASE WORKERS;
     static class JudgeSlave implements Callable<SubmissionRecord> {
         private static final long INPUT_DELAY_MS = 50;
-        private final String[] executeCommand, inputs;
+        private final String[] executeCommand;
         private final String rootdir, language;
         private final CCLogger logger;
         private Process process = null;
+        private Testcase tc;
         int tc_num;
         private SubmissionRecord result;
 
         JudgeSlave(String[] cmd, FileManager fm, String[] inputs, String expected_output, int testcase_number, CCLogger logger) {
-            this(cmd, fm.getRootdir().toString(), fm.getLanguage(), inputs, expected_output, testcase_number, logger);
+            this(cmd, fm.getRootdir().toString(), fm.getLanguage(), new Testcase(inputs, expected_output), testcase_number, logger);
         }
 
-        JudgeSlave(String[] cmd, String rootdir, String language, String[] inputs, String expected_output, int testcase_number, CCLogger logger) {
+        JudgeSlave(String[] cmd, String rootdir, String language, Testcase tc, int testcase_number, CCLogger logger) {
+            if (logger == null) logger = judge_logger;
             this.executeCommand = cmd;
-            this.inputs = inputs;
+            this.tc = tc;
             this.rootdir = rootdir;
             this.language = language;
             this.tc_num = testcase_number;
             this.logger = logger;
-            result = new SubmissionRecord(JudgeVerdict.ESF, "Execution System Failure (IOException)\n", expected_output);
+            result = new SubmissionRecord(JudgeVerdict.ESF, "Execution System Failure (IOException)\n", tc);
             activeSlaves.put(this, true);
         }
 
@@ -341,6 +347,7 @@ public class Judge {
             boolean is_python = language.equals("python");
             String cmd_newline = "\r\n";
             if (is_python) cmd_newline = "\n";
+            String[] inputs = tc.getInputs();
 
             // PROCESS
             try {

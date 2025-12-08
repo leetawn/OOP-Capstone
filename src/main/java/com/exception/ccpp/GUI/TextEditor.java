@@ -1,9 +1,6 @@
 package com.exception.ccpp.GUI;
 
-import com.exception.ccpp.CCJudge.Judge;
-import com.exception.ccpp.CCJudge.SubmissionRecord;
-import com.exception.ccpp.CCJudge.TerminalApp;
-import com.exception.ccpp.CCJudge.TestcaseFile;
+import com.exception.ccpp.CCJudge.*;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -13,6 +10,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
+
 import java.awt.event.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
@@ -25,6 +23,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -39,6 +38,7 @@ public class TextEditor extends JPanel {
     private RoundedButton setEntryPointButton;
     private JButton submitCodeButton;
     private RSyntaxTextArea codeArea;
+    StyledDocument document;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
     private JTextPane actualOutputArea;
@@ -53,20 +53,28 @@ public class TextEditor extends JPanel {
     private SimpleAttributeSet defaultStyle;
 
     private static String oldLanguage;
+    TestcasesPanel testcasesPanel;
+    private JPanel diffMenu;
+    private JPanel tcMenu;
+    private boolean is_diff_open;
+    private StyledDocument actual_null_doc, expected_null_doc;
+    private static TextEditor instance;
 
-    public TextEditor() {
+    public static TextEditor getInstance()
+    {
+        if (instance == null) instance = new TextEditor();
+        return instance;
+    }
+
+    private TextEditor() {
         initializeComponents();
         initializeBackend();
         initializeStyles();
         setupLayout();
         setupEventListeners();
-//        setupTabToSpaces();
-
     }
 
-    public TextEditor(String folderPath, MainMenu mainMenu) {
-        this();
-
+    public TextEditor setAll(String folderPath, MainMenu mainMenu) {
         if (mainMenu != null) {
             mainMenu.setVisible(false);
         }
@@ -80,6 +88,7 @@ public class TextEditor extends JPanel {
                     "Invalid Folder",
                     JOptionPane.ERROR_MESSAGE);
         }
+        return this;
     }
 
     /* --------------- Setup --------------- */
@@ -605,9 +614,13 @@ public class TextEditor extends JPanel {
                 Color.decode("#000000")
         ));
 
-        // TODO: himo pa oga action listener, show / hide which one
-        cardPanel.add(create_third_panel_Testcase(), "TESTCASE_VIEW");
-        cardPanel.add(create_third_panel_Diff(), "DIFF_VIEW");
+        // DONE@GLENSH: add hide fucntionality
+        //  TODO: himo pa oga action listener, show / hide which one
+        tcMenu = create_third_panel_Testcase();
+        diffMenu = create_third_panel_Diff();
+        is_diff_open = false;
+        cardPanel.add(tcMenu, "TESTCASE_VIEW");
+        cardPanel.add(diffMenu, "DIFF_VIEW");
 
         return cardPanel;
     }
@@ -629,7 +642,7 @@ public class TextEditor extends JPanel {
     }
 
     private JPanel create_third_panel_Testcase_content(){
-        RoundedPanel panel = new RoundedPanel(new GridBagLayout(), 100, "#1f2335");
+        RoundedPanel panel = new RoundedPanel(new GridBagLayout(), 40, "#1f2335");
         panel.setBorderThickness(1);
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -639,225 +652,46 @@ public class TextEditor extends JPanel {
         // TITLE SECTION
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.1;
+        gbc.weighty = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0,0,0,0);
-        panel.add(create_title_section(), gbc);
+        gbc.insets = new Insets(12,12,12,12);
+        panel.add(create_testcases_title(), gbc);
 
         // Scrollable content section
         gbc.gridy = 1;
-        gbc.weighty = 0.9;
+        gbc.weighty = 1;
         gbc.insets = new Insets(0,0,0,0);
         gbc.fill = GridBagConstraints.BOTH;
-        panel.add(create_scrollable_section(), gbc);
+        testcasesPanel = create_testcases_panel();
+        panel.add(testcasesPanel, gbc);
 
         return panel;
     }
 
-    private JPanel create_title_section(){
+    private JPanel create_testcases_title(){
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.decode("#1f2335"));
 
         JLabel label = new JLabel("Testcases");
-        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         label.setForeground(Color.WHITE);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
 
         GridBagConstraints gbc = new GridBagConstraints();
-        // Left empty label
-        gbc.gridx = 0;
-        gbc.weightx = 0.5;
-        panel.add(new JLabel(" "), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(label, gbc);
 
-        // Right empty label
-        gbc.gridx = 2;
-        gbc.weightx = 0.5;
-        panel.add(new JLabel(" "), gbc);
 
         return panel;
     }
 
-//    private JPanel create_scrollable_section(){
-//        JPanel wrapper = new JPanel(new GridBagLayout());
-//        wrapper.setBackground(Color.decode("#1f2335"));
-//        wrapper.setBorder(BorderFactory.createMatteBorder(
-//                2, 0, 0, 0,
-//                Color.decode("#4a77dc")
-//        ));
-//
-//        // Panel to hold buttons
-//        JPanel contentPanel = new JPanel(new GridBagLayout());
-//        contentPanel.setBackground(Color.decode("#1f2335"));
-//
-//        GridBagConstraints gbc = new GridBagConstraints();
-//        gbc.gridx = 0;
-//        gbc.fill = GridBagConstraints.BOTH;
-//        // Para mo gana for cross monitors
-//        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
-//        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
-//        System.out.println("MONITOR WIDTH: " + monitorWidth + " MONITOR HEIGHT: " + monitorHeight);
-//        gbc.insets = new Insets((int)(monitorHeight * 0.02), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011)); // Horizontal padding for all monitors
-//
-//        // Try 5 og 20
-//        for(int i = 1; i <= 20; i++) {
-//            gbc.gridy = i-1;
-//            gbc.weighty = 0.0;
-//
-//            JButton button = new RoundedButton("Test case " + i, 30);
-////            button.addActionListener(e -> openTestcase(testcaseNumber));
-//            button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-//            button.setBackground(Color.decode("#1a1c2a"));
-//            button.setForeground(Color.WHITE);
-//            button.setFocusPainted(false);
-//            button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-//            int tempW = (int) (monitorWidth * 0.12);
-//            int tempH = (int) (monitorHeight * 0.05);
-//            button.setPreferredSize(new Dimension(tempW, tempH));
-//            contentPanel.add(button, gbc);
-//
-//            gbc.insets = new Insets((int)(monitorHeight * 0.014), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
-//        }
-//
-//        // Add filler to push buttons to top (if gamay ra ang buttons)
-//        gbc.gridy = 5;
-//        gbc.weighty = 1.0;
-//        contentPanel.add(Box.createGlue(), gbc);
-//
-//        JScrollPane scrollPane = new JScrollPane(contentPanel);
-//        scrollPane.setBackground(Color.decode("#1f2335"));
-//        scrollPane.getViewport().setBackground(Color.decode("#1f2335"));
-//        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-//        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-//        scrollPane.getVerticalScrollBar().setUnitIncrement(20);
-//
-//        GridBagConstraints wrapperGbc = new GridBagConstraints();
-//        wrapperGbc.weightx = 1.0;
-//        wrapperGbc.weighty = 1.0;
-//        wrapperGbc.fill = GridBagConstraints.BOTH;
-//
-//        wrapper.add(scrollPane, wrapperGbc);
-//
-//        return wrapper;
-//    }
-
-    private JPanel create_scrollable_section(){
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setBackground(Color.decode("#1f2335"));
-        wrapper.setBorder(BorderFactory.createMatteBorder(
-                2, 0, 0, 0,
-                Color.decode("#4a77dc")
-        ));
-
-        // Panel to hold buttons
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setBackground(Color.decode("#1f2335"));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.fill = GridBagConstraints.BOTH;
-
-        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
-        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
-        System.out.println("MONITOR WIDTH: " + monitorWidth + " MONITOR HEIGHT: " + monitorHeight);
-        gbc.insets = new Insets((int)(monitorHeight * 0.02), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
-
-        for(int i = 1; i <= 20; i++) {
-            gbc.gridy = i-1;
-            gbc.weighty = 0.0;
-
-            JPanel testcasePanel = createTestcaseButtonPanel(i);
-            contentPanel.add(testcasePanel, gbc);
-
-            gbc.insets = new Insets((int)(monitorHeight * 0.014), (int)(monitorWidth * 0.011), (int)(monitorHeight * 0.004), (int)(monitorWidth * 0.011));
-        }
-
-        // Add filler to push buttons to top (if gamay ra ang buttons)
-        gbc.gridy = 20;
-        gbc.weighty = 1.0;
-        contentPanel.add(Box.createGlue(), gbc);
-
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
-        scrollPane.setBackground(Color.decode("#1f2335"));
-        scrollPane.getViewport().setBackground(Color.decode("#1f2335"));
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getVerticalScrollBar().setUnitIncrement(20);
-
-        GridBagConstraints wrapperGbc = new GridBagConstraints();
-        wrapperGbc.weightx = 1.0;
-        wrapperGbc.weighty = 1.0;
-        wrapperGbc.fill = GridBagConstraints.BOTH;
-
-        wrapper.add(scrollPane, wrapperGbc);
-
-        return wrapper;
+    private TestcasesPanel create_testcases_panel(){
+        return TestcasesPanel.getInstance();
     }
 
-    private JPanel createTestcaseButtonPanel(int testcaseNumber) {
-        // 1. Create the RoundedButton
-        RoundedButton buttonWrapper = new RoundedButton("", 30);
-        buttonWrapper.setBackground(Color.decode("#1a1c2a"));
-        buttonWrapper.setForeground(Color.WHITE);
-        buttonWrapper.setFocusPainted(false);
-        buttonWrapper.setBorder(BorderFactory.createEmptyBorder());
-        buttonWrapper.setLayout(new GridBagLayout());
-
-        GridBagConstraints gbcInternal = new GridBagConstraints();
-        gbcInternal.insets = new Insets(10, 15, 10, 15);
-
-        // --- 1. Left Icon/Image Panel ---
-        RoundedPanel imagePanel = new RoundedPanel(new GridBagLayout(), 30, "#1a1c2a");
-        /* todo: i think kada submit code kay e store array which index ang correct or wrong,
-            then e setBackground lang, i think implementation-based nani sooo
-         **/
-        imagePanel.setBackground(Color.decode("#1a1c2a")); // default color
-        imagePanel.setBorderColor(Color.WHITE);
-        imagePanel.setBorderThickness(1);
-        imagePanel.setPreferredSize(new Dimension(20, 20));
-        imagePanel.setMinimumSize(new Dimension(20, 20));
-
-        gbcInternal.gridx = 0;
-        gbcInternal.gridy = 0;
-        gbcInternal.weightx = 0.0;
-        gbcInternal.anchor = GridBagConstraints.WEST;
-        buttonWrapper.add(imagePanel, gbcInternal);
-
-        // --- 2. Text Label ---
-        JLabel textLabel = new JLabel("Test case " + testcaseNumber);
-        textLabel.setForeground(Color.WHITE);
-        textLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-
-        gbcInternal.gridx = 1;
-        gbcInternal.weightx = 1.0;
-        gbcInternal.anchor = GridBagConstraints.WEST;
-        gbcInternal.insets = new Insets(10, 5, 10, 15);
-        buttonWrapper.add(textLabel, gbcInternal);
-
-        // Add click action
-    //    buttonWrapper.addActionListener(e -> openTestcase(testcaseNumber));
-
-        // Set size based on monitor (ADD THESE LINES)
-        int monitorWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
-        int monitorHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
-        int tempW = (int) (monitorWidth * 0.12);
-        int tempH = (int) (monitorHeight * 0.05);
-        buttonWrapper.setPreferredSize(new Dimension(tempW, tempH));
-
-        // Wrap in JPanel
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBackground(Color.decode("#1f2335"));
-        wrapper.setOpaque(false);
-        wrapper.add(buttonWrapper, BorderLayout.CENTER);
-        wrapper.setPreferredSize(buttonWrapper.getPreferredSize());
-
-        return wrapper;
-    }
-
-    // For DiffPanel ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     private JPanel create_third_panel_Diff() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.decode("#1f2335"));
@@ -900,6 +734,7 @@ public class TextEditor extends JPanel {
         backButton.setForeground(Color.WHITE);
         backButton.setBackground(Color.decode("#1f2335"));
         backButton.setFocusPainted(false);
+        backButton.addActionListener(e -> closeDiffMenu());
         headerPanel.add(backButton, BorderLayout.WEST);
 
         JLabel label = new JLabel();
@@ -950,6 +785,35 @@ public class TextEditor extends JPanel {
 
         return panel;
     }
+
+    public void setDiffMenuDoc(StyledDocument actual, StyledDocument expected) {
+        if (actual == null || null == expected) {
+            actual = actual_null_doc;
+            expected = expected_null_doc;
+        };
+
+        actualOutputArea.setDocument(actual);
+        expectedOutputArea.setDocument(expected);
+        actualOutputArea.revalidate();
+        expectedOutputArea.revalidate();
+//        SwingUtilities.invokeLater(() -> {
+//
+//        });
+    }
+
+    public void openDiffMenu() {
+        is_diff_open = true;
+        diffMenu.setVisible(is_diff_open);
+        tcMenu.setVisible(!is_diff_open);
+    }
+    public void closeDiffMenu() {
+        is_diff_open = false;
+        diffMenu.setVisible(is_diff_open);
+        tcMenu.setVisible(!is_diff_open);
+    }
+
+    // For DiffPanel ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
     // END OF FRONT END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // START OF BACK END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1126,18 +990,22 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setCaretColor(Color.decode("#1f2335"));
         actualOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         expectedOutputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+
+        actual_null_doc = actualOutputArea.getStyledDocument();
+        expected_null_doc = expectedOutputArea.getStyledDocument();
     }
 
 
     /* --------------- Setup --------------- */
 
     /* --------------- Util --------------- */
+
+
+
+
     private int BUFFER_MAX_CHARS = 10000;
-    private void displayActualDiff(String[] actualLines, String[] expectedLines) {
-        StyledDocument doc = actualOutputArea.getStyledDocument();
-        actualOutputArea.getParent().getParent().setIgnoreRepaint(true);
-//        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
-//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+    private void displayActualDiff(String[] actualLines, String[] expectedLines, StyledDocument doc) {
+        if (doc == null) return;
 
         try {
             doc.remove(0, doc.getLength());
@@ -1181,6 +1049,7 @@ public class TextEditor extends JPanel {
                         SwingUtilities.invokeLater(() ->
                         {
                             try {
+                                // TODO OPTIMIZATION: setLargeText and doc.setCharacterAttributes();
                                 doc.insertString(doc.getLength(), final_str, final_style);
                             } catch (BadLocationException ignored) {}
                         });
@@ -1209,16 +1078,14 @@ public class TextEditor extends JPanel {
             });
         }
 
-//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
-        actualOutputArea.getParent().getParent().setIgnoreRepaint(false);
-        actualOutputArea.setCaretPosition(doc.getLength());
+//        actualOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        actualOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
-    private void displayExpectedDiff(String[] actualLines, String[] expectedLines) {
+    private void displayExpectedDiff(String[] actualLines, String[] expectedLines, StyledDocument doc) {
         // Note: We are using expectedOutputArea for this.
-        StyledDocument doc = expectedOutputArea.getStyledDocument();
-        expectedOutputArea.getParent().getParent().setIgnoreRepaint(true);
 //        DefaultCaret caret = (DefaultCaret) expectedOutputArea.getCaret();
 //        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        if (doc == null) return;
 
         try {
             doc.remove(0, doc.getLength());
@@ -1287,9 +1154,8 @@ public class TextEditor extends JPanel {
             });
         }
 
-//        caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
-        expectedOutputArea.setCaretPosition(doc.getLength());
-        expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
+//        expectedOutputArea.getParent().getParent().setIgnoreRepaint(true);
+//        expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
@@ -1301,7 +1167,7 @@ public class TextEditor extends JPanel {
 
         if (currentFile != null && !content.equals(placeholderText) && !content.equals(openFolderPlaceholderText)) {
             currentFile.setContent(content);
-            currentFile.writeOut();
+            currentFile.write();
             System.out.println("File saved: " + currentFile.getStringPath());
         }
     }
@@ -1356,8 +1222,8 @@ public class TextEditor extends JPanel {
 
             saveCurrentFileContent();
 
-            SFile newSFile = new SFile(newFilePath);
-            newSFile.writeOut();
+            SFile newSFile = SFile.open(newFilePath);
+            newSFile.write();
 
             fm.getFiles().add(newSFile);
             fm.setCurrentFile(newSFile);
@@ -1503,8 +1369,8 @@ public class TextEditor extends JPanel {
 
                 getTextEditor().saveCurrentFileContent();
 
-                SFile newSFile = new SFile(newFilePath);
-                newSFile.writeOut();
+                SFile newSFile = SFile.open(newFilePath);
+                newSFile.write();
                 fileManager.getFiles().add(newSFile);
                 fileManager.setCurrentFile(newSFile);
                 getTextEditor().codeArea.setText(newSFile.getContent());
@@ -1642,13 +1508,16 @@ public class TextEditor extends JPanel {
             });
 
             int result = fileChooser.showOpenDialog(getTextEditor());
+// TODO@GLENSH import testcase
 
             if (result == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
                 if (selectedFile != null && selectedFile.isFile()) {
                     try {
                         if (selectedFile.getPath().endsWith(".ccpp")) {
-                            fe.setTestcaseFile(new SFile(selectedFile.getPath()));
+                            TestcaseFile tf = TestcaseFile.open(selectedFile.getPath());
+                            fe.setTestcaseFile(tf);
+                            TextEditor.getInstance().testcasesPanel.setTestcaseFile(tf);
                         } else {
                             throw new InvalidFileException("Invalid file! Please select .ccpp files for testcases.");
                         }
@@ -1659,7 +1528,7 @@ public class TextEditor extends JPanel {
                 }
             }
             if (fe.getTestcaseFile() != null) {
-                System.out.println("Testcase Content: " + fe.getTestcaseFile().getContent());
+                System.out.println("Testcases has " + fe.getTestcaseFile().getTestcases().size() + " testcases");
             } else {
                 System.out.println("No testcase file selected.");
             }
@@ -1699,7 +1568,7 @@ public class TextEditor extends JPanel {
                 if (selectedFile.getName().toLowerCase().endsWith(".ccpp")) {
                     try {
                         Path selectedPath = selectedFile.toPath();
-                        TestcaseFile tf = new TestcaseFile(selectedPath);
+                        TestcaseFile tf = TestcaseFile.open(selectedPath);
                         TestcaseManagerDialog tf_dialog = new TestcaseManagerDialog(SwingUtilities.getWindowAncestor(getTextEditor()), tf);
                         tf_dialog.setVisible(true);
                     } catch (Exception ex) { // we don't have to catch NotDir because we only display directories anyway
@@ -1710,6 +1579,7 @@ public class TextEditor extends JPanel {
         }
     }
 
+
     public static class SubmitButtonHandler extends ComponentHandler {
         public SubmitButtonHandler(TextEditor editor) {
             super(editor);
@@ -1717,13 +1587,14 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            boolean is_java_python = false;
             FileManager fm = FileManager.getInstance();
-            String sel_lang = (String) getTextEditor().languageSelectDropdown.getSelectedItem();
+            String sel_lang = (String)getTextEditor().languageSelectDropdown.getSelectedItem();
             SFile sel_file = FileExplorer.getInstance().getSelectedFile();
-            if (sel_lang != null) is_java_python = sel_lang.equalsIgnoreCase("python") || sel_lang.equalsIgnoreCase("java");
-            if (is_java_python) {
+            if (sel_lang == null) return; // idk how we got in this point;
+            sel_lang = sel_lang.toLowerCase();
 
+            boolean is_java_python = switch (sel_lang) { case "python", "java" -> true; default -> false; };
+            if (is_java_python) {
                 if (sel_file == null)
                 {
                     JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1740,34 +1611,59 @@ public class TextEditor extends JPanel {
                 getTextEditor().saveCurrentFileContent();
             }
 
-            TestcaseFile tf = new TestcaseFile("datafile3.ccpp");
+            TestcaseFile tf = getTextEditor().fileExplorerPanel.getTestcaseFile();
+            if (tf == null) {
+                JOptionPane.showMessageDialog(getTextEditor(), "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // TODO@GLENSH return to testcases
             System.out.println("TF has " + tf.getTestcases().size() + " testcases");
             Judge.judge(FileManager.getInstance(), tf, results -> {
-                System.out.println("[TextEditor] RECEIVED");
+
+                // QUEUE TESTCASES
                 if (results.length > 0) {
-                    System.out.println("[TextEditor] RESULTS HAS LENGTH");
-                    SubmissionRecord rec = results[0];
-
-                    final String actual = rec.output();
-                    final String expected = rec.expected_output();
-                    System.out.println("Exit code : " + rec.verdict());
-
-
-                    Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
-                    String[] expectedLines = expected.split("\\R", -1);
-
-                    try {
-                        final String[] actualLines = future_actual.get();
-                        slaveWorkers.submit(() -> getTextEditor().displayActualDiff(actualLines, expectedLines));
-                        getTextEditor().displayExpectedDiff(actualLines, expectedLines);
-
+                    Map<Testcase, TestcasesPanel.TCEntry> activeTC =
+                            TestcasesPanel.getInstance().getActiveTestcases();
+                    for (SubmissionRecord s : results)
+                    {
+                        TestcasesPanel.TCEntry entry = activeTC.get(s.testcase());
+                        System.out.println("[TextEditor] SENDING SLAVES");
+                        slaveWorkers.submit(new DiffSlave(s, entry.actualDoc, entry.expectedDoc));
                     }
-                    catch (InterruptedException ex) {}
-                    catch (ExecutionException ex) {}
+
+
+
                 }
             });
 
         }
+    }
+
+    public static class DiffSlave implements Runnable {
+        final String actual;
+        final String expected;
+        final StyledDocument actualDoc;
+        final StyledDocument expectedDoc;
+        public DiffSlave(SubmissionRecord rec, StyledDocument actualDoc, StyledDocument expectedDoc) {
+            this.actual = rec.output();
+            this.expected = rec.expected_output();
+            this.actualDoc = actualDoc;
+            this.expectedDoc = expectedDoc;
+        }
+
+        @Override
+        public void run() {
+            Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
+            String[] expectedLines = expected.split("\\R", -1);
+
+            try {
+                final String[] actualLines = future_actual.get();
+                slaveWorkers.submit(() -> TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc));
+                TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc);
+            }  catch (InterruptedException ex) {}
+            catch (ExecutionException ex) {}
+        }
+
     }
     /* --------------- Button Handlers --------------- */
 
@@ -1775,7 +1671,7 @@ public class TextEditor extends JPanel {
         setNimbusLaf();
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("CodeChum++");
-            TextEditor editor = new TextEditor();
+            TextEditor editor = TextEditor.getInstance();
             frame.setContentPane(editor);
 
             // Set window icon (for taskbar/dock)

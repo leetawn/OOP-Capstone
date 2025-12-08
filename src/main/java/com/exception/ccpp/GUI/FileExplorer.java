@@ -1,5 +1,6 @@
 package com.exception.ccpp.GUI;
 
+import com.exception.ccpp.CCJudge.TestcaseFile;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
@@ -31,7 +32,7 @@ public class FileExplorer extends JPanel {
     private JMenuItem addFileItem;
     private TextEditor textEditor;
     private SFile selectedFile;
-    private SFile testcaseFile;
+    private TestcaseFile testcaseFile;
     private static FileExplorer fe_instance;
 
     // Updated constructor signature: No longer accepts language
@@ -359,7 +360,7 @@ public class FileExplorer extends JPanel {
 
             if (success) {
                 Path newFolderPath = directoryToCreateIn.resolve(newFolderName);
-                SFile newDirSFile = new SFile(newFolderPath);
+                SFile newDirSFile = SFile.open(newFolderPath);
 
                 DefaultMutableTreeNode newFolderTreeNode = new DefaultMutableTreeNode(newDirSFile);
 
@@ -443,7 +444,7 @@ public class FileExplorer extends JPanel {
                 }
 
                 if (Files.isDirectory(childPath)) {
-                    SFile dirSFile = new SFile(childPath);
+                    SFile dirSFile = SFile.open(childPath);
                     DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(dirSFile);
 
                     parentNode.add(childNode);
@@ -501,10 +502,10 @@ public class FileExplorer extends JPanel {
             default ->  dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         }
     }
-    public SFile getTestcaseFile() {
+    public TestcaseFile getTestcaseFile() {
         return this.testcaseFile;
     }
-    public void setTestcaseFile(SFile newFile) {
+    public void setTestcaseFile(TestcaseFile newFile) {
         this.testcaseFile = newFile;
     }
 

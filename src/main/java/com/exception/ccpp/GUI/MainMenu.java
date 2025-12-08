@@ -70,8 +70,7 @@ public class MainMenu extends JPanel {
                     SwingUtilities.invokeLater(() -> {
                         JFrame editorFrame = new JFrame("CodeChum++ Editor");
 
-                        TextEditor editorPanel =
-                                new TextEditor(folder.getAbsolutePath(), this);
+                        TextEditor editorPanel = TextEditor.getInstance().setAll(folder.getAbsolutePath(), this);
 
                         editorFrame.setContentPane(editorPanel);
                         editorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
