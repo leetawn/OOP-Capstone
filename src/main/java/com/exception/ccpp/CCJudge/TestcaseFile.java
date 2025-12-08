@@ -33,7 +33,7 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         if (testcasesPanel != null) {testcasesPanel.removeTestcaseCallback(tc); }
     }
     public void addTestcase(FileManager fm, UpdateGUICallback gui_cb) {
-        TerminalApp.getInstance().setAll(fm,this, gui_cb).start();
+        TerminalApp.getInstance().stopSetAll(fm,this, gui_cb).start();
     }
 
     /************ I/O *******************/

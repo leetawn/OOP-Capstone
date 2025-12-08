@@ -1428,11 +1428,11 @@ public class TextEditor extends JPanel {
         }
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
             getTextEditor().saveCurrentFileContent();
-            FileManager fm = fe.getFileManager();
+//            FileManager fm = fe.getFileManager();
+            FileManager fm = FileManager.getInstance();
             SwingUtilities.invokeLater(() -> {
-                TerminalApp.getInstance().setAll(fm, null, null).start();
+                TerminalApp.getInstance().stopSetAll(fm, null, null).start();
 //                new TerminalApp(fm, null, null);
             });
         }

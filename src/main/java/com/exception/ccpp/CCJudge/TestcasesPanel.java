@@ -3,9 +3,7 @@ package com.exception.ccpp.CCJudge;
 import com.exception.ccpp.GUI.TextEditor;
 
 import javax.swing.*;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.StyledDocument;
+import javax.swing.text.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -64,10 +62,47 @@ public class TestcasesPanel extends JPanel {
     private void helperAddTestcase(TextEditor te, Testcase tc, int i)
     {
         TCEntry entry;
-        if (entryPool.isEmpty()) entry = new TCEntry(new TestcaseButton(i+1),new DefaultStyledDocument(), new DefaultStyledDocument());
+        if (entryPool.isEmpty()) entry = new TCEntry(new TestcaseButton(i+1), createDoc(), createDoc());
         else entry = entryPool.pop();
         addTestcase(te, tc, entry, i);
         activeBtns.add(entry.btn);
+    }
+
+    private StyledDocument createDoc()
+    {
+        StyledDocument doc = new DefaultStyledDocument();
+        AbstractDocument adoc = (AbstractDocument) doc;
+        adoc.setDocumentFilter(new DocumentFilter() {
+            private final int MAX_CHARS = 50_000; // max characters
+
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                string = enforceMaxLength(fb, string);
+                super.insertString(fb, offset, string, attr);
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                text = enforceMaxLength(fb, text);
+                super.replace(fb, offset, length, text, attrs);
+            }
+
+            private String enforceMaxLength(FilterBypass fb, String text) throws BadLocationException {
+                if (text == null || text.isEmpty()) return text;
+
+                int currentLength = fb.getDocument().getLength();
+                if (text.length() >= MAX_CHARS) {
+                    // truncate new text to max size
+                    text = text.substring(text.length() - MAX_CHARS);
+                    fb.remove(0, currentLength); // remove everything else
+                } else if (currentLength + text.length() > MAX_CHARS) {
+                    // remove oldest chars to make space
+                    fb.remove(0, (currentLength + text.length()) - MAX_CHARS);
+                }
+                return text;
+            }
+        });
+        return doc;
     }
 
     private TestcaseButton addTestcase(TextEditor te, Testcase tc, TCEntry entry, int i)

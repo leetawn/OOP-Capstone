@@ -26,6 +26,11 @@ public abstract class CCFile {
     public static CCFile getCached(Path path) {
         if (loadedFiles.containsKey(path)) {
             System.err.println("File " + path + " is already cached");
+            try {
+                throw new IOException("When this exception is thrown it probably mean\nEthan's code is in a loop and that loop is calling a recursive function");
+            } catch (IOException e) {
+                System.err.println("IOException: " + e.getMessage());
+            }
             return loadedFiles.get(path);
         }
         System.out.println("File " + path + " is not cached");
