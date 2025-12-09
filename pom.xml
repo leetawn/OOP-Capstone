@@ -20,6 +20,11 @@
             <artifactId>rsyntaxtextarea</artifactId>
             <version>3.6.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.7</version>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>24</maven.compiler.source>

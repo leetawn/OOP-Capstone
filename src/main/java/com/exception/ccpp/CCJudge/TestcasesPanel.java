@@ -43,7 +43,7 @@ public class TestcasesPanel extends JPanel {
         if (file == null) return;
         if (this.file == file) return;
         if (this.file != null) this.file.testcasesPanel = null; // remove ref callback
-
+        TextEditor.getInstance().closeDiffMenu();
         this.file = file;
         this.file.testcasesPanel = this;
         clearActiveTescases();
@@ -68,8 +68,7 @@ public class TestcasesPanel extends JPanel {
         activeBtns.add(entry.btn);
     }
 
-    private StyledDocument createDoc()
-    {
+    private StyledDocument createDoc() {
         StyledDocument doc = new DefaultStyledDocument();
         AbstractDocument adoc = (AbstractDocument) doc;
         adoc.setDocumentFilter(new DocumentFilter() {
@@ -92,11 +91,9 @@ public class TestcasesPanel extends JPanel {
 
                 int currentLength = fb.getDocument().getLength();
                 if (text.length() >= MAX_CHARS) {
-                    // truncate new text to max size
                     text = text.substring(text.length() - MAX_CHARS);
-                    fb.remove(0, currentLength); // remove everything else
+                    fb.remove(0, currentLength);
                 } else if (currentLength + text.length() > MAX_CHARS) {
-                    // remove oldest chars to make space
                     fb.remove(0, (currentLength + text.length()) - MAX_CHARS);
                 }
                 return text;
@@ -177,7 +174,6 @@ public class TestcasesPanel extends JPanel {
 
         System.out.println("MONITOR WIDTH: " + monitorWidth + " MONITOR HEIGHT: " + monitorHeight);
 
-        // Add filler to push buttons to top (if gamay ra ang buttons)
         gbc.gridy = 20;
         gbc.weighty = 1.0;
         mainPanel.add(Box.createGlue(), gbc);
