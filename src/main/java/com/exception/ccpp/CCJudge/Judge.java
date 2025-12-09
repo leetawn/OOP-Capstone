@@ -36,12 +36,21 @@ public class Judge {
     // TODO: this will be the real judge
     // will output an Array of SubmissionRecord, check the Submission Record definition
     // for TERMINAL USE ONLY
-    static void judgeInteractively(String[] cmd, FileManager fm, String[] testInputs, Consumer<SubmissionRecord[]> callback, CCLogger logger) {
+    static void judgeInteractively(
+            String[] cmd,
+            FileManager fm,
+            String[] testInputs,
+            Consumer<SubmissionRecord[]> callback,
+            CCLogger logger,
+            ConcurrentLinkedDeque<Object> runningThreads
+    ) {
         if (logger == null) logger = judge_logger;
 
         final CCLogger f_logger = logger;
-        slaveWorkers.submit(() -> {
-            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger));
+
+        runningThreads.add(slaveWorkers.submit(() -> {
+            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger, runningThreads));
+            runningThreads.add(f);
             SubmissionRecord verdict = new SubmissionRecord(JudgeVerdict.RE, "Runtime Error Buddy", null);
             try {
                 verdict = f.get();
@@ -50,7 +59,7 @@ public class Judge {
                 f_logger.errln("[Judge.judge]: Execution Error!");
             }
             callback.accept(new SubmissionRecord[]{verdict});
-        });
+        }));
     }
 
     /******************** MULTI-THREADED *************************/
@@ -292,9 +301,18 @@ public class Judge {
         private Testcase tc;
         int tc_num;
         private SubmissionRecord result;
+        ConcurrentLinkedDeque<Object>  terminalThreads = null;
 
-        JudgeSlave(String[] cmd, FileManager fm, String[] inputs, String expected_output, int testcase_number, CCLogger logger) {
+        JudgeSlave(
+                String[] cmd,
+                FileManager fm, String[] inputs,
+                String expected_output,
+                int testcase_number,
+                CCLogger logger,
+                ConcurrentLinkedDeque<Object> runningThreads
+        ) {
             this(cmd, fm.getRootdir().toString(), fm.getLanguage(), new Testcase(inputs, expected_output), testcase_number, logger);
+            terminalThreads = runningThreads;
         }
 
         JudgeSlave(String[] cmd, String rootdir, String language, Testcase tc, int testcase_number, CCLogger logger) {
@@ -340,6 +358,11 @@ public class Judge {
             return result;
         }
 
+        private void addTThread(Object o)
+        {
+            if (terminalThreads != null) terminalThreads.add(o);
+        }
+
         @Override
         //throws Exception
         public SubmissionRecord call()  {
@@ -360,6 +383,7 @@ public class Judge {
             } catch (IOException e) {
                 return finishQuota();
             }
+            addTThread(process);
 
             StringBuilder transcript = new StringBuilder();
             Future<Void> output_reader_thread = slaveWorkers.submit(new Judge.OutputReader(process.getInputStream(), transcript));

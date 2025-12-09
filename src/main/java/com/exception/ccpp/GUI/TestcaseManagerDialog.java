@@ -58,7 +58,6 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
         Map<Testcase, String> testcases = tf.getTestcases();
 
         if (testcases.isEmpty()) {
-            listModel.addElement("No testcases found.");
             return;
         }
 

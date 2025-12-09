@@ -1,5 +1,8 @@
 package com.exception.ccpp.GUI;
 
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.util.SystemFileChooser;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -56,13 +59,14 @@ public class MainMenu extends JPanel {
         gbc.insets = new Insets(5, 0, 0, 0);
         add(openFolder, gbc);
 
+
         // ---------- ACTION ----------
         openFolder.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            SystemFileChooser chooser = new SystemFileChooser();
+            chooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
 
             int result = chooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
+            if (result == SystemFileChooser.APPROVE_OPTION) {
 
                 File folder = chooser.getSelectedFile();
                 if (folder != null && folder.isDirectory()) {

@@ -3,6 +3,8 @@ package com.exception.ccpp.GUI;
 import com.exception.ccpp.CCJudge.*;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -12,7 +14,6 @@ import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
 
 import java.awt.event.*;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -59,6 +60,8 @@ public class TextEditor extends JPanel {
     private boolean is_diff_open;
     private StyledDocument actual_null_doc, expected_null_doc;
     private static TextEditor instance;
+    JSplitPane mainSplit;
+    JSplitPane centerRightSplit;
 
     public static TextEditor getInstance()
     {
@@ -111,29 +114,36 @@ public class TextEditor extends JPanel {
         StyleConstants.setBackground(excessStyle, new Color(245, 224, 59)); // Yellow (Excess)
     }
     private void setupLayout() {
+        JPanel panel1 = create_first_panel();
+        JPanel panel2 = create_second_panel();
+        JPanel panel3 = create_third_panel_Container();
+
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-
-        // GLOBAL SETTINGS
+//
+//        // GLOBAL SETTINGS
         gbc.fill = GridBagConstraints.BOTH; // STRICTLY DO NOT EDIT THIS!
         gbc.insets = new Insets(0, 0, 0, 0); // STRICTLY DO NOT EDIT THIS!
-        gbc.gridy = 0; // STRICTLY DO NOT EDIT THIS!
-        gbc.weighty = 1.0; // STRICTLY DO NOT EDIT THIS!
+        gbc.gridy = 1; // STRICTLY DO NOT EDIT THIS!
+        gbc.weighty = 1; // STRICTLY DO NOT EDIT THIS!
+        gbc.weightx = 1; // STRICTLY DO NOT EDIT THIS!
 
-        // --- PANEL 1: Left Sidebar ---
-        gbc.gridx = 0;  // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.20; // STRICTLY DO NOT EDIT THIS!
-        add(create_first_panel(), gbc);
+        centerRightSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panel2, panel3);
+        centerRightSplit.setDividerLocation(200);
+        centerRightSplit.setContinuousLayout(true);
+        centerRightSplit.setOneTouchExpandable(true);
+        centerRightSplit.setResizeWeight(1.0); // center takes extra space when window resizes
 
-        // --- PANEL 2: Center  ---
-        gbc.gridx = 1; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.35; // STRICTLY DO NOT EDIT THIS!
-        add(create_second_panel(), gbc);
+        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panel1,centerRightSplit);
+        mainSplit.setDividerLocation(800); // initial right panel width
+        mainSplit.setContinuousLayout(true);
+        mainSplit.setOneTouchExpandable(true);
+        mainSplit.setResizeWeight(1.0); // center takes extra space when window resizes
 
-        // --- PANEL 3: Right Sidebar ---
-        gbc.gridx = 2; // STRICTLY DO NOT EDIT THIS!
-        gbc.weightx = 0.44; // STRICTLY DO NOT EDIT THIS!
-        add(create_third_panel_Container(), gbc);
+        centerRightSplit.setDividerSize(5);     // optional: thin divider
+        mainSplit.setDividerSize(5);
+
+        add(mainSplit, gbc);
     }
 
     private JPanel create_first_panel() {
@@ -490,17 +500,17 @@ public class TextEditor extends JPanel {
 
         importTestcaseButton = new RoundedButton("Import Testcase", 15);
         importTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        importTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         importTestcaseButton.setForeground(Color.WHITE);
         importTestcaseButton.setBackground(Color.decode("#568afc"));
-        importTestcaseButton.setPreferredSize(new Dimension(120, 40));
+        importTestcaseButton.setPreferredSize(new Dimension(145, 50));
 
-        manageTestcaseButton = new RoundedButton("Export Testcase", 15);
+        manageTestcaseButton = new RoundedButton("Manage Testcase", 15);
         manageTestcaseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        manageTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        manageTestcaseButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         manageTestcaseButton.setForeground(Color.WHITE);
         manageTestcaseButton.setBackground(Color.decode("#568afc"));
-        manageTestcaseButton.setPreferredSize(new Dimension(120, 40));
+        manageTestcaseButton.setPreferredSize(new Dimension(145, 50));
 
         // Import button
         gbc.gridx = 0;
@@ -634,7 +644,7 @@ public class TextEditor extends JPanel {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
-        gbc.insets = new Insets(20, 20, 20, 20);
+        gbc.insets = new Insets(0, 0, 0, 0);
 
         panel.add(create_third_panel_Testcase_content(), gbc);
 
@@ -654,7 +664,6 @@ public class TextEditor extends JPanel {
         gbc.weightx = 1;
         gbc.weighty = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(12,12,12,12);
         panel.add(create_testcases_title(), gbc);
 
         // Scrollable content section
@@ -675,13 +684,14 @@ public class TextEditor extends JPanel {
         JLabel label = new JLabel("Testcases");
         label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         label.setForeground(Color.WHITE);
-        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setHorizontalAlignment(SwingConstants.LEFT);
 
         GridBagConstraints gbc = new GridBagConstraints();
 
         gbc.gridx = 1;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(12,12,12,12);
         panel.add(label, gbc);
 
 
@@ -703,14 +713,14 @@ public class TextEditor extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.weighty = 0.5;
+        gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_3_1_panel(), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1;
-        gbc.weighty = 0.5;
+        gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(create_3_2_panel(), gbc);
 
@@ -751,6 +761,8 @@ public class TextEditor extends JPanel {
         actualOutputArea.setBackground(Color.decode("#1f2335"));
         actualOutputArea.setForeground(Color.WHITE);
         JScrollPane actualScroll = new JScrollPane(actualOutputArea);
+        actualScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        actualScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         actualScroll.setBackground(Color.decode("#1f2335"));
         actualScroll.setBorder(null);
         panel.add(actualScroll, BorderLayout.CENTER);
@@ -779,6 +791,8 @@ public class TextEditor extends JPanel {
         expectedOutputArea.setBackground(Color.decode("#1f2335"));
         expectedOutputArea.setForeground(Color.WHITE);
         JScrollPane expectedScroll = new JScrollPane(expectedOutputArea);
+        expectedScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        expectedScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         expectedScroll.setBackground(Color.decode("#1f2335"));
         expectedScroll.setBorder(null);
         panel.add(expectedScroll, BorderLayout.CENTER);
@@ -957,20 +971,30 @@ public class TextEditor extends JPanel {
         ((RoundedComboBox<String>) languageSelectDropdown).setRadius(20);
 
 
-        actualOutputArea = new JTextPane();
-        actualOutputArea.setBackground(Color.decode("#1f2335"));
+        actualOutputArea = new JTextPane() {
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return getUI().getPreferredSize(this).width < getParent().getWidth();
+            }
+        };
+        actualOutputArea.setBackground(Color.decode("#191c2a"));
         actualOutputArea.setCaretColor(Color.WHITE);
         actualOutputArea.setForeground(Color.WHITE);
 
-        expectedOutputArea = new JTextPane();
-        expectedOutputArea.setBackground(Color.decode("#1f2335"));
+        expectedOutputArea = new JTextPane() {
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return getUI().getPreferredSize(this).width < getParent().getWidth();
+            }
+        };
+        expectedOutputArea.setBackground(Color.decode("#191c2a")) ;
         expectedOutputArea.setCaretColor(Color.WHITE);
         expectedOutputArea.setForeground(Color.WHITE);
 
-        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
-        caret = (DefaultCaret) expectedOutputArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+//        DefaultCaret caret = (DefaultCaret) actualOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+//        caret = (DefaultCaret) expectedOutputArea.getCaret();
+//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
 
         fileExplorerPanel = new FileExplorer(".", codeArea, this);
@@ -1260,14 +1284,9 @@ public class TextEditor extends JPanel {
             this.codeArea.setText("No file selected. Please open a project or select a file to begin editing.");
         }
     }
-    public static void setNimbusLaf() {
+    public static void makeCoolAndNormal() {
         try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
+            UIManager.setLookAndFeel(new FlatDarkLaf());
         } catch (Exception e) {
             System.out.println("nooooooo garbage ui for now");
         }
@@ -1290,14 +1309,14 @@ public class TextEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm = fe.getFileManager();
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            SystemFileChooser fileChooser = new SystemFileChooser();
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
-            if (result == JFileChooser.APPROVE_OPTION) {
+            if (result == SystemFileChooser.APPROVE_OPTION) {
                 File selectedDir = fileChooser.getSelectedFile();
                 if (selectedDir != null && selectedDir.isDirectory()) {
                     try {
@@ -1428,11 +1447,11 @@ public class TextEditor extends JPanel {
         }
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
             getTextEditor().saveCurrentFileContent();
-            FileManager fm = fe.getFileManager();
+            if (!canProceedRunCode()) return;
+            FileManager fm = FileManager.getInstance();
             SwingUtilities.invokeLater(() -> {
-                TerminalApp.getInstance().setAll(fm, null, null).start();
+                TerminalApp.getInstance().stopSetAll(fm, null, null).start();
 //                new TerminalApp(fm, null, null);
             });
         }
@@ -1488,29 +1507,18 @@ public class TextEditor extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            FileManager fm =  fe.getFileManager();
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            FileExplorer fe = FileExplorer.getInstance();
+            FileManager fm =  FileManager.getInstance();
+            SystemFileChooser fileChooser = new SystemFileChooser();
+            fileChooser.setFileSelectionMode(SystemFileChooser.FILES_ONLY);
             fileChooser.setDialogTitle("Select Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
-            fileChooser.setFileFilter(new  FileFilter() {
-                @Override
-                public boolean accept(File f) {
-                    if (f.isDirectory()) return true;
-                    return f.getName().toLowerCase().endsWith(".ccpp");
-                }
-
-                @Override
-                public String getDescription() {
-                    return "CC++ Testcase File";
-                }
-            });
+            fileChooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("Testcase File","ccpp"));
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 // TODO@GLENSH import testcase
 
-            if (result == JFileChooser.APPROVE_OPTION) {
+            if (result == SystemFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
                 if (selectedFile != null && selectedFile.isFile()) {
                     try {
@@ -1543,28 +1551,16 @@ public class TextEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             FileExplorer fe = getTextEditor().fileExplorerPanel;
             FileManager fm =  fe.getFileManager();
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fileChooser.setDialogTitle("Manage Testcase");
+            SystemFileChooser fileChooser = new SystemFileChooser();
+            fileChooser.setFileSelectionMode(SystemFileChooser.FILES_ONLY);
+            fileChooser.setDialogTitle("Select Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
-            fileChooser.setFileFilter(new  FileFilter() {
-                @Override
-                public boolean accept(File f) {
-                    if (f.isDirectory()) return true;
-                    return f.getName().toLowerCase().endsWith(".ccpp");
-                }
-
-                @Override
-                public String getDescription() {
-                    return "CC++ Testcase File";
-                }
-            });
+            fileChooser.addChoosableFileFilter(new  SystemFileChooser.FileNameExtensionFilter("Testcase File","ccpp"));
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
-            if (result == JFileChooser.APPROVE_OPTION) {
+            if (result == SystemFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
-                // SFile toSave = fe.getDummyExportFile();
                 if (selectedFile.getName().toLowerCase().endsWith(".ccpp")) {
                     try {
                         Path selectedPath = selectedFile.toPath();
@@ -1588,29 +1584,11 @@ public class TextEditor extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             FileManager fm = FileManager.getInstance();
-            String sel_lang = (String)getTextEditor().languageSelectDropdown.getSelectedItem();
-            SFile sel_file = FileExplorer.getInstance().getSelectedFile();
-            if (sel_lang == null) return; // idk how we got in this point;
-            sel_lang = sel_lang.toLowerCase();
-
-            boolean is_java_python = switch (sel_lang) { case "python", "java" -> true; default -> false; };
-            if (is_java_python) {
-                if (sel_file == null)
-                {
-                    JOptionPane.showMessageDialog(getTextEditor(), "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                else if (!(FileExplorer.getInstance().getFileExtension(FileExplorer.getInstance().getSelectedFile().getPath().toString()).equals(getTextEditor().getCurrentSelectedLanguage())))
-                {
-                    JOptionPane.showMessageDialog(getTextEditor(), "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            }
+            if (!canProceedRunCode()) return;
 
             if (FileExplorer.getInstance().getSelectedFile() != null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
                 getTextEditor().saveCurrentFileContent();
             }
-
             TestcaseFile tf = getTextEditor().fileExplorerPanel.getTestcaseFile();
             if (tf == null) {
                 JOptionPane.showMessageDialog(getTextEditor(), "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1637,6 +1615,30 @@ public class TextEditor extends JPanel {
             });
 
         }
+    }
+
+    private static boolean canProceedRunCode() {
+        TextEditor tEditor = TextEditor.getInstance();
+        FileExplorer fExplorer = FileExplorer.getInstance();
+        String sel_lang = (String) tEditor.languageSelectDropdown.getSelectedItem();
+        SFile sel_file = fExplorer.getSelectedFile();
+        if (sel_lang == null) return false; // idk how we got in this point;
+        sel_lang = sel_lang.toLowerCase();
+
+        boolean is_java_python = switch (sel_lang) { case "python", "java" -> true; default -> false; };
+        if (is_java_python) {
+            if (sel_file == null)
+            {
+                JOptionPane.showMessageDialog(tEditor, "Yo, compilers aren't smart enough to run null files, so select one.", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            else if (!(fExplorer.getFileExtension(sel_file.getPath().toString()).equals(tEditor.getCurrentSelectedLanguage())))
+            {
+                JOptionPane.showMessageDialog(tEditor, "can you please select the correct compiler for your language please user please please please", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        }
+        return true;
     }
 
     public static class DiffSlave implements Runnable {
@@ -1666,49 +1668,4 @@ public class TextEditor extends JPanel {
 
     }
     /* --------------- Button Handlers --------------- */
-
-    public static void main(String[] args) {
-        setNimbusLaf();
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("CodeChum++");
-            TextEditor editor = TextEditor.getInstance();
-            frame.setContentPane(editor);
-
-            // Set window icon (for taskbar/dock)
-            URL url = TextEditor.class.getResource("/assets/logo2.png");
-            if (url != null) {
-                ImageIcon icon = new ImageIcon(url);
-                Image image = icon.getImage();
-                frame.setIconImage(image);
-
-                // For macOS Dock icon specifically
-                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                    try {
-                        // Use Apple's Taskbar API
-                        Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
-                        java.lang.reflect.Method getTaskbar = taskbarClass.getMethod("getTaskbar");
-                        Object taskbar = getTaskbar.invoke(null);
-                        java.lang.reflect.Method setIconImage = taskbarClass.getMethod("setIconImage", Image.class);
-                        setIconImage.invoke(taskbar, image);
-                    } catch (Exception e) {
-                        // Fallback to window icon
-                        frame.setIconImage(image);
-                    }
-                }
-            }
-
-            frame.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    slaveWorkers.shutdown();
-                }
-            });
-
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1400, 800);
-            frame.setLocationRelativeTo(null);
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame.setVisible(true);
-        });
-    }
 }

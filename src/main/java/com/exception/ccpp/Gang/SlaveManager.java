@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class SlaveManager {
 
-    // upto 5 code runner running in parallel
-    public final static ExecutorService slaveWorkers =
-            Executors.newFixedThreadPool(16);
+    // THE GOAT, without this UX would be a pain in the ass
+    // thats why it has its own package and class
+    public final static ExecutorService slaveWorkers = Executors.newFixedThreadPool(16);
 }

@@ -6,6 +6,7 @@ module com.exception.ccpp {
     requires jdk.compiler;
     requires org.fife.RSyntaxTextArea;
     requires kotlin.stdlib;
+    requires com.formdev.flatlaf;
     exports com.exception.ccpp;
     exports com.exception.ccpp.FileManagement;
 }

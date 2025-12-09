@@ -19,6 +19,8 @@
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.Map;
+    import java.util.concurrent.ConcurrentLinkedDeque;
+    import java.util.concurrent.Future;
 
     import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
@@ -45,6 +47,7 @@
         static TerminalApp instance;
         static boolean bypassFilter;
         private TerminalDocumentFilter outputAreaFilter;
+        ConcurrentLinkedDeque<Object> runningThreads = new ConcurrentLinkedDeque<>();
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -65,79 +68,33 @@
             }
             return instance;
         }
-
-        public TerminalApp setFileManager(FileManager fm)
-        {
-            if (is_processing) return this;
-            this.fm = fm;
-            return this;
-        }
-        public TerminalApp setExitCallback(TerminalCallback exitCallback)
-        {
-            if (is_processing) return this;
-            this.exitCallback = exitCallback;
-            return this;
-        }
-        public TerminalApp setUpdateCallback(UpdateGUICallback guiCallback)
-        {
-            if (is_processing) return this;
-            this.guiCallback = guiCallback;
-            return this;
-        }
-        public TerminalApp setAll(FileManager fm, TerminalCallback exitCallback,  UpdateGUICallback guiCallback)
-        {
-            if (is_processing) return this;
+        public TerminalApp stopSetAll(FileManager fm, TerminalCallback exitCallback, UpdateGUICallback guiCallback) {
+            if (is_processing) {
+                close();
+                inputField.addActionListener(
+                        new CommandListener(fm.getLanguage())
+                );
+                addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        System.out.println("windowClosing");
+                        if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
+                        slaveWorkers.submit(()->Judge.cleanup(fm));
+                        instance = null;
+                        close();
+                    }
+                });
+            };
             this.fm = fm;
             this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
             return this;
         }
 
-        public void start()
-        {
-            if (is_processing) return;;
+        public void start() {
             is_processing = true;
-            setTitle("Java Swing Command Console");
-            inputs = new ArrayList<>();
-
-            outputArea = new JTextArea();
-            outputArea.setEditable(false);
-            outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-            JScrollPane scrollPane = new JScrollPane(outputArea);
-            scrollPane.setPreferredSize(new Dimension(800, 600));
-
-            inputField = new JTextField();
-            inputField.addActionListener(
-                    new CommandListener(fm.getLanguage())
-            );
-
-            setLayout(new BorderLayout());
-            add(scrollPane, BorderLayout.CENTER);
-            add(inputField, BorderLayout.SOUTH);
-
-            addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    System.out.println("windowClosing");
-                    if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
-                    slaveWorkers.submit(()->Judge.cleanup(fm));
-                    instance = null;
-                    is_processing = false;
-                }
-            });
-
-            output_logger = new JTextLogger(outputArea);
-
-            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            pack();
-
-            setLocationRelativeTo(null);
+            outputAreaFilter.lastInsertionStart = 0;
             setVisible(true);
-
-            AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
-            outputAreaFilter = new TerminalDocumentFilter();
-            doc.setDocumentFilter(outputAreaFilter);
-
 
             slaveWorkers.submit(() -> {
                 if (initTerminalProcess())
@@ -148,8 +105,56 @@
             });
         }
 
+        public void stop() {
+            for(Object o : runningThreads)
+            {
+                if (o instanceof Future<?> f)
+                {
+                    f.cancel(true);
+                }
+                else if (o instanceof Process p)
+                {
+                    p.destroyForcibly();
+                }
+            }
+            runningThreads.clear();
+        }
+
+        public void close() {
+            setVisible(false);
+            is_processing = false;
+            outputArea.setText("");
+            outputAreaFilter.lastInsertionStart = 0;
+            stop();
+        }
+
         private TerminalApp() {
             is_processing = false;
+            setTitle("Java Swing Command Console");
+            inputs = new ArrayList<>();
+
+            outputArea = new JTextArea();
+            outputArea.setEditable(false);
+            outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            JScrollPane scrollPane = new JScrollPane(outputArea);
+            scrollPane.setPreferredSize(new Dimension(800, 600));
+
+            inputField = new JTextField();
+
+            setLayout(new BorderLayout());
+            add(scrollPane, BorderLayout.CENTER);
+            add(inputField, BorderLayout.SOUTH);
+
+            output_logger = new JTextLogger(outputArea);
+            AbstractDocument doc = (AbstractDocument) outputArea.getDocument();
+            outputAreaFilter = new TerminalDocumentFilter();
+            doc.setDocumentFilter(outputAreaFilter);
+
+            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            pack();
+
+            setLocationRelativeTo(null);
+            setVisible(false);
         }
 
 
@@ -157,46 +162,6 @@
             bypassFilter = shouldBypass;
 //            outputAreaFilter.lastInsertionStart = outputArea.getDocument().getLength();
         }
-
-        static class TerminalDocumentFilter extends DocumentFilter {
-            int lastInsertionStart = 0;
-
-            @Override
-            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
-                    throws BadLocationException {
-                if (bypassFilter) {
-                    lastInsertionStart = offset;
-//                    return;
-                }
-
-                int start = Math.min(lastInsertionStart, offset);
-                int length = offset - start;
-
-                String prevText = "";
-                if (length > 0) {
-                    prevText = fb.getDocument().getText(start, length);
-                }
-
-                String combined = prevText + string;
-                String filtered = Helpers.stripCRLines(combined);
-                fb.replace(start, length, filtered, attr);
-                lastInsertionStart = start;
-
-            }
-
-            @Override
-            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
-                    throws BadLocationException {
-                fb.replace(offset, length, text, attrs);
-            }
-
-            @Override
-            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-//                lastInsertionEnd = offset;
-//                fb.remove(offset, length);
-                fb.remove(offset, length);
-            }
-        };
 
         private boolean initTerminalProcess() {
             setBypassFilter(true);
@@ -233,6 +198,7 @@
                         .setDirectory(fm.getRootdir().toString())
                         .setConsole(false)
                         .start();
+                runningThreads.add(terminalProcess);
 
 
                 // TERMINAL WILL EXIT HERE
@@ -257,7 +223,7 @@
                             prompt_again = true;
                             if (guiCallback != null) { guiCallback.updateGUI(); }
                         }
-                    }, null);
+                    }, null, runningThreads);
 
                     outputArea.append("");
 
@@ -297,7 +263,7 @@
                             return;
                         }
                     }
-                    SwingUtilities.invokeLater(TerminalApp.this::dispose);
+                    SwingUtilities.invokeLater(() -> {TerminalApp.this.close();});
                     return;
                 }
 
@@ -368,6 +334,68 @@
             }
         }
 
+        private static class TerminalDocumentFilter extends DocumentFilter {
+            int lastInsertionStart = 0;
+            int lastWarning = 0;
+            private boolean reached = false;
+            private int MAX_CHARS = 100000;
+
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws BadLocationException {
+                checkLength(fb, string.length());
+                if (bypassFilter) {
+                    lastInsertionStart = offset;
+//                    return;
+                }
+                int start = Math.min(lastInsertionStart, offset);
+                int length = offset - start;
+
+                String prevText = "";
+                if (length > 0) {
+                    prevText = fb.getDocument().getText(start, length);
+                }
+
+                String combined = prevText + string;
+                String filtered = Helpers.stripCRLines(combined);
+                fb.replace(start, length, filtered, attr);
+                lastInsertionStart = start;
+                int curLen = fb.getDocument().getLength();
+                if (curLen > MAX_CHARS) {
+                    if (!reached){
+                        reached = true;
+                        System.err.println("[TerminalApp]: Warning concsole is " + offset + " chacters long");
+                    }
+                    fb.remove(0, (curLen) - 50_000);
+                    lastInsertionStart = Integer.max(0,start - 50_000);
+                }
+
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                checkLength(fb, text.length());
+                fb.replace(offset, length, text, attrs);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+//                lastInsertionEnd = offset;
+//                fb.remove(offset, length);
+                fb.remove(offset, length);
+            }
+
+            private void checkLength(FilterBypass fb, int addedLength) throws BadLocationException {
+                int currentLength = fb.getDocument().getLength();
+                int max = MAX_CHARS;
+                if (currentLength + addedLength > max) {
+                    // remove oldest content
+                    fb.remove(0, (currentLength + addedLength) - max);
+                }
+            }
+        };
+
         public static void main(String[] args) {
             boolean OPEN_TERMINAL, APPEND_TESTCASES, RUN_TESTCASES;
             String[] files = {"datafile3.ccpp", "datafile3.ccpp"};
@@ -422,8 +450,8 @@
             if (OPEN_TERMINAL)
             {
                 TerminalApp ta  = TerminalApp.getInstance();
-                if (APPEND_TESTCASES) ta.setAll(finalFm, tf, null).start();
-                else ta.setAll(finalFm, null, null).start();
+                if (APPEND_TESTCASES) ta.stopSetAll(finalFm, tf, null).start();
+                else ta.stopSetAll(finalFm, null, null).start();
 
                 // block main thread to mimic workload on main
                 // the testfile will be updated after the terminal is finished

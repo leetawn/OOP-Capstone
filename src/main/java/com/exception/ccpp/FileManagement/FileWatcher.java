@@ -113,8 +113,8 @@ public class FileWatcher implements Runnable {
                 }
             }
         }
-
         SwingUtilities.invokeLater(FileExplorer::reloadTree);
+
         // TODO ETHAN: Trigger a UI refresh event here
     }
     private void handleDelete(Path deletedPath) {
