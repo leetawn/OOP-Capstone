@@ -45,7 +45,6 @@ public class TextEditor extends JPanel {
     public static final String CCPP_FILE_DESC = "CC++ File";
     public static final String CCPP_EXT = "ccpp";
     private JButton runCodeButton;
-    private JButton addFileButton;
     private JButton createButton; // Appears unused, but keeping it
     private JButton openFolderButton;
     private JButton createFolderButton;
@@ -271,28 +270,23 @@ public class TextEditor extends JPanel {
 
         // Create JButtons and set the icon
         openFolderButton = new JButton(openFolderIcon);
-        addFileButton = new JButton(addFileIcon);
         createFolderButton = new JButton(createFolderIcon);
 
         openFolderButton.setToolTipText("Open Folder");
-        addFileButton.setToolTipText("Add File");
         createFolderButton.setToolTipText("Create Folder");
 
         // Set tooltip delay ONCE for all components
         ToolTipManager.sharedInstance().setInitialDelay(500);
 
         openFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        addFileButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         createFolderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         // Configure the Buttons to look like Icons
         configureToolbarButton(openFolderButton);
-        configureToolbarButton(addFileButton);
         configureToolbarButton(createFolderButton);
 
         // Add JButtons to the Panel
         panel.add(openFolderButton);
-        panel.add(addFileButton);
         panel.add(createFolderButton);
 
         // Set a minimum height for the panel
@@ -852,7 +846,6 @@ public class TextEditor extends JPanel {
         // save ctrl+s migrated to main frame
 
         openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
-        addFileButton.addActionListener(new AddFileButtonHandler(this));
         languageSelectDropdown.addActionListener(new LanguageSelectHandler(this));
         runCodeButton.addActionListener(new RunButtonHandler(this));
         submitCodeButton.addActionListener(new SubmitButtonHandler(this));
@@ -879,7 +872,6 @@ public class TextEditor extends JPanel {
         submitCodeButton.setBorderPainted(false);
         submitCodeButton.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
 
-        addFileButton = new RoundedButton("", 15);
         URL urlAddFileButton = TextEditor.class.getResource("/assets/add_file.png");
         if (urlAddFileButton != null) {
             ImageIcon iconAddFileButton = new ImageIcon(urlAddFileButton);
@@ -888,14 +880,9 @@ public class TextEditor extends JPanel {
             Image scaledImage = originalImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
 
             // Set the scaled image using the new setIconImage method
-            ((RoundedButton)addFileButton).setIconImage(scaledImage);
         } else {
             System.err.println("Resource not found: /assets/add_file.png");
         }
-        addFileButton.setBackground(Color.decode("#28313b"));
-        addFileButton.setBorderPainted(false);
-        addFileButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        addFileButton.setToolTipText("Add File");
         ToolTipManager.sharedInstance().setInitialDelay(800);
 
         setEntryPointButton = new RoundedButton("Set Entry Point", 30);
