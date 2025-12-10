@@ -466,7 +466,7 @@
             if (RUN_TESTCASES)
             {
                 // this is how you call multithreaded judge
-                Judge.judge(fm,tf, results -> {
+                Judge.judge(fm,tf, (results, verdict) -> {
                     int i = 0;
                     for (SubmissionRecord sr : results) {
                         System.out.printf("[[[------------- ACTUAL OUT Testcase %d---------------\n", ++i);
