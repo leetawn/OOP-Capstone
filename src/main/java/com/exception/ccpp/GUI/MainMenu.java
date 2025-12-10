@@ -9,7 +9,7 @@ import java.io.File;
 public class MainMenu extends JPanel {
 
     private JLabel title = new JLabel("CodeChum++");
-    private JLabel description = new JLabel("The Fastest and Reliable CodeJudger!");
+    private JLabel description = new JLabel("The Fastest and Most Reliable CodeJudger!");
     private JLabel start = new JLabel("Start Coding");
     private RoundedButton openFolder = new RoundedButton("Open Folder", 20);
 
