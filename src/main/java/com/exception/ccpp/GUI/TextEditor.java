@@ -844,7 +844,6 @@ public class TextEditor extends JPanel {
                 if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
                     e.consume();
                     saveCurrentFileContent();
-                    actualOutputArea.setText("File saved successfully.");
                     return;
                 }
                 super.keyPressed(e);
