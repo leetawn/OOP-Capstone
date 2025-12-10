@@ -394,7 +394,7 @@ public class Judge {
 
     // TESTCASE WORKERS;
     static class JudgeSlave implements Callable<SubmissionRecord> {
-        private static final long INPUT_DELAY_MS = 80;
+        private static final long INPUT_DELAY_MS = 50;
         private final String[] executeCommand;
         private final String rootdir, language;
         private final CCLogger logger;
@@ -501,10 +501,10 @@ public class Judge {
                         return finishQuota().setVerdict(JudgeVerdict.TLE).setOutput(Helpers.stripAnsiCRLines(transcript.toString()).trim());
                     }
 
-                    synchronized (this)
-                    {
-                        this.wait(INPUT_DELAY_MS);
-                    }
+//                    synchronized (this)
+//                    {
+//                    }
+                    Thread.sleep(INPUT_DELAY_MS);
 
                     if (inputIndex < inputs.length) {
                         String inputLine = inputs[inputIndex++];
