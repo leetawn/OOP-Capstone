@@ -436,6 +436,8 @@ public class TextEditor extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeArea);
         editorScroll.setBorder(null);
         editorScroll.setBackground(Color.decode("#1f2335"));
+        org.fife.ui.rtextarea.Gutter gutter = editorScroll.getGutter();
+        gutter.setBorderColor(Color.BLACK);
         panel.add(editorScroll, BorderLayout.CENTER);
 
         return panel;
@@ -698,7 +700,7 @@ public class TextEditor extends JPanel {
         JLabel label = new JLabel("Testcases");
         label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         label.setForeground(Color.WHITE);
-        label.setHorizontalAlignment(SwingConstants.LEFT);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
 
         GridBagConstraints gbc = new GridBagConstraints();
 
