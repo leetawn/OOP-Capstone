@@ -8,7 +8,7 @@ import java.io.File;
 */
 public abstract class ComponentHandler implements ActionListener {
 
-    private final TextEditor textEditor;
+    private static TextEditor textEditor = null;
 
     public ComponentHandler(TextEditor textEditor) {
         this.textEditor = textEditor;
@@ -17,8 +17,8 @@ public abstract class ComponentHandler implements ActionListener {
     @Override
     public abstract void actionPerformed(ActionEvent e);
 
-    public TextEditor getTextEditor() {
-        return this.textEditor;
+    public static TextEditor getTextEditor() {
+        return textEditor;
     }
 
 }

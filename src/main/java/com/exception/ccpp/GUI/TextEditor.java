@@ -14,6 +14,8 @@ import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
 
 import java.awt.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -62,6 +64,8 @@ public class TextEditor extends JPanel {
     private static TextEditor instance;
     JSplitPane mainSplit;
     JSplitPane centerRightSplit;
+    JLabel textEditorLabel;
+    final int ICON_SIZE = 20;
 
     public static TextEditor getInstance()
     {
@@ -243,7 +247,6 @@ public class TextEditor extends JPanel {
 
         Class<?> contextClass = this.getClass();
 
-        final int ICON_SIZE = 20;
 
         // Load URLs
         URL openFolderUrl = contextClass.getResource("/assets/open_folder.png");
@@ -356,15 +359,15 @@ public class TextEditor extends JPanel {
         Color panelBgColor = Color.decode("#191c2a");
         Color foreColor = Color.WHITE;
 
-        JLabel label1 = new JLabel();
-        label1.setText("Text Editor");
-        label1.setForeground(foreColor);
-        label1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        textEditorLabel = new JLabel();
+        textEditorLabel.setText("Text Editor");
+        textEditorLabel.setForeground(foreColor);
+        textEditorLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
-        label1.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        textEditorLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
-        // Add label1 to the WEST (left) region
-        panel.add(label1, BorderLayout.WEST);
+        // Add textEditorLabel to the WEST (left) region
+        panel.add(textEditorLabel, BorderLayout.WEST);
 
         // Create an INNER panel to hold the two right-side components
         JPanel rightPanel = new JPanel();
@@ -952,6 +955,25 @@ public class TextEditor extends JPanel {
         codeArea.setAntiAliasingEnabled(true);
         codeArea.setFractionalFontMetricsEnabled(false);
         codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        codeArea.getDocument().addDocumentListener(new DocumentListener() {
+
+            private void updateModifiedState() {
+                SFile currentFile = fileExplorerPanel.getSelectedFile();
+                if (currentFile != null) {
+                    if (!currentFile.isDirty()) {
+                        currentFile.setModified(true);
+                    }
+
+                    SwingUtilities.invokeLater(() -> {
+                        updateUnsavedIndicator(true);
+                    });
+                }
+            }
+
+            @Override public void insertUpdate(DocumentEvent e) { updateModifiedState(); }
+            @Override public void removeUpdate(DocumentEvent e) { updateModifiedState(); }
+            @Override public void changedUpdate(DocumentEvent e) { }
+        });
 
         InputStream in = getClass().getClassLoader()
                 .getResourceAsStream("org/fife/ui/rsyntaxtextarea/themes/monokai.xml");
@@ -1023,7 +1045,6 @@ public class TextEditor extends JPanel {
     /* --------------- Setup --------------- */
 
     /* --------------- Util --------------- */
-
 
 
 
@@ -1192,6 +1213,7 @@ public class TextEditor extends JPanel {
         if (currentFile != null && !content.equals(placeholderText) && !content.equals(openFolderPlaceholderText)) {
             currentFile.setContent(content);
             currentFile.write();
+            updateUnsavedIndicator(false);
             System.out.println("File saved: " + currentFile.getStringPath());
         }
     }
@@ -1271,6 +1293,25 @@ public class TextEditor extends JPanel {
     }
     /* --------------- Util --------------- */
     /* --------------- Getters & Setters --------------- */
+    public void updateUnsavedIndicator(boolean isDirty) {
+        String currentText = textEditorLabel.getText();
+
+        final String ASTERISK_INDICATOR = " *";
+
+        String cleanText = currentText;
+        if (currentText.endsWith(ASTERISK_INDICATOR)) {
+            cleanText = currentText.substring(0, currentText.length() - ASTERISK_INDICATOR.length());
+        }
+
+        if (isDirty) {
+            if (!currentText.endsWith(ASTERISK_INDICATOR)) {
+                textEditorLabel.setText(cleanText + ASTERISK_INDICATOR);
+                System.out.println("LABEL: " + textEditorLabel.getText());
+            }
+        } else {
+            textEditorLabel.setText(cleanText);
+        }
+    }
 
     public String getCurrentSelectedLanguage() {
         if (languageSelectDropdown.getSelectedItem().equals("C++")) return "cpp";
@@ -1585,6 +1626,7 @@ public class TextEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             FileManager fm = FileManager.getInstance();
             if (!canProceedRunCode()) return;
+
 
             if (FileExplorer.getInstance().getSelectedFile() != null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
                 getTextEditor().saveCurrentFileContent();

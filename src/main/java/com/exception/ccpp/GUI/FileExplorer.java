@@ -196,10 +196,13 @@ public class FileExplorer extends JPanel {
                     textEditor.saveCurrentFileContent();
 
                     setSelectedFile(sfile);
+                    String filename = sfile.getPath().getFileName().toString();
+                    ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
                     textEditor.setTextArea(true);
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
+                    textEditor.updateUnsavedIndicator(false);
                     System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -438,9 +441,15 @@ public class FileExplorer extends JPanel {
             for (Path childPath : contents) {
                 String fileName = childPath.getFileName().toString();
 
-                // Skip hidden files/folders and those starting with '.'
                 if (Files.isHidden(childPath) || fileName.startsWith(".")) {
                     continue;
+                }
+
+                if (Files.isDirectory(childPath)) {
+                    if (fileName.equals("target") || fileName.equals("out") || fileName.equals("bin") || fileName.equals("node_modules") || fileName.equals("venv") || fileName.equals("env")) {
+                        System.err.println("Skipping problematic directory: " + fileName);
+                        continue;
+                    }
                 }
 
                 if (Files.isDirectory(childPath)) {
@@ -451,8 +460,6 @@ public class FileExplorer extends JPanel {
 
                     recursivelyAddNodes(childNode, childPath);
                 } else {
-                    // Check if the file is tracked by the FileManager
-                    // NOTE: Since FileManager tracks ALL files now, this will include them all.
                     SFile targetSFile = sFiles.stream()
                             .filter(sf -> sf.getPath().equals(childPath))
                             .findFirst()
@@ -468,8 +475,6 @@ public class FileExplorer extends JPanel {
             System.err.println("Error reading directory for tree build: " + e.getMessage());
         }
     }
-
-
     public Path resolveNodeToPath(DefaultMutableTreeNode node) {
         Object userObject = node.getUserObject();
 
