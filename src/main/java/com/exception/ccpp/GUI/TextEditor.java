@@ -33,6 +33,8 @@ import java.util.concurrent.Future;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class TextEditor extends JPanel {
+    public static final String CCPP_FILE_DESC = "CC++ File";
+    public static final String CCPP_EXT = "ccpp";
     private JButton runCodeButton;
     private JButton addFileButton;
     private JButton createButton; // Appears unused, but keeping it
@@ -1552,9 +1554,9 @@ public class TextEditor extends JPanel {
             FileManager fm =  FileManager.getInstance();
             SystemFileChooser fileChooser = new SystemFileChooser();
             fileChooser.setFileSelectionMode(SystemFileChooser.FILES_ONLY);
-            fileChooser.setDialogTitle("Select Testcase File");
+            fileChooser.setDialogTitle("Load CC++ Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
-            fileChooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("Testcase File","ccpp"));
+            fileChooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter(CCPP_FILE_DESC,CCPP_EXT));
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 // TODO@GLENSH import testcase
@@ -1594,11 +1596,11 @@ public class TextEditor extends JPanel {
             FileManager fm =  fe.getFileManager();
             SystemFileChooser fileChooser = new SystemFileChooser();
             fileChooser.setFileSelectionMode(SystemFileChooser.FILES_ONLY);
-            fileChooser.setDialogTitle("Select Testcase File");
+            fileChooser.setDialogTitle("Load/Create CC++ Testcase File");
             fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
-            fileChooser.addChoosableFileFilter(new  SystemFileChooser.FileNameExtensionFilter("Testcase File","ccpp"));
+            fileChooser.addChoosableFileFilter(new  SystemFileChooser.FileNameExtensionFilter(CCPP_FILE_DESC, CCPP_EXT));
 
-            int result = fileChooser.showOpenDialog(getTextEditor());
+            int result = fileChooser.showDialog(getTextEditor(), "Open");
 
             if (result == SystemFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
@@ -1612,6 +1614,9 @@ public class TextEditor extends JPanel {
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
+            }
+            else {
+                System.err.println("HELLO2");
             }
         }
     }

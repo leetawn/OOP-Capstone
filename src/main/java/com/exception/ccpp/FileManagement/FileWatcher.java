@@ -16,18 +16,19 @@ import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 public class FileWatcher implements Runnable {
 
     private final FileManager fmInstance;
+    private final FileExplorer feInstance;
     private final List<Path> filePaths;
     private final Path rootDir;
     private final WatchService watcher;
     private final ConcurrentHashMap<WatchKey, Path> keys;
 
-    public FileWatcher(FileManager fm) throws IOException {
+    public FileWatcher(FileManager fm, FileExplorer fe) throws IOException {
         this.fmInstance = fm;
         this.rootDir = fmInstance.getRootdir().toAbsolutePath().normalize();
         this.filePaths = Collections.synchronizedList(fmInstance.getFiles().stream().map(SFile::getPath).collect(Collectors.toList()));
         this.watcher = FileSystems.getDefault().newWatchService();
         this.keys = new ConcurrentHashMap<>();
-
+        this.feInstance = fe;
         registerAll(this.rootDir);
     }
 
@@ -101,21 +102,22 @@ public class FileWatcher implements Runnable {
             if (isAllowed) {
                 filePaths.add(path);
                 FileManager.addFile(fmInstance,path);
+                // TODO@Ethan feInstance.addFile, NOTE feInstance is FileExplorer
                 System.out.println("FileWatcher.handleCreate: File : " + path.getFileName());
             }
         } else if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
             if (!shouldIgnore(path)) {
                 try {
                     registerAll(path);
+                    // TODO@Ethan feInstance.addFolder, NOTE feInstance is FileExplorer
                     System.out.println("FileWatcher.handleCreate: Dir: " + path.getFileName());
                 } catch (IOException e) {
                     System.err.println("FileWatcher.handleCreate:: Dir Err " + path);
                 }
             }
         }
-        SwingUtilities.invokeLater(FileExplorer::reloadTree);
+        SwingUtilities.invokeLater(FileExplorer::reloadTree); // TODO@ETHAN REMOVE THIS RECURSIVE SHIT IF YOU CAN
 
-        // TODO ETHAN: Trigger a UI refresh event here
     }
     private void handleDelete(Path deletedPath) {
         if (Files.isDirectory(deletedPath, LinkOption.NOFOLLOW_LINKS)) {
@@ -123,17 +125,18 @@ public class FileWatcher implements Runnable {
                 filePaths.removeIf(p -> p.startsWith(deletedPath));
                 fmInstance.removeDir(fmInstance,deletedPath);
             }
+            // TODO@ETHAN feInstance.deleteFolder (RecursiveDelete), NOTE feInstance is FileExplorer
 
             keys.entrySet().removeIf(entry -> entry.getValue().startsWith(deletedPath));
             System.out.println("FileWatcher.handleDelete: DirRM: " + deletedPath.getFileName());
 
         } else {
+            // TODO@ETHAN feInstance.deleteFile, NOTE feInstance is FileExplorer
             fmInstance.removeFile(fmInstance,deletedPath);
             filePaths.remove(deletedPath);
             System.out.println("FileWatcher.handleDelete: FileRM: " + deletedPath.getFileName());
         }
-        // TODO ETHAN: Trigger a UI refresh event here
-        SwingUtilities.invokeLater(FileExplorer::reloadTree);
+        SwingUtilities.invokeLater(FileExplorer::reloadTree); // TODO@ETHAN REMOVE THIS RECURSIVE SHIT IF YOU CAN
     }
 
     public void closeAndCleanup() throws IOException {

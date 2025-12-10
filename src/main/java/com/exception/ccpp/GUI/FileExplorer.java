@@ -425,7 +425,6 @@ public class FileExplorer extends JPanel {
                 stream.forEach(contents::add);
             }
 
-            // Sort directories first, then files alphabetically
             contents.sort((p1, p2) -> {
                 boolean isDir1 = Files.isDirectory(p1);
                 boolean isDir2 = Files.isDirectory(p2);
@@ -440,14 +439,15 @@ public class FileExplorer extends JPanel {
 
             for (Path childPath : contents) {
                 String fileName = childPath.getFileName().toString();
+                String fileNameLower = fileName.toLowerCase();
 
                 if (Files.isHidden(childPath) || fileName.startsWith(".")) {
                     continue;
                 }
 
                 if (Files.isDirectory(childPath)) {
-                    if (fileName.equals("target") || fileName.equals("out") || fileName.equals("bin") || fileName.equals("node_modules") || fileName.equals("venv") || fileName.equals("env")) {
-                        System.err.println("Skipping problematic directory: " + fileName);
+                    if (FileManager.IGNORED_FOLDERS.contains(fileNameLower)) {
+                        System.err.println("Skipping ignored directory: " + fileName);
                         continue;
                     }
                 }
