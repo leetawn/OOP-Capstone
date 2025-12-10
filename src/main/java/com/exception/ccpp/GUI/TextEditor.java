@@ -30,12 +30,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
+import static com.exception.ccpp.Common.Helpers.parallelSplit;
+import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class TextEditor extends JPanel {
@@ -952,6 +955,8 @@ public class TextEditor extends JPanel {
         codeArea.setAntiAliasingEnabled(true);
         codeArea.setFractionalFontMetricsEnabled(false);
         codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        codeArea.setTabsEmulated(true);
+        codeArea.setTabSize(4); // 4 spaces per tab
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
 
             private void updateModifiedState() {
@@ -1637,17 +1642,21 @@ public class TextEditor extends JPanel {
 
                 if (results.length <= 0)  return;
 
-                ArrayList<Future<Integer>> futures = new ArrayList<>();
-
+                List<Callable<Integer>> tasks  = new ArrayList<>();
                 for (SubmissionRecord s : results)
                 {
                     TCEntry entry = activeTC.get(s.testcase());
                     if (verdict == JudgeVerdict.CE) entry.btn.setLogo(TestcaseLogo.BLUNDER);
-                    System.out.println("[TextEditor] SENDING SLAVES");
-                    futures.add(
-                        slaveWorkers.submit(new DiffSlave(s, entry.actualDoc, entry.expectedDoc))
-                    );
+                    tasks.add(new DiffSlave(s, entry.actualDoc, entry.expectedDoc));
                 }
+
+                if (verdict == JudgeVerdict.UE) return;
+
+                System.out.println("[TextEditor] SENDING SLAVES");
+                List<Future<Integer>> futures = null;
+                try {
+                    futures = romanArmy.invokeAll(tasks);
+                } catch (InterruptedException ex) {}
 
                 if (verdict == JudgeVerdict.CE) return;
 
@@ -1730,13 +1739,15 @@ public class TextEditor extends JPanel {
 
         @Override
         public Integer call() throws Exception {
-            Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
-            String[] expectedLines = expected.split("\\R", -1);
+            Future<String[]> future_actual = romanArmy.submit(() -> parallelSplit(actual, 2));
+            String[] expectedLines = parallelSplit(expected,2);
 
             try {
                 final String[] actualLines = future_actual.get();
-                slaveWorkers.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
-                return TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
+                ForkJoinPool pool = ForkJoinPool.commonPool();
+                pool.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
+                int i = TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
+                return i;
             }  catch (InterruptedException ex) {}
             catch (ExecutionException ex) {}
             return 0;

@@ -38,6 +38,8 @@ class BinaryTree {
     virtual node* addRight(node* p, int e) = 0;
     virtual node* getRoot() = 0;
     virtual int getSize() = 0;
+    virtual node* sibling(node* n) = 0;
+    virtual int remove(node* n) = 0;
 
     void print() {
         cout << "Size: " << getSize() << endl;

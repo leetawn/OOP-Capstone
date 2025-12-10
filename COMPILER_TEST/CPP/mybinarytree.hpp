@@ -44,4 +44,52 @@ public:
     node* getRoot() {
         return root;
     }
+
+   node *sibling(node *a)
+    {
+        if (!a || !a->parent) return NULL;
+        if (a->parent->left == a) return a->parent->right;
+        return a->parent->left;
+    }
+
+
+    int remove(node *n)
+    {
+        if (size <= 0)
+            return -1;
+        int nc = (n->left != nullptr) + (n->right != nullptr);
+        if (nc >= 2)
+            throw logic_error("Cannot remove " + to_string(n->elem) + " for it has 2 children");
+        
+        node **slot = nullptr; 
+        if (n->parent)
+        {
+            if (n->parent->left == n)
+                slot = &n->parent->left;
+            if (n->parent->right == n)
+                slot = &n->parent->right;
+        } 
+        else 
+        {
+            slot = &root;
+        }
+        
+        if (slot)
+        {
+            *slot = nullptr;
+            if (n->left)
+            {
+                *slot = n->left;
+            }
+            if (n->right)
+            {
+                *slot = n->right;
+            }
+            if (*slot)
+                (*slot)->parent = n->parent;
+        }
+        return n->elem + (free(n), size--, 0);
+    }
+
+    
 };

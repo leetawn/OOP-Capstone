@@ -8,6 +8,7 @@ int main(void) {
     int input, ind;
     node* nodes[100];
     node* res;
+    int num_res;
     do {
         try {
             cout << "Op: ";
@@ -41,6 +42,28 @@ int main(void) {
                     break;
                 case 'x':
                     cout << "Exiting" << endl;
+                    break;
+                case 'd':
+                    cin >> ind;
+                    cout << "The depth of " << nodes[ind]->elem << " is " << nodes[ind]->depth() << endl;
+                    break;
+                case 'h':
+                    cin >> ind;
+                    cout << "The height of " << nodes[ind]->elem << " is " << nodes[ind]->height() << endl;
+                    break;
+                case '-':
+                    cin >> ind;
+                    num_res = tree->remove(nodes[ind]);
+                    cout << "Removed " << num_res << endl;
+                    break;
+                case 's':
+                    cin >> ind;
+                    res = tree->sibling(nodes[ind]);
+                    if (!res) {
+                        cout << nodes[ind]->elem << " has no sibling" << endl;
+                    } else {
+                        cout << "The sibling of " << nodes[ind]->elem << " is " << res->elem << endl;
+                    }
                     break;
                 default:
                     cout << "Invalid operation" << endl;

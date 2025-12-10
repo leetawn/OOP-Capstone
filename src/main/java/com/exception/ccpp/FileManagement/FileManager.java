@@ -311,7 +311,6 @@ public class FileManager {
             if (watcherThread != null && watcherThread.isAlive()) {
                 watcherThread.interrupt();
                 try {
-                    // Wait briefly for the thread to exit gracefully
                     watcherThread.join(2000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -319,10 +318,8 @@ public class FileManager {
             }
         }
 
-        // Instantiate a brand new FileWatcher object
         this.fileWatcher = new FileWatcher(this, FileExplorer.getInstance());
 
-        // Start the new thread
         this.watcherThread = new Thread(this.fileWatcher);
         this.watcherThread.setDaemon(true);
         this.watcherThread.start();

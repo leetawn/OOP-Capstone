@@ -2,7 +2,15 @@ package com.exception.ccpp.Common;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.RecursiveTask;
+import java.util.stream.Collectors;
 
+import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class Helpers {
@@ -134,6 +142,86 @@ public class Helpers {
             else if (c == '\n') System.out.print("\\n\n");
             else System.out.print(c);
         }
+    }
+
+
+    static class SplitTask extends RecursiveTask<String[]> {
+        private final String str;
+        private final int start, end;
+        private static final int THRESHOLD = 1_000_000;
+
+        public SplitTask(String str, int start, int end) {
+            this.str = str;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        protected String[] compute() {
+            int length = end - start;
+            if (length <= THRESHOLD) {
+                return str.substring(start, end).split("\\R", -1);
+            } else {
+                int mid = start + length / 2;
+
+                SplitTask left = new SplitTask(str, start, mid);
+                SplitTask right = new SplitTask(str, mid, end);
+
+                left.fork();
+                String[] rightResult = right.compute();
+                String[] leftResult = left.join();
+
+                // merge left and right
+                String[] merged = new String[leftResult.length + rightResult.length];
+                System.arraycopy(leftResult, 0, merged, 0, leftResult.length);
+                System.arraycopy(rightResult, 0, merged, leftResult.length, rightResult.length);
+                return merged;
+            }
+        }
+    }
+
+    public static String[] parallelSplit(String text) {
+        return romanArmy.invoke(new SplitTask(text, 0, text.length()));
+    }
+
+    public static String[] parallelSplit(String text, int chunkSize) {
+        // Step 1: split all lines (single-threaded)
+        String[] allLines = text.split("\\R", -1);
+
+        // Step 2: divide into chunks for parallel processing
+        int numChunks = (allLines.length + chunkSize - 1) / chunkSize;
+        ForkJoinPool pool = ForkJoinPool.commonPool();
+
+        List<RecursiveTask<String[]>> tasks = new ArrayList<>();
+        for (int i = 0; i < numChunks; i++) {
+            final int start = i * chunkSize;
+            final int end = Math.min(allLines.length, (i + 1) * chunkSize);
+            tasks.add(new RecursiveTask<>() {
+                @Override
+                protected String[] compute() {
+                    return Arrays.copyOfRange(allLines, start, end);
+                }
+            });
+        }
+
+        // Invoke all tasks in parallel
+        List<String[]> chunks = tasks.stream()
+                .map(pool::invoke)
+                .collect(Collectors.toList());
+
+        // Step 3: flatten into a single String[]
+        int totalLength = Arrays.stream(chunks.toArray(new String[0][]))
+                .mapToInt(arr -> arr.length)
+                .sum();
+
+        String[] result = new String[totalLength];
+        int pos = 0;
+        for (String[] chunk : chunks) {
+            System.arraycopy(chunk, 0, result, pos, chunk.length);
+            pos += chunk.length;
+        }
+
+        return result;
     }
 
     public static void main(String[] args) {

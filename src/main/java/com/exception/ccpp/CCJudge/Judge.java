@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.exception.ccpp.CCJudge.ExecutionConfig.NO_C_COMPILER_ERROR;
+import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class Judge {
@@ -57,7 +58,7 @@ public class Judge {
                 verdict = f.get();
             } catch (InterruptedException e) {}
             catch (ExecutionException e) { /*Normal shit*/
-                f_logger.errln("[Judge.judge]: Execution Error!");
+                f_logger.errln("[Judge.judge]: Execution Error while waiting for submission!");
             }
             callback.accept(new SubmissionRecord[]{verdict});
         }));
@@ -104,14 +105,19 @@ public class Judge {
 
             // judgeInteractively (Parallel)
             String[] cmd = ExecutionConfig.getExecuteCommand(fm);
-            ArrayList<Future<SubmissionRecord>> futures = new ArrayList<>();
+            List<Future<SubmissionRecord>> futures = new ArrayList<>();
+            List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
             i =1;
             for (Testcase tc : testcases.keySet()) {
 
                 judge_logger.logf("[Judge.judge]: Running Testcase %d...\n", i);
-                futures.add(slaveWorkers.submit(
-                    new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger)
-                ));
+                tasks.add(new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger));
+            }
+
+            try {
+                futures = slaveWorkers.invokeAll(tasks);
+            } catch (InterruptedException e) {
+                judge_logger.errln("[Judge.judge]: Running Testcase FAILED MISERABLY!");
             }
 
             i = 0;
@@ -131,7 +137,7 @@ public class Judge {
                 catch (ExecutionException e) { /*Normal shit*/
 //                    Throwable cause = e.getCause();
 //                    cause.printStackTrace();  // see what actually went wrong
-                    judge_logger.errln("[Judge.judge]: Execution Error!");
+                    judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
                 }
             }
 
@@ -392,9 +398,10 @@ public class Judge {
             addTThread(process);
 
             StringBuilder transcript = new StringBuilder();
-            Future<Void> output_reader_thread = slaveWorkers.submit(new Judge.OutputReader(process.getInputStream(), transcript));
+            Future<Void> output_reader_thread = romanArmy.submit(new Judge.OutputReader(process.getInputStream(), transcript));
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-
+//            Thread readerThread = new Thread(new Judge.OutputReader(process.getInputStream(), transcript));
+//            readerThread.start();
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
@@ -434,7 +441,7 @@ public class Judge {
             } catch (InterruptedException e) { return finishQuota().setOutput("Execution Interrupted\n"); }
 
             output_reader_thread.cancel(true);
-
+//            readerThread.interrupt();
             // PROGRAM TLE
             if (process.isAlive()) {
                 return finishQuota()
@@ -464,32 +471,41 @@ public class Judge {
                         ).trim()
                     );
             } else {
-                return finishQuota().setVerdict(JudgeVerdict.NONE).setOutput(Helpers.stripAnsiCRLines(transcript.toString()).trim());
+                synchronized (transcript)
+                {
+                    final String res = transcript.toString();
+                    return finishQuota().setVerdict(JudgeVerdict.NONE).setOutput(Helpers.stripAnsiCRLines(res).trim());
+                }
             }
         }
     }
 
 
     static class OutputReader implements Callable<Void> {
-        private final BufferedReader reader;
+        private final InputStream in;
         private final StringBuilder transcript;
 
-        public OutputReader(InputStream is, StringBuilder transcript) {
-            this.reader = new BufferedReader(new InputStreamReader(is));
+        public OutputReader(InputStream in, StringBuilder transcript) {
+            this.in = in;
             this.transcript = transcript;
         }
 
         @Override
         public Void call() {
+            byte[] buffer = new byte[8192];
+            int read;
             try {
-                int data;
-                while ((data = reader.read()) != -1) {
-                    transcript.append((char) data);
+                while ((read = in.read(buffer)) != -1) {
+                    // Convert bytes to string in chunks without altering content
+                    transcript.append(new String(buffer, 0, read));
                 }
-            } catch (IOException e) {}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }
+
     public class JudgeVerdict {
         final public static int
                 AC   = 0b000000000, // Accepted
