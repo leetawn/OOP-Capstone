@@ -1,6 +1,10 @@
 package com.exception.ccpp.GUI;
 
+import com.exception.ccpp.CCJudge.TestcaseButton.TestcaseLogo;
+import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
+import com.exception.ccpp.CCJudge.TestcasesPanel.TCEntry;
 import com.exception.ccpp.CCJudge.*;
+import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -26,7 +30,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -1050,8 +1056,8 @@ public class TextEditor extends JPanel {
 
 
     private int BUFFER_MAX_CHARS = 10000;
-    private void displayActualDiff(String[] actualLines, String[] expectedLines, StyledDocument doc) {
-        if (doc == null) return;
+    private int displayActualDiff(String[] actualLines, String[] expectedLines, StyledDocument doc) {
+        if (doc == null) return -1;
 
         try {
             doc.remove(0, doc.getLength());
@@ -1062,6 +1068,7 @@ public class TextEditor extends JPanel {
         AttributeSet prevStyle;
         AttributeSet styleToApply = null;
         StringBuilder buffer = new StringBuilder();
+        boolean excess = false, mismatch = false;
         for (int i = 0; i < maxLines; i++) {
             String actualLine = (i < actualLines.length) ? actualLines[i] : "";
             String expectedLine = (i < expectedLines.length) ? expectedLines[i] : "";
@@ -1078,12 +1085,14 @@ public class TextEditor extends JPanel {
                 prevStyle = styleToApply;
                 if (expectedChar == 0 && actualChar != 0) {
                     styleToApply = excessStyle;
+                    excess = true;
                 }
                 else if (expectedChar != 0 && actualChar == expectedChar) {
                     styleToApply = matchStyle; // Green
                 }
                 else {
                     styleToApply = mismatchStyle;
+                    mismatch = true;
                     if (actualChar == 0) charToProcess = ' ';
                 }
 
@@ -1123,14 +1132,11 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
-
-//        actualOutputArea.getParent().getParent().setIgnoreRepaint(true);
-//        actualOutputArea.getParent().getParent().setIgnoreRepaint(false);
+        if (mismatch) { return 2; }
+        if (excess) { return 1; }
+        return 0;
     }
     private void displayExpectedDiff(String[] actualLines, String[] expectedLines, StyledDocument doc) {
-        // Note: We are using expectedOutputArea for this.
-//        DefaultCaret caret = (DefaultCaret) expectedOutputArea.getCaret();
-//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         if (doc == null) return;
 
         try {
@@ -1199,10 +1205,8 @@ public class TextEditor extends JPanel {
                 } catch (BadLocationException ignored) {}
             });
         }
-
-//        expectedOutputArea.getParent().getParent().setIgnoreRepaint(true);
-//        expectedOutputArea.getParent().getParent().setIgnoreRepaint(false);
     }
+
     public void saveCurrentFileContent() {
         SFile currentFile = fileExplorerPanel.getSelectedFile(); // <-- Use the new source of truth
 
@@ -1630,18 +1634,69 @@ public class TextEditor extends JPanel {
                 return;
             }
             // TODO@GLENSH return to testcases
-            System.out.println("TF has " + tf.getTestcases().size() + " testcases");
-            Judge.judge(FileManager.getInstance(), tf, results -> {
+            final Map<Testcase, TCEntry> activeTC = TestcasesPanel.getInstance().getActiveTestcases();
+            SwingUtilities.invokeLater(() -> {
+                System.out.println("-------------------------------------\nSubmit Code\n----------------------------------\n");
+                for (TCEntry entry : activeTC.values())
+                {
+                    entry.btn.setLogo(TestcaseLogo.COMPILING);
+                }
+            });
 
-                // QUEUE TESTCASES
-                if (results.length > 0) {
-                    Map<Testcase, TestcasesPanel.TCEntry> activeTC =
-                            TestcasesPanel.getInstance().getActiveTestcases();
-                    for (SubmissionRecord s : results)
-                    {
-                        TestcasesPanel.TCEntry entry = activeTC.get(s.testcase());
-                        System.out.println("[TextEditor] SENDING SLAVES");
-                        slaveWorkers.submit(new DiffSlave(s, entry.actualDoc, entry.expectedDoc));
+            System.out.println("TF has " + tf.getTestcases().size() + " testcases");
+            Judge.judge(FileManager.getInstance(), tf, (results, verdict) -> {
+
+                if (results.length <= 0)  return;
+
+                ArrayList<Future<Integer>> futures = new ArrayList<>();
+
+                for (SubmissionRecord s : results)
+                {
+                    TCEntry entry = activeTC.get(s.testcase());
+                    if (verdict == JudgeVerdict.CE) entry.btn.setLogo(TestcaseLogo.BLUNDER);
+                    System.out.println("[TextEditor] SENDING SLAVES");
+                    futures.add(
+                        slaveWorkers.submit(new DiffSlave(s, entry.actualDoc, entry.expectedDoc))
+                    );
+                }
+
+                if (verdict == JudgeVerdict.CE) return;
+
+                int total = 0;
+                int status_size = 0;
+                int[] status = new int[results.length];
+                for (Future<Integer> future : futures) {
+                    try {
+                        int stat = future.get();
+                        status[status_size++] = stat;
+                        total += stat;
+                    } catch (InterruptedException | ExecutionException ex) {}
+                }
+
+                if (status_size != results.length) {
+                    System.err.println("[TextEditor] RECEIVED FUTURE NOT EQUAL TO RESULTS");
+                }
+
+                for (int i =  0; i < status_size; i++)
+                {
+                    TCEntry entry = activeTC.get(results[i].testcase());
+                    if (total == 0)  {
+                        entry.btn.setLogo(TestcaseLogo.BRILLIANT);
+                        continue;
+                    }
+                    switch (status[i]) {
+                        case 0: { // best
+                            entry.btn.setLogo(TestcaseLogo.BEST);
+                            break;
+                        }
+                        case 1: { // excess
+                            entry.btn.setLogo(TestcaseLogo.INACCURACY);
+                            break;
+                        }
+                        case 2: { // mistake
+                            entry.btn.setLogo(TestcaseLogo.MISS);
+                            break;
+                        }
                     }
                 }
             });
@@ -1672,7 +1727,7 @@ public class TextEditor extends JPanel {
         return true;
     }
 
-    public static class DiffSlave implements Runnable {
+    public static class DiffSlave implements Callable<Integer> {
         final String actual;
         final String expected;
         final StyledDocument actualDoc;
@@ -1685,18 +1740,18 @@ public class TextEditor extends JPanel {
         }
 
         @Override
-        public void run() {
+        public Integer call() throws Exception {
             Future<String[]> future_actual = slaveWorkers.submit(() -> actual.split("\\R", -1));
             String[] expectedLines = expected.split("\\R", -1);
 
             try {
                 final String[] actualLines = future_actual.get();
-                slaveWorkers.submit(() -> TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc));
-                TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc);
+                slaveWorkers.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
+                return TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
             }  catch (InterruptedException ex) {}
             catch (ExecutionException ex) {}
+            return 0;
         }
-
     }
     /* --------------- Button Handlers --------------- */
 }

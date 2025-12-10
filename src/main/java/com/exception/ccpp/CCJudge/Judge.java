@@ -12,6 +12,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,7 @@ public class Judge {
     /******************** MULTI-THREADED *************************/
     // PARALLEL JUDGE
 
-    public static void judge(FileManager fm, TestcaseFile tf, Consumer<SubmissionRecord[]> callback)  {
+    public static void judge(FileManager fm, TestcaseFile tf, BiConsumer<SubmissionRecord[], Integer> callback)  {
         slaveWorkers.submit(() -> {
             SubmissionRecord judge_res;
             String rootdir = fm.getRootdir().toString();
@@ -86,7 +87,7 @@ public class Judge {
                     judge_logger.errln("[Judge.judge]: Compiler Error!");
                     recordCopy(verdicts, judge_res, testcases_size);
                     parallelCleanup(fm);
-                    callback.accept(verdicts);
+                    callback.accept(verdicts, JudgeVerdict.CE);
                     return;
                 }
             } catch (Exception e) {
@@ -96,7 +97,7 @@ public class Judge {
                 judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg, null);
                 recordCopy(verdicts, judge_res, testcases_size);
                 parallelCleanup(fm);
-                callback.accept(verdicts);
+                callback.accept(verdicts, JudgeVerdict.JSF);
                 return;
             }
             judge_logger.logln("[Judge.judge]: Compilation Done.");
@@ -114,6 +115,7 @@ public class Judge {
             }
 
             i = 0;
+            int status = 0;
             for  (Future<SubmissionRecord> f : futures) {
                 try {
                     judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
@@ -121,6 +123,9 @@ public class Judge {
                     verdicts[i++]
                             .setVerdict(sr.verdict())
                             .setOutput(sr.output());
+                    // RE/TLE
+                    if (status == 0 && sr.verdict() != JudgeVerdict.NONE) { status = sr.verdict(); }
+                    else if (sr.verdict() == JudgeVerdict.RE) { status = sr.verdict(); }
                 }
                 catch (InterruptedException e) { /*TODO HANDLE INTERRUPT*/}
                 catch (ExecutionException e) { /*Normal shit*/
@@ -132,13 +137,13 @@ public class Judge {
 
             if (DebugLog.DEBUG_ENABLED)
                 for (int j = 0; j < verdicts.length; j++) {
-                    judge_logger.logf("[Judge.judge] Testcase %d exit code: %s\n", j+1, verdicts[j].verdict().name());
+                    judge_logger.logf("[Judge.judge] Testcase %d exit code: %s\n", j+1, verdicts[j].verdictName());
                 }
 
 
             parallelCleanup(fm);
             judge_logger.logln("[Judge.judge]: Returning Results...\n");
-            callback.accept(verdicts);
+            callback.accept(verdicts, status);
         });
     }
 
@@ -365,6 +370,7 @@ public class Judge {
 
         @Override
         //throws Exception
+        // RETURNS Verdicts: RE/TLE/NONE
         public SubmissionRecord call()  {
             // VARS
             boolean is_python = language.equals("python");
@@ -484,18 +490,34 @@ public class Judge {
             return null;
         }
     }
-    public enum JudgeVerdict {
-        AC, // Accepted
-        WA, // Wrong Answer
-        CE, // Compile Error
-        RE, // Runtime Error
-        TLE, // Time Limit Exceeded
-        MLE, // Memory Limit Exceeded
-
-        UE, // Unknown Error. We the devs, idk and idc what the fuck you are facing rn
-        ESF, // Execution System Failure, Not the Users Fault!
-        JSF, // Judge System Failure
-        NONE // USED FOR CREATION ONLY
+    public class JudgeVerdict {
+        final public static int
+                AC   = 0b000000000, // Accepted
+                WA   = 0b000000001, // Wrong Answer
+                WAE  = 0b000000011, // Wrong Answer Excess
+                CE   = 0b000000101, // Compile Error
+                RE   = 0b000001001, // Runtime Error
+                TLE  = 0b000010001, // Time Limit Exceeded
+                MLE  = 0b000100001, // Memory Limit Exceeded
+                UE   = 0b111111111, // Unknown Error. We the devs, idk and idc what the fuck you are facing rn
+                ESF  = 0b101000001, // Execution System Failure, Not the Users Fault!
+                JSF  = 0b110000001, // Judge System Failure
+                NONE = 0b100000001; // USED FOR CREATION ONLY
+        public static String getName(int verdictCode)
+        {
+            return switch (verdictCode) {
+                case AC -> "AC";
+                case WA, WAE -> "WA";
+                case CE -> "CE";
+                case RE -> "RE";
+                case TLE -> "TLE";
+                case MLE -> "MLE";
+                case UE -> "UE";
+                case ESF -> "ESF";
+                case JSF -> "JSF";
+                default -> "NONE";
+            };
+        }
     }
 
 }
