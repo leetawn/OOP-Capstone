@@ -7,21 +7,24 @@ Designed for students, programmers, and competitive coders, **CodeChum++** provi
 
 ---
 
-Technical Stack and Requirements
+# Technical Stack and Requirements
 - Language: Java 17+ (or specify your version)
 - GUI Framework: Swing/AWT
 - Build Tool: Maven
 - Platform: Cross-platform (Windows, macOS)
 
-Dependencies // TODO GLENSH
+## 🧩 Dependencies
+- **Apache Maven** – Used as the build automation and dependency management tool for this Java project.  
+  It ensures consistent builds, manages third-party libraries, and simplifies project configuration through the `pom.xml` file.
 
-Software Architecture and Design Patterns
-The project employs a structured, component-based architecture to ensure maintainability, encapsulation, and separation of concerns. The following design patterns were strategically applied:
+## 🧱 Software Architecture and Design Patterns
+The project follows a structured, component-based architecture that emphasizes maintainability, encapsulation, and separation of concerns.  
+The following design patterns are strategically applied:
 
-- Singleton [implemented where?]
-- Builder [implemented where?]
+- **Singleton (File Manager):** Ensures a single, globally accessible instance for managing file operations.  
+- **Builder (Judge):** Simplifies the construction of complex objects by separating the creation process from their representation.
 
-## ✨ Features // TODO ADD MORE FEATURES
+## ✨ Features 
 
 - 🚀 **Offline & ultra-fast code execution**
 - 🖥️ **JSwing-based graphical interface**
@@ -29,15 +32,12 @@ The project employs a structured, component-based architecture to ensure maintai
 - ✔️ **Automatic code judging and validation**
 - 📦 **Simple, portable, and easy to use**
 - ⚡ Perfect for **practice, exercises, and quick testing**
-- File Tree Navigation: Hierarchical view for easy navigation of project directories and files.
-- Create, Delete, and Rename files within the program
-- Share and Create testcases
-- Syntax highlighting
-- Supports 4 programming languages
-- File Management with File Watcher
-- Custom Files
-- 
-
+- 🌳 **File Tree Navigation** offering a hierarchal view for easy navigation of project directories and files.
+- 📁 **Create, delete, and rename files** directly within the program.
+- 🧪 **Create and share test cases** with friends!
+- 💬 **Syntax Highlighting** to make coding look cool and normal.
+- 🌐 **Multi-Language Support** supporting Java, C, C++, and Python.
+  
 ---
 
 Whether you’re preparing for coding challenges or simply experimenting, **CodeChum++** offers a powerful and dependable environment that works anywhere—anytime.
