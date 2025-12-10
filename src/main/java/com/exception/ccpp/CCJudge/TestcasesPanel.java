@@ -24,6 +24,9 @@ public class TestcasesPanel extends JPanel {
     final ArrayList<TestcaseButton> activeBtns = new ArrayList<>();
     final Deque<TCEntry> entryPool = new ConcurrentLinkedDeque<>();
 
+    public  Map<Testcase, TCEntry> getActiveTestcases() {
+        return activeTestcases;
+    }
     private void clearActiveTescases() {
 
         for (Map.Entry<Testcase, TCEntry> e : activeTestcases.entrySet()) {
@@ -33,10 +36,6 @@ public class TestcasesPanel extends JPanel {
         }
         activeTestcases.clear();
         activeBtns.clear();
-    }
-
-    public  Map<Testcase, TCEntry> getActiveTestcases() {
-        return activeTestcases;
     }
 
     public void setTestcaseFile(TestcaseFile file) {
@@ -58,16 +57,57 @@ public class TestcasesPanel extends JPanel {
         mainPanel.revalidate();
 
     }
+    private TestcaseButton addTestcase(TextEditor te, Testcase tc, TCEntry entry, int i) {
+        TestcaseButton tcBtn = entry.btn;
+        StyledDocument expected = entry.expectedDoc;
+        try {
+            expected.remove(0, expected.getLength());
+            expected.insertString(0, tc.getExpectedOutput(), null);
+        } catch (BadLocationException e) {}
+        tcBtn.addActionListener(e -> {
+            System.out.println("OPENING TESTCASE " + (i+1));
+            te.setDiffMenuDoc(entry.actualDoc, entry.expectedDoc);
+            te.openDiffMenu();
+        });
+        System.out.println("CREATING TESTCASE " + (i+1));
+        gbc.gridy = i;
+        gbc.weightx = 1;
+        gbc.weighty = 0.0;
+        gbc.insets = testcaseInsets;
+        mainPanel.add(tcBtn, gbc);
+        activeTestcases.put(tc, entry);
+        return tcBtn;
+    }
 
-    private void helperAddTestcase(TextEditor te, Testcase tc, int i)
-    {
+    public void addTestcaseCallback(Testcase newFile) {
+        helperAddTestcase(TextEditor.getInstance(), newFile, activeTestcases.size());
+        mainPanel.revalidate();
+    }
+    public void removeTestcaseCallback(Testcase tc) {
+        TestcaseButton btn = activeTestcases.get(tc).btn;
+        if (activeTestcases.remove(tc) != null) System.err.println("REMOVED TESTCASE ");
+        int i = 0;
+        boolean found = false;
+        for (TestcaseButton tb : activeBtns) {
+            if (!found && tb == btn) {
+                found = true;
+                i = tb.getTestcaseNumber();
+            } else if (found) {
+                tb.setTestcaseNumber(i++);
+            }
+        }
+        activeBtns.remove(btn);
+        mainPanel.remove(btn);
+        mainPanel.revalidate();
+    }
+
+    private void helperAddTestcase(TextEditor te, Testcase tc, int i) {
         TCEntry entry;
         if (entryPool.isEmpty()) entry = new TCEntry(new TestcaseButton(i+1), createDoc(), createDoc());
         else entry = entryPool.pop();
         addTestcase(te, tc, entry, i);
         activeBtns.add(entry.btn);
     }
-
     private StyledDocument createDoc() {
         StyledDocument doc = new DefaultStyledDocument();
         AbstractDocument adoc = (AbstractDocument) doc;
@@ -100,53 +140,6 @@ public class TestcasesPanel extends JPanel {
             }
         });
         return doc;
-    }
-
-    private TestcaseButton addTestcase(TextEditor te, Testcase tc, TCEntry entry, int i)
-    {
-        TestcaseButton tcBtn = entry.btn;
-        StyledDocument expected = entry.expectedDoc;
-        try {
-            expected.remove(0, expected.getLength());
-            expected.insertString(0, tc.getExpectedOutput(), null);
-        } catch (BadLocationException e) {}
-        tcBtn.addActionListener(e -> {
-            System.out.println("OPENING TESTCASE " + (i+1));
-            te.setDiffMenuDoc(entry.actualDoc, entry.expectedDoc);
-            te.openDiffMenu();
-        });
-        System.out.println("CREATING TESTCASE " + (i+1));
-        gbc.gridy = i;
-        gbc.weightx = 1;
-        gbc.weighty = 0.0;
-        gbc.insets = testcaseInsets;
-        mainPanel.add(tcBtn, gbc);
-        activeTestcases.put(tc, entry);
-        return tcBtn;
-    }
-
-    public void addTestcaseCallback(Testcase newFile)
-    {
-        helperAddTestcase(TextEditor.getInstance(), newFile, activeTestcases.size());
-        mainPanel.revalidate();
-    }
-    public void removeTestcaseCallback(Testcase tc)
-    {
-        TestcaseButton btn = activeTestcases.get(tc).btn;
-        if (activeTestcases.remove(tc) != null) System.err.println("REMOVED TESTCASE ");
-        int i = 0;
-        boolean found = false;
-        for (TestcaseButton tb : activeBtns) {
-            if (!found && tb == btn) {
-                found = true;
-                i = tb.getTestcaseNumber();
-            } else if (found) {
-                tb.setTestcaseNumber(i++);
-            }
-        }
-        activeBtns.remove(btn);
-        mainPanel.remove(btn);
-        mainPanel.revalidate();
     }
 
     public static TestcasesPanel  getInstance() {

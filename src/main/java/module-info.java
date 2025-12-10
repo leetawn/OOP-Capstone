@@ -7,6 +7,7 @@ module com.exception.ccpp {
     requires org.fife.RSyntaxTextArea;
     requires kotlin.stdlib;
     requires com.formdev.flatlaf;
+    requires com.kitfox.svgSalamander;
     exports com.exception.ccpp;
     exports com.exception.ccpp.FileManagement;
 }
