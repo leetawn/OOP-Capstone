@@ -12,7 +12,7 @@ import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 public class MainMenu extends JPanel {
 
     private JLabel title = new JLabel("CodeChum++");
-    private JLabel description = new JLabel("The Fastest and Reliable CodeJudger!");
+    private JLabel description = new JLabel("The Fastest and Most Reliable CodeJudger!");
     private JLabel start = new JLabel("Start Coding");
     private JButton openFolder = new JButton("Open Folder");
 
