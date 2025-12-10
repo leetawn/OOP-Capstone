@@ -2,6 +2,7 @@ package com.exception.ccpp.GUI;
 
 import com.exception.ccpp.CCJudge.Testcase;
 import com.exception.ccpp.CCJudge.TestcaseFile;
+import com.exception.ccpp.CCJudge.TestcaseManualDialog;
 import com.exception.ccpp.FileManagement.FileManager;
 
 import javax.swing.*;
@@ -38,18 +39,21 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
         listPanel.add(new JScrollPane(testcaseList), BorderLayout.CENTER);
         add(listPanel, BorderLayout.CENTER);
 
-        JPanel controlPanel = new JPanel(new GridLayout(1, 3, 10, 10));
-        JButton addButton = new JButton("Add Testcase");
-        JButton deleteButton = new JButton("Delete Selected");
+        JPanel controlPanel = new JPanel(new GridLayout(1, 4, 10, 10));
+        JButton addButton = new JButton("Run & Add");
+        JButton manualAdd = new JButton("Manual Add");
+        JButton deleteButton = new JButton("Delete");
         JButton passwordButton = new JButton("Set Password");
 
         controlPanel.add(addButton);
+        controlPanel.add(manualAdd);
         controlPanel.add(deleteButton);
         controlPanel.add(passwordButton);
 
         add(controlPanel, BorderLayout.SOUTH);
 
         addButton.addActionListener(e -> handleAddTestcase());
+        manualAdd.addActionListener(e -> handleManualAdd());
         deleteButton.addActionListener(e -> handleDeleteTestcase());
         passwordButton.addActionListener(e -> handleSetPassword());
     }
@@ -79,6 +83,11 @@ public class TestcaseManagerDialog extends JDialog implements UpdateGUICallback 
     private void handleAddTestcase() {
         // api call
         tf.addTestcase(FileManager.getInstance(), this);
+    }
+    private void handleManualAdd() {
+        // api call
+        TestcaseManualDialog.show(tf,this);
+
     }
 
 

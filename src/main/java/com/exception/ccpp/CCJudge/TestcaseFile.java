@@ -35,6 +35,11 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
     public void addTestcase(FileManager fm, UpdateGUICallback gui_cb) {
         TerminalApp.getInstance().stopSetAll(fm,this, gui_cb).start();
     }
+    public void manualAddTestcase(Testcase res, UpdateGUICallback gui_cb)
+    {
+        onTerminalExit(res.getInputs(), res.getExpectedOutput());
+        gui_cb.updateGUI();
+    }
 
     /************ I/O *******************/
 
@@ -47,8 +52,6 @@ public class TestcaseFile extends CCFile implements TerminalCallback{
         assert f instanceof TestcaseFile;
         return (TestcaseFile) f;
     }
-
-
 
     @Override
     protected void read() {

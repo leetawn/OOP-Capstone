@@ -27,3 +27,38 @@ TODO DUT-DUT:
 
 
 TODO McDonalds:
+
+
+
+
+Ethan:
+	CustomExceptions (ALL)
+	GUI/FileExplorer
+	Debug (ALL)
+    GUI/TestcaseManagerDialog
+Glensh:
+	FileManagement (ALL)
+	CCJudge/ExecutionConfig
+	CCJudge/Judge
+	CCJudge/TerminalApp
+	CCJudge/SubmissionRecord
+	CCJudge/TestcaseFile
+Dano:
+    CCJudge/TerminalCallback
+	CCJudge/Testcase
+	CCJudge/TestcaseButton
+	CCJudge/TestcaseManualDialog
+	CCJudge/TestcasesPanel
+    Gang/SlaveManager
+    GUI/UpdateGUICallback
+Macoy:
+    Common/Helpers
+    GUI/MainFrame
+    GUI/MainMenu
+    GUI/RoundedButton
+    GUI/RoundedComboBox
+    GUI/RoundedPanel
+    GUI/TextEditor (PARTIAL)
+DutDut:
+    GUI/TextEditor (PARTIAL)
+    Main

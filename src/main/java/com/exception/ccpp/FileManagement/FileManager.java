@@ -246,6 +246,7 @@ public class FileManager {
                     // ROOT DIR KEEP ON GETTING SKIPPED SO THIS CODE EXIST
                     if (dir.toAbsolutePath().normalize().equals(absoluteRootDir)) {
                         // System.out.println("[ROOT DIR] " + dir);
+                        // TODO@ETHAN ADD ROOT FOLDER NODE using (Path dir)
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -256,6 +257,7 @@ public class FileManager {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
 
+                    // TODO@ETHAN ADD FOLDER NODE using (Path dir)
                     // System.out.println("[DIR]  " + dir);
                     return FileVisitResult.CONTINUE;
                 }
@@ -271,6 +273,9 @@ public class FileManager {
                             .anyMatch(fileName::endsWith);
 
                     if (isAllowed) {
+                        // TODO@ETHAN ADD FILE NODE using (Path dir)
+                        // TODO@ETHAN or just use fm.getFiles() your calls
+
                         SFile sfile = SFile.open(file);
                         all_files.add(sfile);
                         System.out.println("[FILE] " + file);
