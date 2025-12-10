@@ -1,4 +1,4 @@
-# 📘 CodeChum++: The Fastest and Reliable CodeJudger
+# 📘 CodeChum++: The Fastest and Most Reliable CodeJudger
 
 **CodeChum++** is a **lightweight, offline, and blazing-fast Java application** built with **JSwing**.  
 It serves as a standalone code-judging environment inspired by CodeChum—but without the need for an internet connection.
@@ -18,7 +18,7 @@ Designed for students, programmers, and competitive coders, **CodeChum++** provi
 
 ---
 
-Whether you’re preparing for coding challenges or simply experimenting with Java, **CodeChum++** offers a powerful and dependable environment that works anywhere—anytime.
+Whether you’re preparing for coding challenges or simply experimenting, **CodeChum++** offers a powerful and dependable environment that works anywhere—anytime.
 
 ---
 ### C and CPP windows compiler
