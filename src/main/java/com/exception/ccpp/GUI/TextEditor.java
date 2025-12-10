@@ -362,7 +362,7 @@ public class TextEditor extends JPanel {
         Color foreColor = Color.WHITE;
 
         textEditorLabel = new JLabel();
-        textEditorLabel.setText("Text Editor");
+        textEditorLabel.setText("Select a file!");
         textEditorLabel.setForeground(foreColor);
         textEditorLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
 
@@ -1276,15 +1276,6 @@ public class TextEditor extends JPanel {
             fm.getFiles().add(newSFile);
             fm.setCurrentFile(newSFile);
             codeArea.setText(newSFile.getContent());
-
-            DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
-            DefaultTreeModel model = (DefaultTreeModel) fileExplorerPanel.getFeTree().getModel();
-
-            model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
-
-            fileExplorerPanel.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
-            fileExplorerPanel.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
-
             JOptionPane.showMessageDialog(this, "File created: " + newFilePath.getFileName());
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
@@ -1632,10 +1623,8 @@ public class TextEditor extends JPanel {
             FileManager fm = FileManager.getInstance();
             if (!canProceedRunCode()) return;
 
+            fm.saveAll(); // ADDED SAVING ALL FILES
 
-            if (FileExplorer.getInstance().getSelectedFile() != null && (getTextEditor().languageSelectDropdown.getSelectedItem().equals("Java") || getTextEditor().languageSelectDropdown.getSelectedItem().equals("Python"))) {
-                getTextEditor().saveCurrentFileContent();
-            }
             TestcaseFile tf = getTextEditor().fileExplorerPanel.getTestcaseFile();
             if (tf == null) {
                 JOptionPane.showMessageDialog(getTextEditor(), "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1655,12 +1644,8 @@ public class TextEditor extends JPanel {
                         System.out.println("[TextEditor] SENDING SLAVES");
                         slaveWorkers.submit(new DiffSlave(s, entry.actualDoc, entry.expectedDoc));
                     }
-
-
-
                 }
             });
-
         }
     }
 

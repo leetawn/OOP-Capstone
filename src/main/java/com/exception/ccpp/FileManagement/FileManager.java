@@ -137,17 +137,20 @@ public class FileManager {
     // TODO @ETHAN: you add function CALLS here to refresh your fileExplorer
     public static void addFile(FileManager fm, Path file) {
         fm.all_files.add(SFile.open(file));
+        FileExplorer.getInstance().addFileNodeToTree(file);
     }
     public static void removeFile(FileManager fm, Path file) {
         for (SFile sfile : fm.all_files) {
             if (sfile.getPath().equals(file)) {
                 fm.all_files.remove(sfile);
+                FileExplorer.removeFileNodeFromTree(file);
                 return;
             }
         }
     }
     public static void removeDir(FileManager fm, Path dir) {
         fm.all_files.removeIf(p -> p.getPath().startsWith(dir));
+        FileExplorer.removeFileNodeFromTree(dir);
     }
 
     /****************** INITIALIZERS/BUILDERS ******************/
