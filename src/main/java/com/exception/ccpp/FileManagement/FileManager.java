@@ -1,6 +1,7 @@
 package com.exception.ccpp.FileManagement;
 
 import com.exception.ccpp.CustomExceptions.NotDirException;
+import com.exception.ccpp.GUI.FileExplorer;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -316,7 +317,7 @@ public class FileManager {
         }
 
         // Instantiate a brand new FileWatcher object
-        this.fileWatcher = new FileWatcher(this);
+        this.fileWatcher = new FileWatcher(this, FileExplorer.getInstance());
 
         // Start the new thread
         this.watcherThread = new Thread(this.fileWatcher);
