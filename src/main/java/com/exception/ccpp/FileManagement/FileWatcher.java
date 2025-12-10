@@ -125,11 +125,13 @@ public class FileWatcher implements Runnable {
                 filePaths.removeIf(p -> p.startsWith(deletedPath));
                 fmInstance.removeDir(fmInstance,deletedPath);
             }
+            // TODO@ETHAN feInstance.deleteFolder (RecursiveDelete), NOTE feInstance is FileExplorer
 
             keys.entrySet().removeIf(entry -> entry.getValue().startsWith(deletedPath));
             System.out.println("FileWatcher.handleDelete: DirRM: " + deletedPath.getFileName());
 
         } else {
+            // TODO@ETHAN feInstance.deleteFile, NOTE feInstance is FileExplorer
             fmInstance.removeFile(fmInstance,deletedPath);
             filePaths.remove(deletedPath);
             System.out.println("FileWatcher.handleDelete: FileRM: " + deletedPath.getFileName());
