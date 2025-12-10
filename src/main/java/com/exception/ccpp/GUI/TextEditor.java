@@ -1370,8 +1370,8 @@ public class TextEditor extends JPanel {
             }
         }
     };
-
     public static class AddFileButtonHandler extends ComponentHandler {
+
         public AddFileButtonHandler(TextEditor editor) {
             super(editor);
         }
@@ -1384,64 +1384,47 @@ public class TextEditor extends JPanel {
 
             DefaultMutableTreeNode selectedNode = fe.getSelectedNode();
             Path targetDir = fileManager.getRootdir();
-            DefaultMutableTreeNode parentNodeInTree;
 
             if (selectedNode != null) {
                 Object obj = selectedNode.getUserObject();
-
                 if (obj instanceof SFile sfile) {
-                    if (Files.isDirectory(sfile.getPath())) {
-                        targetDir = sfile.getPath();
-                        parentNodeInTree = selectedNode;
-                    } else {
-                        targetDir = sfile.getPath().getParent();
-                        parentNodeInTree = (DefaultMutableTreeNode) selectedNode.getParent();
-                    }
+                    targetDir = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
                 } else {
                     targetDir = fe.resolveNodeToPath(selectedNode);
-                    parentNodeInTree = selectedNode;
                 }
-            } else {
-                parentNodeInTree = (DefaultMutableTreeNode) fe.getFeTree().getModel().getRoot();
             }
-
 
             String fileName = JOptionPane.showInputDialog(getTextEditor(), "Enter new file name (with extension):");
-            if (fileName == null || fileName.isBlank()) return;
-
-            if (!fileManager.isAllowedFile(fileName)) {
-                JOptionPane.showMessageDialog(getTextEditor(),
-                        "Invalid file extension.\nAllowed: .c, .cpp, .h, .hpp, .java, .py",
-                        "Invalid Extension",
-                        JOptionPane.WARNING_MESSAGE);
+            if (fileName == null || fileName.isBlank() || !fileManager.isAllowedFile(fileName)) {
                 return;
             }
+            Path newFilePath = targetDir.resolve(fileName);
 
             try {
-                Path newFilePath = targetDir.resolve(fileName);
-
                 if (Files.exists(newFilePath)) {
                     JOptionPane.showMessageDialog(getTextEditor(), "File already exists in " + targetDir);
                     return;
                 }
 
-                getTextEditor().saveCurrentFileContent();
-
                 SFile newSFile = SFile.open(newFilePath);
                 newSFile.write();
+
                 fileManager.getFiles().add(newSFile);
+
                 fileManager.setCurrentFile(newSFile);
+                fe.setSelectedFile(newSFile);
                 getTextEditor().codeArea.setText(newSFile.getContent());
 
-                DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
-                DefaultTreeModel model = (DefaultTreeModel) fe.getFeTree().getModel();
+                DefaultMutableTreeNode nodeToSelect = FileExplorer.findNodeByPath(newFilePath);
+                if (nodeToSelect != null) {
+                    DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) nodeToSelect.getParent();
 
-                model.insertNodeInto(newFileNode, parentNodeInTree, parentNodeInTree.getChildCount());
-
-                fe.getFeTree().expandPath(new TreePath(parentNodeInTree.getPath()));
-                fe.getFeTree().setSelectionPath(new TreePath(newFileNode.getPath()));
+                    fe.getFeTree().setSelectionPath(new TreePath(nodeToSelect.getPath()));
+                    fe.getFeTree().expandPath(new TreePath(parentNode.getPath()));
+                }
 
                 JOptionPane.showMessageDialog(getTextEditor(), "File created: " + newFilePath);
+
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(getTextEditor(),
                         "Error creating file: " + ex.getMessage(),
@@ -1449,7 +1432,6 @@ public class TextEditor extends JPanel {
             }
         }
     }
-
     public static class LanguageSelectHandler extends ComponentHandler {
         public LanguageSelectHandler(TextEditor editor) {
             super(editor);
