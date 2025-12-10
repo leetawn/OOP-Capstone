@@ -1,20 +1,17 @@
 package com.exception.ccpp.GUI;
 
-import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.util.SystemFileChooser;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 
-import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
-
 public class MainMenu extends JPanel {
 
     private JLabel title = new JLabel("CodeChum++");
     private JLabel description = new JLabel("The Fastest and Reliable CodeJudger!");
     private JLabel start = new JLabel("Start Coding");
-    private JButton openFolder = new JButton("Open Folder");
+    private RoundedButton openFolder = new RoundedButton("Open Folder", 20);
 
     public MainMenu() {
         setLayout(new GridBagLayout());
@@ -26,18 +23,18 @@ public class MainMenu extends JPanel {
         description.setFont(new Font("Consolas", Font.PLAIN, 24));
         description.setForeground(new Color(200, 200, 200));
 
-        start.setFont(new Font("Consolas", Font.PLAIN, 20));
+        start.setFont(new Font("Consolas", Font.ITALIC, 20));
         start.setForeground(Color.WHITE);
-        start.setBorder(BorderFactory.createEmptyBorder(30, 0, 10, 0));
+        start.setBorder(BorderFactory.createEmptyBorder(30, 0, 0, 0));
 
-        openFolder.setFont(new Font("Consolas", Font.PLAIN, 20));
-        openFolder.setForeground(Color.BLACK);
-        openFolder.setBackground(Color.RED);
+        openFolder.setFont(new Font("Consolas", Font.PLAIN, 25));
+        openFolder.setForeground(Color.WHITE);
+        openFolder.setBackground(Color.decode("#568afc"));
         openFolder.setBorderPainted(false);
-        openFolder.setContentAreaFilled(true);
-        openFolder.setOpaque(true);
+//        openFolder.setContentAreaFilled(true);
+//        openFolder.setOpaque(true);
         openFolder.setFocusPainted(false);
-        openFolder.setPreferredSize(new Dimension(200, 45));
+        openFolder.setPreferredSize(new Dimension(275, 45));
 
         // Layout
         GridBagConstraints gbc = new GridBagConstraints();
