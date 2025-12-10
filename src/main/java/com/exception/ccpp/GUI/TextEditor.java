@@ -1623,11 +1623,14 @@ public class TextEditor extends JPanel {
 
             fm.saveAll(); // ADDED SAVING ALL FILES
 
-            TestcaseFile tf = getTextEditor().fileExplorerPanel.getTestcaseFile();
+            TextEditor te = getTextEditor();
+            TestcaseFile tf = te.fileExplorerPanel.getTestcaseFile();
             if (tf == null) {
-                JOptionPane.showMessageDialog(getTextEditor(), "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(te, "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            te.submitCodeButton.setEnabled(false);
             // TODO@GLENSH return to testcases
             final Map<Testcase, TCEntry> activeTC = TestcasesPanel.getInstance().getActiveTestcases();
             SwingUtilities.invokeLater(() -> {
@@ -1640,6 +1643,10 @@ public class TextEditor extends JPanel {
             System.out.println("TF has " + tf.getTestcases().size() + " testcases");
             Judge.judge(FileManager.getInstance(), tf, (results, verdict) -> {
 
+
+                SwingUtilities.invokeLater(() -> {
+                    te.submitCodeButton.setEnabled(true);
+                });
                 if (results.length <= 0)  return;
 
                 List<Callable<Integer>> tasks  = new ArrayList<>();

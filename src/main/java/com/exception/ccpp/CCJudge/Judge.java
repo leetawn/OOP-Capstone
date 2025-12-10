@@ -26,7 +26,7 @@ public class Judge {
     private static DebugLog judge_logger = DebugLog.getInstance();
     static {
         env = new HashMap<>(System.getenv());
-        if (!env.containsKey("TERM")) env.put("TERM", "xterm");
+        if (!env.containsKey("TERM")) env.put("TERM", "dumb");
     }
 
     static final long TIME_LIMIT_MS = 2000; // TLE
@@ -68,7 +68,7 @@ public class Judge {
     // PARALLEL JUDGE
 
     public static void judge(FileManager fm, TestcaseFile tf, BiConsumer<SubmissionRecord[], Integer> callback)  {
-        slaveWorkers.submit(() -> {
+        romanArmy.submit(() -> {
             SubmissionRecord judge_res;
             String rootdir = fm.getRootdir().toString();
             String language = fm.getLanguage();
@@ -105,40 +105,51 @@ public class Judge {
 
             // judgeInteractively (Parallel)
             String[] cmd = ExecutionConfig.getExecuteCommand(fm);
-            List<Future<SubmissionRecord>> futures = new ArrayList<>();
-            List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
+            Queue<Future<SubmissionRecord>> futures = new LinkedList<>();
+//            List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
+            Queue<Callable<SubmissionRecord>> tasks = new LinkedList<>();
             i =1;
             for (Testcase tc : testcases.keySet()) {
-
                 judge_logger.logf("[Judge.judge]: Running Testcase %d...\n", i);
                 tasks.add(new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger));
             }
 
-            try {
-                futures = slaveWorkers.invokeAll(tasks);
-            } catch (InterruptedException e) {
-                judge_logger.errln("[Judge.judge]: Running Testcase FAILED MISERABLY!");
+            judge_logger.errln("[Judge.judge]: Running Testcase FAILED MISERABLY!");
+
+            ArrayList<SubmissionRecord> res =  new ArrayList<>();
+
+            while(!tasks.isEmpty()) {
+                judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
+                futures.add(slaveWorkers.submit(tasks.remove()));
+                if (futures.size() > 10 || tasks.isEmpty())
+                {
+                    while (!futures.isEmpty())
+                    {
+                        Future<SubmissionRecord> f = futures.remove();
+                        try {
+                            res.add(f.get());
+                        } catch (InterruptedException | ExecutionException e) {
+                            judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
+                        }
+                        if (!tasks.isEmpty()) futures.add(slaveWorkers.submit(tasks.remove()));
+
+                    }
+                }
             }
 
             i = 0;
             int status = 0;
-            for  (Future<SubmissionRecord> f : futures) {
-                try {
-                    judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
-                    SubmissionRecord sr = f.get(); // blocks
-                    verdicts[i++]
-                            .setVerdict(sr.verdict())
-                            .setOutput(sr.output());
-                    // RE/TLE
-                    if (status == 0 && sr.verdict() != JudgeVerdict.NONE) { status = sr.verdict(); }
-                    else if (sr.verdict() == JudgeVerdict.RE) { status = sr.verdict(); }
-                }
-                catch (InterruptedException e) { /*TODO HANDLE INTERRUPT*/}
-                catch (ExecutionException e) { /*Normal shit*/
+            for  (SubmissionRecord sr : res) {
+                verdicts[i++]
+                        .setVerdict(sr.verdict())
+                        .setOutput(sr.output());
+                // RE/TLE
+                if (status == 0 && sr.verdict() != JudgeVerdict.NONE) { status = sr.verdict(); }
+                else if (sr.verdict() == JudgeVerdict.RE) { status = sr.verdict(); }
+
 //                    Throwable cause = e.getCause();
 //                    cause.printStackTrace();  // see what actually went wrong
-                    judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
-                }
+
             }
 
             if (DebugLog.DEBUG_ENABLED)
@@ -301,10 +312,89 @@ public class Judge {
 
     /*********************** STATIC CLASSES, ENUMS OR WHATEVER **********************/
 
+    static class JudgeTranscript {
+        final private ConcurrentLinkedDeque<String> transcript = new ConcurrentLinkedDeque<>();
+
+        public static String removeOverlap(String x, String y) {
+            String a = Helpers.stripAnsi(x);
+            String b = Helpers.stripAnsi(y);
+            int max = Math.min(a.length(), b.length());
+            for (int len = max; len > 0; len--) {
+                if (a.regionMatches(a.length() - len, b, 0, len))
+                {
+                    return y;
+                }
+            }
+            return y; // no overlap
+        }
+
+        public static String removeOverlapPrintable(String a, String b) {
+            // Find printable end of A
+            int aEnd = a.length();
+            while (aEnd > 0) {
+                char c = a.charAt(aEnd - 1);
+                if ((c >= 32 && c <= 126) || c == '\r' || c == '\n' || c == '\t') break;
+                aEnd--;
+            }
+
+            // Find printable start of B
+            int bStart = 0;
+            while (bStart < b.length()) {
+                char c = b.charAt(bStart);
+                if ((c >= 32 && c <= 126) || c == '\r' || c == '\n' || c == '\t') break;
+                bStart++;
+            }
+
+            int max = Math.min(aEnd, b.length() - bStart);
+
+            for (int len = max; len > 0; len--) {
+                if (a.regionMatches(aEnd - len, b, bStart, len)) {
+                    return b;
+                }
+            }
+
+            return b; // no overlap
+        }
+
+        public static String mergeNoOverlap(String a, String b) {
+            int max = Math.min(a.length(), b.length());
+
+            for (int len = max; len > 0; len--) {
+                if (a.regionMatches(a.length() - len, b, 0, len)) {
+                    return a + b.substring(len);
+                }
+            }
+            return a + b;
+        }
+
+        public JudgeTranscript() {}
+
+        public JudgeTranscript append(String s)
+        {
+            transcript.addLast(s);
+            return this;
+        }
+        public JudgeTranscript append(char c)
+        {
+            return append(Character.toString(c));
+        }
+        public JudgeTranscript append(int c)
+        {
+            return append(Integer.toString(c));
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            transcript.forEach(sb::append);
+            return sb.toString();
+        }
+    }
+
 
     // TESTCASE WORKERS;
     static class JudgeSlave implements Callable<SubmissionRecord> {
-        private static final long INPUT_DELAY_MS = 50;
+        private static final long INPUT_DELAY_MS = 80;
         private final String[] executeCommand;
         private final String rootdir, language;
         private final CCLogger logger;
@@ -313,6 +403,7 @@ public class Judge {
         int tc_num;
         private SubmissionRecord result;
         ConcurrentLinkedDeque<Object>  terminalThreads = null;
+        StringBuffer transcript = new StringBuffer();
 
         JudgeSlave(
                 String[] cmd,
@@ -369,7 +460,7 @@ public class Judge {
             return result;
         }
 
-        private void addTThread(Object o)
+        private void addThread(Object o)
         {
             if (terminalThreads != null) terminalThreads.add(o);
         }
@@ -395,13 +486,12 @@ public class Judge {
             } catch (IOException e) {
                 return finishQuota();
             }
-            addTThread(process);
+            addThread(process);
 
-            StringBuilder transcript = new StringBuilder();
-            Future<Void> output_reader_thread = romanArmy.submit(new Judge.OutputReader(process.getInputStream(), transcript));
+
+            Future<Void> output_reader_thread = slaveWorkers.submit(new Judge.OutputReader(process.getInputStream(), transcript));
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-//            Thread readerThread = new Thread(new Judge.OutputReader(process.getInputStream(), transcript));
-//            readerThread.start();
+
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
@@ -471,11 +561,9 @@ public class Judge {
                         ).trim()
                     );
             } else {
-                synchronized (transcript)
-                {
-                    final String res = transcript.toString();
-                    return finishQuota().setVerdict(JudgeVerdict.NONE).setOutput(Helpers.stripAnsiCRLines(res).trim());
-                }
+                final String raw = transcript.toString();
+                final String res = Helpers.stripAnsiCRLines(raw);
+                return finishQuota().setVerdict(JudgeVerdict.NONE).setOutput((res).trim());
             }
         }
     }
@@ -483,9 +571,10 @@ public class Judge {
 
     static class OutputReader implements Callable<Void> {
         private final InputStream in;
-        private final StringBuilder transcript;
+        private final StringBuffer transcript;
 
-        public OutputReader(InputStream in, StringBuilder transcript) {
+
+        public OutputReader(InputStream in, StringBuffer transcript) {
             this.in = in;
             this.transcript = transcript;
         }
@@ -495,9 +584,19 @@ public class Judge {
             byte[] buffer = new byte[8192];
             int read;
             try {
+
                 while ((read = in.read(buffer)) != -1) {
-                    // Convert bytes to string in chunks without altering content
-                    transcript.append(new String(buffer, 0, read));
+                    String b = new String(buffer, 0, read);
+                    transcript.append(b);
+//
+//                    StringBuilder output = new StringBuilder();
+//                    for (char c : b.toCharArray()) {
+//                        if (c == '\n') output.append("\\n");
+//                        else if (c == '\r') output.append("\\r");
+//                        else output.append(c);
+//                    }
+//                    System.out.printf("[%s]: \"%s\"\n\n",Thread.currentThread().getName(),output.toString());
+
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -519,6 +618,7 @@ public class Judge {
                 ESF  = 0b101000001, // Execution System Failure, Not the Users Fault!
                 JSF  = 0b110000001, // Judge System Failure
                 NONE = 0b100000001; // USED FOR CREATION ONLY
+
         public static String getName(int verdictCode)
         {
             return switch (verdictCode) {
@@ -534,6 +634,11 @@ public class Judge {
                 default -> "NONE";
             };
         }
+    }
+
+    public static void main(String[] args) {
+
+        System.out.println(JudgeTranscript.removeOverlap("\rOp: p\r\nSize: 5\r\n+--R: 5","+--R: 50\r\n|   +--R: 60\r\n|   |   +--R: 70\r\n|   |   |   +--R: 80\r\n|   |   |   |   +--R: 90\r\nStatus: 1\r\nOp:"));
     }
 
 }

@@ -3,7 +3,7 @@ package com.exception.ccpp.Debug;
 // temporarily just prints to sout
 // soon it will write to a single log file
 public class DebugLog implements CCLogger {
-    public static final boolean DEBUG_ENABLED = true;
+    public static final boolean DEBUG_ENABLED = false;
     private static DebugLog instance;
     private DebugLog() {}
 
