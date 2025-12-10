@@ -237,7 +237,6 @@ public class FileExplorer extends JPanel {
 
             if (newName == null || newName.isBlank() || newName.equals(currentName)) return;
 
-            // Validation for renaming: Check if new name is allowed for current language
             if (!isDirectory && !fileManager.isAllowedFile(newName)) {
                 JOptionPane.showMessageDialog(null,
                         "Invalid file extension for the current project language (" + fileManager.getLanguage() + ").",
@@ -248,8 +247,6 @@ public class FileExplorer extends JPanel {
             boolean success = fileManager.renameFile(sfile, newName);
 
             if (success) {
-                // ⭐️ CLEANUP: Removed all manual GUI refresh/reload code.
-                // Rely on FileWatcher for surgical update (delete + create events).
                 JOptionPane.showMessageDialog(null, itemType + " renamed successfully to " + newName);
             } else {
                 JOptionPane.showMessageDialog(null, "Failed to rename " + itemType + ".", "Error", JOptionPane.ERROR_MESSAGE);
@@ -298,7 +295,6 @@ public class FileExplorer extends JPanel {
         });
     }
 
-    // Extracted context menu visibility logic for clarity
     private void showContextMenu(MouseEvent e) {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
 
@@ -307,7 +303,6 @@ public class FileExplorer extends JPanel {
             deleteItem.setVisible(true);
             addFileItem.setVisible(true);
         } else {
-            // Assume if no file is selected, but a location is clicked, we can create
             renameItem.setVisible(false);
             deleteItem.setVisible(false);
             addFileItem.setVisible(true);
@@ -384,7 +379,7 @@ public class FileExplorer extends JPanel {
     /**
      * Helper to find a specific node in the JTree based on its Path.
      */
-    private static DefaultMutableTreeNode findNodeByPath(Path targetPath) {
+    static DefaultMutableTreeNode findNodeByPath(Path targetPath) {
         // ... (unchanged, as it was fixed previously) ...
         if (fe_tree == null || targetPath == null) return null;
 
