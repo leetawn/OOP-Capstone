@@ -52,7 +52,7 @@ public class TextEditor extends JPanel {
     StyledDocument document;
     private JComboBox<String> languageSelectDropdown;
     private FileExplorer fileExplorerPanel;
-    private JTextPane actualOutputArea;
+    JTextPane actualOutputArea;
     private JTextPane expectedOutputArea;
     private JButton importTestcaseButton;
     private JButton manageTestcaseButton;
@@ -844,18 +844,7 @@ public class TextEditor extends JPanel {
     // START OF BACK END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     private void setupEventListeners() {
-        codeArea.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0)) {
-                    e.consume();
-                    saveCurrentFileContent();
-                    actualOutputArea.setText("File saved successfully.");
-                    return;
-                }
-                super.keyPressed(e);
-            }
-        });
+        // save ctrl+s migrated to main frame
 
         openFolderButton.addActionListener(new OpenFolderButtonHandler(this));
         addFileButton.addActionListener(new AddFileButtonHandler(this));
@@ -1637,7 +1626,6 @@ public class TextEditor extends JPanel {
             // TODO@GLENSH return to testcases
             final Map<Testcase, TCEntry> activeTC = TestcasesPanel.getInstance().getActiveTestcases();
             SwingUtilities.invokeLater(() -> {
-                System.out.println("-------------------------------------\nSubmit Code\n----------------------------------\n");
                 for (TCEntry entry : activeTC.values())
                 {
                     entry.btn.setLogo(TestcaseLogo.COMPILING);

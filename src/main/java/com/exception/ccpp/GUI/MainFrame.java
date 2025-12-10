@@ -53,7 +53,6 @@ public class MainFrame extends JFrame {
             public void componentResized(ComponentEvent e) {
                 int width = getWidth();
                 int sideWidth = 200;
-
                 TextEditor.getInstance().mainSplit.setDividerLocation(sideWidth);
                 TextEditor.getInstance().centerRightSplit.setDividerLocation(width - sideWidth - sideWidth);
             }
@@ -65,6 +64,16 @@ public class MainFrame extends JFrame {
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
 
+        // FILE_MENU
+        JMenu fileMenu = new JMenu("File");
+        menuBar.add(fileMenu);
+
+        JRadioButtonMenuItem saveItem = new JRadioButtonMenuItem("Save");
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        fileMenu.add(saveItem);
+
+
+        // VIEW_MENU
         JMenu viewMenu = new JMenu("View");
         menuBar.add(viewMenu);
 
@@ -104,6 +113,11 @@ public class MainFrame extends JFrame {
         fullscreenItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0));
         viewMenu.add(fullscreenItem);
 
+        final TextEditor te = TextEditor.getInstance();
+        saveItem.addActionListener(e -> {
+            te.saveCurrentFileContent();
+            te.actualOutputArea.setText("File saved successfully.");
+        });
 
         fullscreenItem.addActionListener(new ActionListener() {
             private boolean fullscreen = false;
