@@ -1,5 +1,7 @@
 package com.exception.ccpp.FileManagement;
 
+import com.exception.ccpp.GUI.ComponentHandler;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,6 +10,7 @@ import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public final class SFile extends CCFile {
     private String content = "";
+    private boolean isModified = false;
 
     private SFile(Path path) {
         super(path);
@@ -36,12 +39,18 @@ public final class SFile extends CCFile {
         try {
             Files.writeString(path, content);
         } catch (Exception ignored) {}
+        this.isModified = false;
     }
 
     /****************** GETTERS ******************/
     public String getContent() { return content; }
 
+    public boolean isDirty() { return this.isModified; }
+
     /****************** SETTERS ******************/
     public void setContent(String content) { this.content = content; }
+    public void setModified(boolean modified) {
+        this.isModified = modified;
+    }
 
 }

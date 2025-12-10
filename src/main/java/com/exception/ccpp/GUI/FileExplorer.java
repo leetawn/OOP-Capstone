@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.Enumeration; // Keep for JTree enumeration
 
 public class FileExplorer extends JPanel {
     private static JTree fe_tree;
@@ -35,29 +36,31 @@ public class FileExplorer extends JPanel {
     private TestcaseFile testcaseFile;
     private static FileExplorer fe_instance;
 
-    // Updated constructor signature: No longer accepts language
     public FileExplorer(String rootDir, RSyntaxTextArea editorTextArea, TextEditor textEditor){
         fe_instance = FileExplorer.this;
         this.dTextArea = editorTextArea;
         this.textEditor = textEditor;
-        initializeBackend(rootDir); // Calls initializeBackend without language argument
+        initializeBackend(rootDir);
         initializeComponents();
         setupLayout();
         setupEventListeners();
         buildFileTree();
     }
 
-    // Updated updateRootDirectory to fetch language from TextEditor
     public void updateRootDirectory(String newRootDir) throws NotDirException {
-        String currentLang = fileManager != null ? fileManager.getLanguage() : null;
+        // Fetch language from TextEditor before updating FileManager
+        String currentLang = textEditor.getCurrentSelectedLanguage();
         this.fileManager = fileManager.setAll(newRootDir, currentLang);
         this.dTextArea.setText("");
-        this.buildFileTree();
+        // Full rebuild required when root directory changes
+        FileExplorer.buildFileTree();
     }
 
     private void initializeBackend(String rootDir) {
         try {
-            fileManager = FileManager.getInstance().setAll(rootDir, textEditor.getCurrentSelectedLanguage());
+            // Ensure FileManager is initialized (using getInstance() handles singleton)
+            fileManager = FileManager.getInstance();
+            fileManager.setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
             testcaseFile = null;
         } catch (NotDirException e) {
@@ -70,8 +73,8 @@ public class FileExplorer extends JPanel {
         fe_tree.setBackground(Color.decode("#191c2a"));
         fe_tree.setForeground(Color.WHITE);
 
-        UIManager.put("Tree.selectionBackground", Color.decode("#191c2a"));
-        UIManager.put("Tree.selectionForeground", Color.WHITE);
+        // Setting UIManager properties for tree selection is generally unreliable.
+        // The custom renderer handles the background/foreground correctly.
 
         fe_tree.setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
@@ -81,14 +84,9 @@ public class FileExplorer extends JPanel {
 
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 
-                if (sel) {
-                    setBackground(Color.decode("#191c2a"));
-                    setForeground(Color.WHITE);
-                } else {
-                    setBackground(Color.decode("#191c2a"));
-                    setForeground(Color.WHITE);
-                }
-
+                // Consistent dark theme colors
+                setBackground(Color.decode("#191c2a"));
+                setForeground(Color.WHITE);
                 setOpaque(true);
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
@@ -101,12 +99,11 @@ public class FileExplorer extends JPanel {
                     } else {
                         setIcon(UIManager.getIcon("FileView.fileIcon"));
                     }
-
                 } else {
+                    // This handles the root node (which is a String)
                     setText(userObj.toString());
                     setIcon(UIManager.getIcon("FileView.directoryIcon"));
                 }
-
                 return this;
             }
         });
@@ -117,12 +114,15 @@ public class FileExplorer extends JPanel {
         createFolderItem = new JMenuItem("Create folder");
         addFileItem = new JMenuItem("Add file");
 
+        // Use a consistent order, putting file actions together
+        contextMenu.add(addFileItem);
+        contextMenu.add(createFolderItem);
         contextMenu.addSeparator();
         contextMenu.add(renameItem);
         contextMenu.add(deleteItem);
-        contextMenu.add(createFolderItem);
-        contextMenu.add(addFileItem);
     }
+
+    // ... setupLayout remains unchanged ...
 
     private void setupLayout() {
         setLayout(new BorderLayout());
@@ -193,13 +193,16 @@ public class FileExplorer extends JPanel {
                 }
 
                 try {
+                    loadFileContent(sfile);
                     textEditor.saveCurrentFileContent();
 
-                    setSelectedFile(sfile);
+                    String filename = sfile.getPath().getFileName().toString();
+                    ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
                     textEditor.setTextArea(true);
                     Path filePath = sfile.getPath();
                     String content = Files.readString(filePath);
                     dTextArea.setText(content);
+                    textEditor.updateUnsavedIndicator(false);
                     System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -211,25 +214,12 @@ public class FileExplorer extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
-
-                    if (node != null && node.getUserObject() instanceof SFile) {
-                        renameItem.setVisible(true);
-                        deleteItem.setVisible(true);
-                        addFileItem.setVisible(true);
-                    } else {
-                        renameItem.setVisible(false);
-                        deleteItem.setVisible(false);
-                        addFileItem.setVisible(true);
-                    }
-
-                    contextMenu.show(fe_tree, e.getX(), e.getY());
+                    showContextMenu(e);
                 }
             }
         });
+
         addFileItem.addActionListener(e -> {
-            // Reuses the main handler logic in TextEditor
             textEditor.handleAddFileAction();
         });
 
@@ -258,20 +248,8 @@ public class FileExplorer extends JPanel {
             boolean success = fileManager.renameFile(sfile, newName);
 
             if (success) {
-                DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
-                DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
-
-                model.nodeChanged(node);
-
-                if (parentNode != null) {
-                    model.reload(parentNode);
-                } else {
-                    model.reload();
-                }
-
-                fe_tree.setSelectionPath(new TreePath(node.getPath()));
-                fe_tree.repaint();
-
+                // ⭐️ CLEANUP: Removed all manual GUI refresh/reload code.
+                // Rely on FileWatcher for surgical update (delete + create events).
                 JOptionPane.showMessageDialog(null, itemType + " renamed successfully to " + newName);
             } else {
                 JOptionPane.showMessageDialog(null, "Failed to rename " + itemType + ".", "Error", JOptionPane.ERROR_MESSAGE);
@@ -303,18 +281,13 @@ public class FileExplorer extends JPanel {
                 }
 
                 if (success) {
-                    DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
-                    DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+                    // Rely on FileWatcher for surgical node removal.
 
-                    if (parentNode != null) {
-                        model.removeNodeFromParent(node);
-
-                        if (sfile.equals(fileManager.getCurrentFile()) || isDirectory) {
-                            dTextArea.setText("");
-                            fileManager.setCurrentFile(null);
-                            // If a deleted file was the entry point, reset the entry point button label
-                            textEditor.getSetEntryPointButton().setText("Set Entry Point");
-                        }
+                    // UX Fix: Update the Text Editor state immediately
+                    if (sfile.equals(fileManager.getCurrentFile()) || isDirectory) {
+                        dTextArea.setText("");
+                        fileManager.setCurrentFile(null);
+                        textEditor.getSetEntryPointButton().setText("Set Entry Point");
                     }
 
                     JOptionPane.showMessageDialog(null, itemType + " deleted successfully.");
@@ -325,28 +298,42 @@ public class FileExplorer extends JPanel {
         });
     }
 
+    // Extracted context menu visibility logic for clarity
+    private void showContextMenu(MouseEvent e) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+
+        if (node != null && node.getUserObject() instanceof SFile) {
+            renameItem.setVisible(true);
+            deleteItem.setVisible(true);
+            addFileItem.setVisible(true);
+        } else {
+            // Assume if no file is selected, but a location is clicked, we can create
+            renameItem.setVisible(false);
+            deleteItem.setVisible(false);
+            addFileItem.setVisible(true);
+        }
+
+        contextMenu.show(fe_tree, e.getX(), e.getY());
+    }
+
     public void handleCreateFolderAction() {
         FileManager fm = getFileManager();
         if (fm == null) return;
 
-        DefaultMutableTreeNode selectedTreePathNode = getSelectedNode();
-        Path directoryToCreateIn = fileManager.getRootdir();
-        DefaultMutableTreeNode parentNodeInTree;
+        DefaultMutableTreeNode selectedNode = getSelectedNode();
+        Path targetDir = fm.getRootdir();
 
-        if (selectedTreePathNode != null) {
-            Object obj = selectedTreePathNode.getUserObject();
+        // Determine the target directory to create the new folder in
+        if (selectedNode != null) {
+            Object obj = selectedNode.getUserObject();
             if (obj instanceof SFile sfile) {
-                // If a file is selected, create folder in its parent directory
-                directoryToCreateIn = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
-                // Parent node is the directory itself, or the selected node's parent
-                parentNodeInTree = Files.isDirectory(sfile.getPath()) ? selectedTreePathNode : (DefaultMutableTreeNode) selectedTreePathNode.getParent();
+                targetDir = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
             } else {
-                directoryToCreateIn = fileManager.getRootdir();
-                parentNodeInTree = selectedTreePathNode;
+                // If selected node is the String root node
+                targetDir = resolveNodeToPath(selectedNode);
             }
-        } else {
-            parentNodeInTree = (DefaultMutableTreeNode) fe_tree.getModel().getRoot();
         }
+        // If selectedNode is null, targetDir remains the rootdir.
 
         String newFolderName = JOptionPane.showInputDialog(null, "Enter new folder name:");
 
@@ -356,30 +343,25 @@ public class FileExplorer extends JPanel {
                 return;
             }
 
-            boolean success = fm.createFolder(directoryToCreateIn, newFolderName);
+            boolean success = fm.createFolder(targetDir, newFolderName);
 
             if (success) {
-                Path newFolderPath = directoryToCreateIn.resolve(newFolderName);
-                SFile newDirSFile = SFile.open(newFolderPath);
-
-                DefaultMutableTreeNode newFolderTreeNode = new DefaultMutableTreeNode(newDirSFile);
-
-                DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
-
-                // Insert into the determined parent node
-                model.insertNodeInto(newFolderTreeNode, parentNodeInTree, parentNodeInTree.getChildCount());
-
-                fe_tree.expandPath(new TreePath(parentNodeInTree.getPath()));
-
-                JOptionPane.showMessageDialog(null, "Folder created successfully in " + directoryToCreateIn.getFileName());
+                // ⭐️ CLEANUP: Removed manual GUI insertion (model.insertNodeInto, expandPath, setSelectionPath).
+                // fm.createFolder() triggered the FileWatcher, which will call addFileNodeToTree,
+                // handling the surgical insertion, expansion, and selection.
+                JOptionPane.showMessageDialog(null, "Folder created successfully in " + targetDir.getFileName());
             } else {
                 JOptionPane.showMessageDialog(null, "Failed to create folder.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-
     }
 
+    // ----------------------------------------------------------------------------------
+    // Core Tree Building Methods
+    // ----------------------------------------------------------------------------------
+
     public static void buildFileTree() {
+        // ... (unchanged) ...
         if (fileManager == null) return;
 
         Path rootPath = fileManager.getRootdir();
@@ -389,6 +371,7 @@ public class FileExplorer extends JPanel {
             return;
         }
 
+        // The root node uses the file name string
         DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(rootPath.getFileName().toString());
 
         recursivelyAddNodes(rootNode, rootPath);
@@ -397,22 +380,123 @@ public class FileExplorer extends JPanel {
         // Expand the root node by default
         fe_tree.expandPath(new TreePath(rootNode));
     }
-    public static void reloadTree() {
-        FileExplorer explorer = getInstance();
 
-        if (explorer == null) {
-            System.err.println("FileExplorer not initialized or instance is null.");
+    /**
+     * Helper to find a specific node in the JTree based on its Path.
+     */
+    private static DefaultMutableTreeNode findNodeByPath(Path targetPath) {
+        // ... (unchanged, as it was fixed previously) ...
+        if (fe_tree == null || targetPath == null) return null;
+
+        DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
+        if (model == null) return null;
+
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        if (root == null) return null;
+
+        // ⭐️ FIX: Normalize the target path once for consistent comparison
+        Path normalizedTargetPath;
+        try {
+            normalizedTargetPath = targetPath.toAbsolutePath().normalize();
+        } catch (Exception e) {
+            System.err.println("Error normalizing target path: " + e.getMessage());
+            return null;
+        }
+
+        FileExplorer explorer = getInstance();
+        if (explorer != null && explorer.getFileManager() != null) {
+            Path rootDir;
+            try {
+                rootDir = explorer.getFileManager().getRootdir().toAbsolutePath().normalize();
+            } catch (Exception e) {
+                // Should not happen if rootDir is set correctly
+                return null;
+            }
+
+            // 1. Handle the root node path (which has a String user object)
+            if (normalizedTargetPath.equals(rootDir)) {
+                return root;
+            }
+        }
+
+        Enumeration<javax.swing.tree.TreeNode> e = root.breadthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
+            Object userObject = node.getUserObject();
+
+            if (userObject instanceof SFile sfile) {
+                // Compare normalized SFile path with the normalized target path
+                if (sfile.getPath().toAbsolutePath().normalize().equals(normalizedTargetPath)) {
+                    return node;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * Inserts a single file/folder node into the JTree at the correct parent location.
+     * Called by the FileWatcher via FileManager.
+     */
+    public static void addFileNodeToTree(Path filePath) {
+        // ... (unchanged) ...
+        FileExplorer explorer = getInstance();
+        if (explorer == null || fe_tree == null || filePath == null) return;
+
+        // 1. Find the parent directory node in the existing tree
+        Path parentPath = filePath.getParent();
+        DefaultMutableTreeNode parentNode = findNodeByPath(parentPath);
+
+        if (parentNode == null) {
+            // FALLBACK: If we can't find the parent, rebuild the tree to ensure data integrity.
+            System.err.println("Parent node for new file not found. Rebuilding tree as fallback.");
+            FileExplorer.buildFileTree();
             return;
         }
 
-        if (explorer.textEditor != null) {
-            explorer.textEditor.saveCurrentFileContent();
+        // 2. Create the new node
+        SFile newSFile = SFile.open(filePath);
+        // Check if the file is recognized by the FileManager before adding
+        if (!Files.isDirectory(filePath) && !fileManager.isAllowedFile(filePath.getFileName().toString())) {
+            // File not recognized (e.g., .exe, .tmp), do not add to tree
+            return;
         }
+        DefaultMutableTreeNode newFileNode = new DefaultMutableTreeNode(newSFile);
+        DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
 
-        FileExplorer.buildFileTree();
+        // 3. Insert the node.
+        model.insertNodeInto(newFileNode, parentNode, parentNode.getChildCount());
+
+        // 4. Update the view: Expand the parent and make the new node visible/selected
+        fe_tree.expandPath(new TreePath(parentNode.getPath()));
+
+        TreePath newPath = new TreePath(newFileNode.getPath());
+        fe_tree.setSelectionPath(newPath);
 
         fe_tree.revalidate();
         fe_tree.repaint();
+    }
+
+    public static void removeFileNodeFromTree(Path filePath) {
+        if (fe_tree == null || filePath == null) return;
+
+        DefaultMutableTreeNode nodeToRemove = findNodeByPath(filePath);
+
+        if (nodeToRemove != null) {
+            DefaultTreeModel model = (DefaultTreeModel) fe_tree.getModel();
+            model.removeNodeFromParent(nodeToRemove);
+
+            FileExplorer explorer = getInstance();
+            if (explorer != null && explorer.getSelectedFile() != null && explorer.getSelectedFile().getPath().equals(filePath)) {
+                explorer.dTextArea.setText("");
+                explorer.setSelectedFile(null);
+                explorer.textEditor.updateUnsavedIndicator(false);
+            }
+
+            fe_tree.revalidate();
+            fe_tree.repaint();
+        }
     }
 
     private static void recursivelyAddNodes(DefaultMutableTreeNode parentNode, Path parentPath) {
@@ -422,7 +506,6 @@ public class FileExplorer extends JPanel {
                 stream.forEach(contents::add);
             }
 
-            // Sort directories first, then files alphabetically
             contents.sort((p1, p2) -> {
                 boolean isDir1 = Files.isDirectory(p1);
                 boolean isDir2 = Files.isDirectory(p2);
@@ -433,35 +516,17 @@ public class FileExplorer extends JPanel {
                 return p1.getFileName().toString().compareToIgnoreCase(p2.getFileName().toString());
             });
 
-            ArrayList<SFile> sFiles = fileManager.getFiles();
-
             for (Path childPath : contents) {
                 String fileName = childPath.getFileName().toString();
 
-                // Skip hidden files/folders and those starting with '.'
                 if (Files.isHidden(childPath) || fileName.startsWith(".")) {
                     continue;
                 }
 
                 if (Files.isDirectory(childPath)) {
-                    SFile dirSFile = SFile.open(childPath);
-                    DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(dirSFile);
-
-                    parentNode.add(childNode);
-
-                    recursivelyAddNodes(childNode, childPath);
+                    addFolderNode(parentNode, childPath);
                 } else {
-                    // Check if the file is tracked by the FileManager
-                    // NOTE: Since FileManager tracks ALL files now, this will include them all.
-                    SFile targetSFile = sFiles.stream()
-                            .filter(sf -> sf.getPath().equals(childPath))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (targetSFile != null) {
-                        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(targetSFile);
-                        parentNode.add(childNode);
-                    }
+                    addFileNode(parentNode, childPath);
                 }
             }
         } catch (IOException e) {
@@ -469,7 +534,40 @@ public class FileExplorer extends JPanel {
         }
     }
 
+    private static void addFileNode(DefaultMutableTreeNode parentNode, Path childPath) {
+        // ... (unchanged) ...
+        ArrayList<SFile> sFiles = fileManager.getFiles();
 
+        SFile targetSFile = sFiles.stream()
+                .filter(sf -> sf.getPath().equals(childPath))
+                .findFirst()
+                .orElse(null);
+
+        if (targetSFile != null) {
+            DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(targetSFile);
+            parentNode.add(childNode);
+        }
+    }
+
+    private static void addFolderNode(DefaultMutableTreeNode parentNode, Path childPath) {
+        String fileName = childPath.getFileName().toString();
+        String fileNameLower = fileName.toLowerCase();
+
+        if (FileManager.IGNORED_FOLDERS.contains(fileNameLower)) {
+            System.err.println("Skipping ignored directory: " + fileName);
+            return;
+        }
+
+        SFile dirSFile = SFile.open(childPath);
+        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(dirSFile);
+        parentNode.add(childNode);
+
+        recursivelyAddNodes(childNode, childPath);
+    }
+
+    // ----------------------------------------------------------------------------------
+    // Rest of the Getters/Setters/Helpers
+    // ----------------------------------------------------------------------------------
     public Path resolveNodeToPath(DefaultMutableTreeNode node) {
         Object userObject = node.getUserObject();
 
@@ -489,6 +587,13 @@ public class FileExplorer extends JPanel {
         return selectedFile;
     }
     public void setSelectedFile(SFile newFile) {
+        if (newFile == null) {
+            setSyntaxHightlighting(null);
+            this.selectedFile = null;
+            textEditor.updateUnsavedIndicator(false);
+            ComponentHandler.getTextEditor().textEditorLabel.setText("Select a file!");
+            return;
+        }
         setSyntaxHightlighting(newFile.getStringPath());
         this.selectedFile = newFile;
     }
@@ -501,6 +606,18 @@ public class FileExplorer extends JPanel {
             case "c", "h" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
             default ->  dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         }
+    }
+    private void loadFileContent(SFile sfile) throws IOException {
+        setSelectedFile(sfile);
+
+        Path filePath = sfile.getPath();
+        String content = Files.readString(filePath);
+
+        dTextArea.setText(content);
+
+        textEditor.updateUnsavedIndicator(false);
+
+        System.out.println("Current file: " + filePath);
     }
     public TestcaseFile getTestcaseFile() {
         return this.testcaseFile;

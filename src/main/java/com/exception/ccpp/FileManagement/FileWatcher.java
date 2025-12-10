@@ -110,13 +110,13 @@ public class FileWatcher implements Runnable {
                 try {
                     registerAll(path);
                     // TODO@Ethan feInstance.addFolder, NOTE feInstance is FileExplorer
+                    feInstance.addFileNodeToTree(path);
                     System.out.println("FileWatcher.handleCreate: Dir: " + path.getFileName());
                 } catch (IOException e) {
                     System.err.println("FileWatcher.handleCreate:: Dir Err " + path);
                 }
             }
         }
-        SwingUtilities.invokeLater(FileExplorer::reloadTree); // TODO@ETHAN REMOVE THIS RECURSIVE SHIT IF YOU CAN
 
     }
     private void handleDelete(Path deletedPath) {
@@ -126,7 +126,7 @@ public class FileWatcher implements Runnable {
                 fmInstance.removeDir(fmInstance,deletedPath);
             }
             // TODO@ETHAN feInstance.deleteFolder (RecursiveDelete), NOTE feInstance is FileExplorer
-
+            feInstance.removeFileNodeFromTree(deletedPath);
             keys.entrySet().removeIf(entry -> entry.getValue().startsWith(deletedPath));
             System.out.println("FileWatcher.handleDelete: DirRM: " + deletedPath.getFileName());
 
@@ -134,9 +134,9 @@ public class FileWatcher implements Runnable {
             // TODO@ETHAN feInstance.deleteFile, NOTE feInstance is FileExplorer
             fmInstance.removeFile(fmInstance,deletedPath);
             filePaths.remove(deletedPath);
+            feInstance.removeFileNodeFromTree(deletedPath);
             System.out.println("FileWatcher.handleDelete: FileRM: " + deletedPath.getFileName());
         }
-        SwingUtilities.invokeLater(FileExplorer::reloadTree); // TODO@ETHAN REMOVE THIS RECURSIVE SHIT IF YOU CAN
     }
 
     public void closeAndCleanup() throws IOException {
