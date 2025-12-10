@@ -7,7 +7,21 @@ Designed for students, programmers, and competitive coders, **CodeChum++** provi
 
 ---
 
-## ✨ Features
+Technical Stack and Requirements
+- Language: Java 17+ (or specify your version)
+- GUI Framework: Swing/AWT
+- Build Tool: Maven
+- Platform: Cross-platform (Windows, macOS)
+
+Dependencies // TODO GLENSH
+
+Software Architecture and Design Patterns
+The project employs a structured, component-based architecture to ensure maintainability, encapsulation, and separation of concerns. The following design patterns were strategically applied:
+
+- Singleton [implemented where?]
+- Builder [implemented where?]
+
+## ✨ Features // TODO ADD MORE FEATURES
 
 - 🚀 **Offline & ultra-fast code execution**
 - 🖥️ **JSwing-based graphical interface**
@@ -15,6 +29,14 @@ Designed for students, programmers, and competitive coders, **CodeChum++** provi
 - ✔️ **Automatic code judging and validation**
 - 📦 **Simple, portable, and easy to use**
 - ⚡ Perfect for **practice, exercises, and quick testing**
+- File Tree Navigation: Hierarchical view for easy navigation of project directories and files.
+- Create, Delete, and Rename files within the program
+- Share and Create testcases
+- Syntax highlighting
+- Supports 4 programming languages
+- File Management with File Watcher
+- Custom Files
+- 
 
 ---
 
@@ -22,6 +44,8 @@ Whether you’re preparing for coding challenges or simply experimenting, **Code
 
 ---
 ### C and CPP windows compiler
+
+Installation Process
 
 Place this on root file  
 File tree should look like this:
