@@ -9,10 +9,9 @@ class MyBinaryTree : public BinaryTree {
     node* root;
     int size;
 
+    // TODO
     node* create_node(int e, node* parent) {
-        node *nn = new node{e, nullptr, nullptr, parent};
-        size++;
-        return nn;
+        return nullptr;
     }
 
 public:

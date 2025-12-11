@@ -62,6 +62,7 @@ public class FileManager {
                 System.err.println("File not found: " + filePath);
                 return false;
             }
+            removeFile(this,sfile.path);
             Files.delete(filePath);
             if (currentFile != null && currentFile.equals(sfile)) {
                 currentFile = null;
@@ -201,7 +202,7 @@ public class FileManager {
                         .filter(a -> {
                             String filename = a.getPath().getFileName().toString().toLowerCase();
                             int dot = filename.lastIndexOf('.');
-                            if (dot == -1) return false;
+                            if (dot == -1 || !Files.exists(a.path)) return false;
                             return getAllowedExtensions(language).contains(filename.substring(dot));
                         })
                         .toList()

@@ -31,6 +31,7 @@ public class Judge {
 
     static final long TIME_LIMIT_MS = 2000; // TLE
     static final long COMPILE_TIME_LIMIT_SEC = 10;
+//    static boolean is_running = false;
 
 
 
@@ -501,9 +502,6 @@ public class Judge {
                         return finishQuota().setVerdict(JudgeVerdict.TLE).setOutput(Helpers.stripAnsiCRLines(transcript.toString()).trim());
                     }
 
-//                    synchronized (this)
-//                    {
-//                    }
                     Thread.sleep(INPUT_DELAY_MS);
 
                     if (inputIndex < inputs.length) {
