@@ -22,22 +22,21 @@ import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class Judge {
+//    TODO@CCPP2.0 Add centralize tracking of threads for forcibly killing them
+//    private static Map<JudgeSlave, Boolean> activeSlaves = new ConcurrentHashMap<>();
     private static Map<String, String> env;
-    private static Map<JudgeSlave, Boolean> activeSlaves = new ConcurrentHashMap<>();
     private static DebugLog judge_logger = DebugLog.getInstance();
     static {
         env = new HashMap<>(System.getenv());
         if (!env.containsKey("TERM")) env.put("TERM", "dumb");
     }
 
-    static final long TIME_LIMIT_MS = 2000; // TLE
+    static final long TIME_LIMIT_MS = 2000; // TLE, 2secs
     static final long COMPILE_TIME_LIMIT_SEC = 10;
-//    static boolean is_running = false;
 
 
 
     /******************** SINGLE-THREADED *************************/
-    // TODO: this will be the real judge
     // will output an Array of SubmissionRecord, check the Submission Record definition
     // for TERMINAL USE ONLY
     static void judgeInteractively(
@@ -67,7 +66,6 @@ public class Judge {
     }
 
     /******************** MULTI-THREADED *************************/
-    // PARALLEL JUDGE
 
     public static void judge(FileManager fm, TestcaseFile tf, BiConsumer<SubmissionRecord[], Integer> callback)  {
         romanArmy.submit(() -> {
@@ -110,6 +108,8 @@ public class Judge {
             List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
             List<Future<SubmissionRecord>> futures = new ArrayList<>();
             i =1;
+
+            // TESTCASE
             for (Testcase tc : testcases.keySet()) {
                 judge_logger.logf("[Judge.judge]: Running Testcase %d...\n", i);
                 tasks.add(new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger));
@@ -119,26 +119,6 @@ public class Judge {
                 futures = slaveWorkers.invokeAll(tasks);
             } catch (InterruptedException e) {}
             ArrayList<SubmissionRecord> res =  new ArrayList<>();
-//            Queue<Future<SubmissionRecord>> futures = new LinkedList<>();
-//            Queue<Callable<SubmissionRecord>> tasks = new LinkedList<>();
-//            while(!tasks.isEmpty()) {
-//                judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
-//                futures.add(slaveWorkers.submit(tasks.remove()));
-//                if (futures.size() > 10 || tasks.isEmpty())
-//                {
-//                    while (!futures.isEmpty())
-//                    {
-//                        Future<SubmissionRecord> f = futures.remove();
-//                        try {
-//                            res.add(f.get());
-//                        } catch (InterruptedException | ExecutionException e) {
-//                            judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
-//                        }
-//                        if (!tasks.isEmpty()) futures.add(slaveWorkers.submit(tasks.remove()));
-//
-//                    }
-//                }
-//            }
 
             i = 0;
             int status = 0;
@@ -154,9 +134,6 @@ public class Judge {
                 // RE/TLE
                 if (status == 0 && sr.verdict() != JudgeVerdict.NONE) { status = sr.verdict(); }
                 else if (sr.verdict() == JudgeVerdict.RE) { status = sr.verdict(); }
-
-//                    Throwable cause = e.getCause();
-//                    cause.printStackTrace();  // see what actually went wrong
 
             }
 
@@ -175,8 +152,7 @@ public class Judge {
     // please terminate all workers
     static void parallelCleanup(FileManager fm) {
         slaveWorkers.submit(() -> {
-//            if (!activeSlaves.isEmpty())
-//                for (JudgeSlave s : activeSlaves.keySet()) { s.mutilate(); }
+            // TODO@CCPP2.0 FORCE CLOSE ALL RUNNING THREADS
             cleanup(fm);
         });
     }
@@ -205,9 +181,6 @@ public class Judge {
         switch (fm.getLanguage().toLowerCase()) {
             case "java": {
                 compileCommand = ExecutionConfig.getCompileCommand(fm);
-                // IN-HOUSE HAVA COMPILER
-//                logger.logln("-> Compiling Java using javax.tools.JavaCompiler");
-//                return startJavaCompilation(fm);
                 break;
             }
             case "c","cpp", "c++": {
@@ -225,71 +198,6 @@ public class Judge {
         pb.directory(fm.getRootdir().toFile());
 
         return startCompilation(pb);
-    }
-
-    private static SubmissionRecord startJavaCompilation(FileManager fm) throws IOException {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) {
-            return new SubmissionRecord(JudgeVerdict.CE, ExecutionConfig.NO_JDK_ERROR, null);
-        }
-
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        // Use try-with-resources to ensure fileManager is closed
-        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {
-
-            // 1. Get all Java source files to be compiled
-            Iterable<Path> sourcePaths = fm.getFiles().stream()
-                    .filter(f -> f.getPath().toString().endsWith(".java"))
-                    .map(SFile::getPath)
-                    .collect(Collectors.toList());
-
-            if (!sourcePaths.iterator().hasNext()) {
-                return new SubmissionRecord(JudgeVerdict.CE, "No Java source files (.java) found for compilation.", null);
-            }
-
-            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromPaths(sourcePaths);
-
-            // 2. Set compilation options: output directory (-d)
-            Path outputDir = fm.getRootdir();
-            if (!Files.exists(outputDir)) {
-                Files.createDirectories(outputDir);
-            }
-
-            // Options: -d <output directory>
-            Iterable<String> options = Arrays.asList(
-                    "-d", outputDir.toAbsolutePath().toString()
-            );
-
-            // 3. Create and run the compilation task
-            JavaCompiler.CompilationTask task = compiler.getTask(
-                    null, // Writer for compilation output (null uses System.err/out)
-                    fileManager,
-                    diagnostics,
-                    options,
-                    null, // Classes for annotation processing
-                    compilationUnits
-            );
-
-            boolean success = task.call();
-
-            // 4. Handle results
-            if (!success) {
-                StringWriter output = new StringWriter();
-                for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
-                    // Format the error message to be submission record friendly
-                    output.write(String.format("Error [%s] on line %d in %s:\n%s\n",
-                            diagnostic.getKind().toString(),
-                            diagnostic.getLineNumber(),
-                            diagnostic.getSource() != null ? diagnostic.getSource().getName() : "Unknown File",
-                            diagnostic.getMessage(null)));
-                }
-                String ceMsg = "Compilation Errors (javax.tools):\n" + output.toString();
-                judge_logger.errln(ceMsg);
-                return new SubmissionRecord(JudgeVerdict.CE, ceMsg, null);
-            }
-
-            return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful (javax.tools)", null);
-        }
     }
 
     private static SubmissionRecord startCompilation(ProcessBuilder pb) throws IOException, InterruptedException {
@@ -320,87 +228,6 @@ public class Judge {
 
     /*********************** STATIC CLASSES, ENUMS OR WHATEVER **********************/
 
-    static class JudgeTranscript {
-        final private ConcurrentLinkedDeque<String> transcript = new ConcurrentLinkedDeque<>();
-
-        public static String removeOverlap(String x, String y) {
-            String a = Helpers.stripAnsi(x);
-            String b = Helpers.stripAnsi(y);
-            int max = Math.min(a.length(), b.length());
-            for (int len = max; len > 0; len--) {
-                if (a.regionMatches(a.length() - len, b, 0, len))
-                {
-                    return y;
-                }
-            }
-            return y; // no overlap
-        }
-
-        public static String removeOverlapPrintable(String a, String b) {
-            // Find printable end of A
-            int aEnd = a.length();
-            while (aEnd > 0) {
-                char c = a.charAt(aEnd - 1);
-                if ((c >= 32 && c <= 126) || c == '\r' || c == '\n' || c == '\t') break;
-                aEnd--;
-            }
-
-            // Find printable start of B
-            int bStart = 0;
-            while (bStart < b.length()) {
-                char c = b.charAt(bStart);
-                if ((c >= 32 && c <= 126) || c == '\r' || c == '\n' || c == '\t') break;
-                bStart++;
-            }
-
-            int max = Math.min(aEnd, b.length() - bStart);
-
-            for (int len = max; len > 0; len--) {
-                if (a.regionMatches(aEnd - len, b, bStart, len)) {
-                    return b;
-                }
-            }
-
-            return b; // no overlap
-        }
-
-        public static String mergeNoOverlap(String a, String b) {
-            int max = Math.min(a.length(), b.length());
-
-            for (int len = max; len > 0; len--) {
-                if (a.regionMatches(a.length() - len, b, 0, len)) {
-                    return a + b.substring(len);
-                }
-            }
-            return a + b;
-        }
-
-        public JudgeTranscript() {}
-
-        public JudgeTranscript append(String s)
-        {
-            transcript.addLast(s);
-            return this;
-        }
-        public JudgeTranscript append(char c)
-        {
-            return append(Character.toString(c));
-        }
-        public JudgeTranscript append(int c)
-        {
-            return append(Integer.toString(c));
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            transcript.forEach(sb::append);
-            return sb.toString();
-        }
-    }
-
-
-    // TESTCASE WORKERS;
     static class JudgeSlave implements Callable<SubmissionRecord> {
         private static final long INPUT_DELAY_MS = 50;
         private final String[] executeCommand;
@@ -432,34 +259,20 @@ public class Judge {
             this.rootdir = rootdir;
             this.language = language;
             this.tc_num = testcase_number;
-            this.logger = logger;
+            this.logger = Judge.judge_logger; // FIXME: Changer to logger;
             result = new SubmissionRecord(JudgeVerdict.ESF, "Execution System Failure (IOException)\n", tc);
-            activeSlaves.put(this, true);
         }
-
-
-        /**
-         * stops the Callable
-         * @apiNote <b  style="color:red">PLS PLS DONT USE ON ITERATORS</b>
-         * */
         public void halt() {
             if (process != null && process.isAlive()) {
                 process.destroy();
                 logger.logln("[JudgeSlave]: Process destroyed!");
             }
-            activeSlaves.remove(this);
         }
-
-        /**
-         * forcefully stops the Callable
-         * @apiNote PLS PLS DONT USE ON ITERATORS
-         * */
         public void mutilate() {
             if (process != null && process.isAlive()) {
                 process.destroyForcibly();
                 logger.logln("[JudgeSlave]: Process forcefully destroyed!");
             }
-            activeSlaves.remove(this);
         }
 
         // Slave done with work
@@ -489,7 +302,7 @@ public class Judge {
             try {
                 process = new PtyProcessBuilder(executeCommand)
                         .setEnvironment(env)
-                        .setRedirectErrorStream(true) // Redirects stderr to stdout stream
+                        .setRedirectErrorStream(true)
                         .setDirectory(rootdir)
                         .setConsole(is_python)
                         .start();
@@ -500,7 +313,6 @@ public class Judge {
 
 
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-            int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
             try {
@@ -562,7 +374,6 @@ public class Judge {
         }
     }
 
-
     static class OutputReader implements Callable<Void> {
         private final InputStream in;
         private final BufferedReader reader;
@@ -594,7 +405,7 @@ public class Judge {
         }
     }
 
-    public class JudgeVerdict {
+    static public class JudgeVerdict {
         final public static int
                 AC   = 0b000000000, // Accepted
                 WA   = 0b000000001, // Wrong Answer
@@ -626,8 +437,6 @@ public class Judge {
     }
 
     public static void main(String[] args) {
-
-        System.out.println(JudgeTranscript.removeOverlap("\rOp: p\r\nSize: 5\r\n+--R: 5","+--R: 50\r\n|   +--R: 60\r\n|   |   +--R: 70\r\n|   |   |   +--R: 80\r\n|   |   |   |   +--R: 90\r\nStatus: 1\r\nOp:"));
     }
 
 }
