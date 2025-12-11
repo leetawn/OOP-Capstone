@@ -4,6 +4,7 @@ import com.exception.ccpp.CCJudge.TestcaseButton.TestcaseLogo;
 import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
 import com.exception.ccpp.CCJudge.TestcasesPanel.TCEntry;
 import com.exception.ccpp.CCJudge.*;
+import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -36,7 +37,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
+
 import static com.exception.ccpp.Common.Helpers.parallelSplit;
+import static com.exception.ccpp.Common.Helpers.SplitTask;
 import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 
 public class TextEditor extends JPanel {
@@ -1637,7 +1640,7 @@ public class TextEditor extends JPanel {
                 System.out.println("[TextEditor] SENDING SLAVES");
                 List<Future<Integer>> futures = null;
                 try {
-                    futures = romanArmy.invokeAll(tasks);
+                    futures = romanArmy.invokeAll("diff",tasks);
                 } catch (InterruptedException ex) {}
 
                 if (verdict == JudgeVerdict.CE) {
@@ -1688,7 +1691,7 @@ public class TextEditor extends JPanel {
 
         private void enableButton()
         {
-            romanArmy.submit(()->{
+            romanArmy.submit("enable",()->{
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
@@ -1738,20 +1741,30 @@ public class TextEditor extends JPanel {
             this.expectedDoc = expectedDoc;
         }
 
+//        @Override
+//        public Integer call() throws Exception {
+//            Future<String[]> future_actual = romanArmy.submit("diff",() -> parallelSplit(actual, 2));
+//            String[] expectedLines = parallelSplit(expected,2);
+//
+//            try {
+//                final String[] actualLines = future_actual.get();
+//                ForkJoinPool pool = ForkJoinPool.commonPool();
+//                pool.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
+//                int i = TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
+//                return i;
+//            }  catch (InterruptedException ex) {}
+//            catch (ExecutionException ex) {}
+//            return 0;
+//        }
         @Override
         public Integer call() throws Exception {
-            Future<String[]> future_actual = romanArmy.submit(() -> parallelSplit(actual, 2));
-            String[] expectedLines = parallelSplit(expected,2);
+            String[] actualLines = romanArmy.invoke(new SplitTask(actual, 0, actual.length()));
+            String[] expectedLines = romanArmy.invoke(new SplitTask(expected, 0, expected.length()));
 
-            try {
-                final String[] actualLines = future_actual.get();
-                ForkJoinPool pool = ForkJoinPool.commonPool();
-                pool.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
-                int i = TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
-                return i;
-            }  catch (InterruptedException ex) {}
-            catch (ExecutionException ex) {}
-            return 0;
+            ForkJoinPool pool = ForkJoinPool.commonPool();
+            pool.submit(() -> TextEditor.getInstance().displayExpectedDiff(actualLines, expectedLines, expectedDoc));
+            int i = TextEditor.getInstance().displayActualDiff(actualLines, expectedLines, actualDoc);
+            return i;
         }
     }
     /* --------------- Button Handlers --------------- */

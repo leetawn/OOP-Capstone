@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
+
 public class Helpers {
     public static String[] concatStringArrays(String[]... arrays) {
         // compute total length
@@ -145,7 +146,7 @@ public class Helpers {
     }
 
 
-    static class SplitTask extends RecursiveTask<String[]> {
+    public static class SplitTask extends RecursiveTask<String[]> {
         private final String str;
         private final int start, end;
         private static final int THRESHOLD = 1_000_000;

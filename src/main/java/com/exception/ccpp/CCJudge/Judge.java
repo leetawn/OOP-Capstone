@@ -1,14 +1,12 @@
 package com.exception.ccpp.CCJudge;
 
 import com.exception.ccpp.Common.Helpers;
-import com.exception.ccpp.CCJudge.Judge.OutputReader;
 import com.exception.ccpp.Debug.CCLogger;
 import com.exception.ccpp.Debug.DebugLog;
 import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
 import com.pty4j.PtyProcessBuilder;
 
-import javax.tools.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -22,8 +20,13 @@ import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class Judge {
+    public static final String TASK_TESTCASE_RUNNER = "testcase_runner";
+    public static final String TASK_JUDGE = "judge";
+    public static final String TASK_CLEANUP = "cleanup";
+
 //    TODO@CCPP2.0 Add centralize tracking of threads for forcibly killing them
 //    private static Map<JudgeSlave, Boolean> activeSlaves = new ConcurrentHashMap<>();
+    private static ConcurrentLinkedDeque<Process> runningPTY = new ConcurrentLinkedDeque<>();
     private static Map<String, String> env;
     private static DebugLog judge_logger = DebugLog.getInstance();
     static {
@@ -44,16 +47,14 @@ public class Judge {
             FileManager fm,
             String[] testInputs,
             Consumer<SubmissionRecord[]> callback,
-            CCLogger logger,
-            ConcurrentLinkedDeque<Object> runningThreads
+            CCLogger logger
     ) {
         if (logger == null) logger = judge_logger;
-
         final CCLogger f_logger = logger;
+        killJudge(true);
 
-        runningThreads.add(slaveWorkers.submit(() -> {
-            Future<SubmissionRecord> f = slaveWorkers.submit(new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger, runningThreads));
-            runningThreads.add(f);
+        romanArmy.submit(TASK_JUDGE,() -> {
+            Future<SubmissionRecord> f = slaveWorkers.submit(TASK_TESTCASE_RUNNER,new JudgeSlave(cmd, fm, testInputs, null, 1, f_logger));
             SubmissionRecord verdict = new SubmissionRecord(JudgeVerdict.RE, "Runtime Error Buddy", null);
             try {
                 verdict = f.get();
@@ -62,13 +63,27 @@ public class Judge {
                 f_logger.errln("[Judge.judge]: Execution Error while waiting for submission!");
             }
             callback.accept(new SubmissionRecord[]{verdict});
-        }));
+            killJudge(false);
+        });
     }
 
     /******************** MULTI-THREADED *************************/
 
+    public static void killJudge(boolean includeJudge)
+    {
+        slaveWorkers.killAll(TASK_TESTCASE_RUNNER, true);
+        if (includeJudge) romanArmy.killAll(TASK_JUDGE, true);
+        for(Process p : runningPTY)
+        {
+            p.destroyForcibly();
+        }
+        runningPTY.clear();
+    }
+
     public static void judge(FileManager fm, TestcaseFile tf, BiConsumer<SubmissionRecord[], Integer> callback)  {
-        romanArmy.submit(() -> {
+        TerminalApp.kill();
+        killJudge(true);
+        romanArmy.submit(TASK_JUDGE,() -> {
             SubmissionRecord judge_res;
             String rootdir = fm.getRootdir().toString();
             String language = fm.getLanguage();
@@ -88,7 +103,8 @@ public class Judge {
                     judge_logger.errln("[Judge.judge]: Compiler Error!");
                     recordCopy(verdicts, judge_res, testcases_size);
                     parallelCleanup(fm);
-                    callback.accept(verdicts, JudgeVerdict.CE);
+
+                    end_judge(callback, verdicts, JudgeVerdict.CE);
                     return;
                 }
             } catch (Exception e) {
@@ -98,7 +114,7 @@ public class Judge {
                 judge_res = new SubmissionRecord(JudgeVerdict.JSF, fmsg, null);
                 recordCopy(verdicts, judge_res, testcases_size);
                 parallelCleanup(fm);
-                callback.accept(verdicts, JudgeVerdict.JSF);
+                end_judge(callback, verdicts, JudgeVerdict.JSF);
                 return;
             }
             judge_logger.logln("[Judge.judge]: Compilation Done.");
@@ -116,7 +132,7 @@ public class Judge {
             }
 
             try {
-                futures = slaveWorkers.invokeAll(tasks);
+                futures = slaveWorkers.invokeAll(TASK_TESTCASE_RUNNER,tasks);
             } catch (InterruptedException e) {}
             ArrayList<SubmissionRecord> res =  new ArrayList<>();
 
@@ -145,14 +161,19 @@ public class Judge {
 
             parallelCleanup(fm);
             judge_logger.logln("[Judge.judge]: Returning Results...\n");
-            callback.accept(verdicts, status);
+            end_judge(callback, verdicts, status);
         });
+    }
+
+    private static void end_judge(BiConsumer<SubmissionRecord[], Integer> callback, SubmissionRecord[] verdicts, Integer status)
+    {
+        callback.accept(verdicts, status);
+        killJudge(false);
     }
 
     // please terminate all workers
     static void parallelCleanup(FileManager fm) {
-        slaveWorkers.submit(() -> {
-            // TODO@CCPP2.0 FORCE CLOSE ALL RUNNING THREADS
+        slaveWorkers.submit(TASK_CLEANUP,() -> {
             cleanup(fm);
         });
     }
@@ -207,8 +228,10 @@ public class Judge {
         if (compileProcess.waitFor(COMPILE_TIME_LIMIT_SEC, TimeUnit.SECONDS) && compileProcess.exitValue() != 0) {
             String ceMsg = "Compiler Errors:\n" + errorOutput;
             judge_logger.errln(ceMsg);
+            compileProcess.destroy();
             return new SubmissionRecord(JudgeVerdict.CE, ceMsg, null);
         }
+        compileProcess.destroy();
         return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful", null);
     }
 
@@ -237,7 +260,6 @@ public class Judge {
         private Testcase tc;
         int tc_num;
         private SubmissionRecord result;
-        ConcurrentLinkedDeque<Object>  terminalThreads = null;
         StringBuffer transcript = new StringBuffer();
 
         JudgeSlave(
@@ -245,11 +267,9 @@ public class Judge {
                 FileManager fm, String[] inputs,
                 String expected_output,
                 int testcase_number,
-                CCLogger logger,
-                ConcurrentLinkedDeque<Object> runningThreads
+                CCLogger logger
         ) {
             this(cmd, fm.getRootdir().toString(), fm.getLanguage(), new Testcase(inputs, expected_output), testcase_number, logger);
-            terminalThreads = runningThreads;
         }
 
         JudgeSlave(String[] cmd, String rootdir, String language, Testcase tc, int testcase_number, CCLogger logger) {
@@ -278,12 +298,8 @@ public class Judge {
         // Slave done with work
         private SubmissionRecord finishQuota() {
             mutilate();
+            runningPTY.remove(process);
             return result;
-        }
-
-        private void addThread(Object o)
-        {
-            if (terminalThreads != null) terminalThreads.add(o);
         }
 
         @Override
@@ -309,7 +325,7 @@ public class Judge {
             } catch (IOException e) {
                 return finishQuota();
             }
-            addThread(process);
+            runningPTY.add(process);
 
 
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));

@@ -31,6 +31,8 @@
      */
     public class TerminalApp extends JFrame {
 
+        public static final String TASK_TERMINAL = "terminal";
+        public static final String TASK_TERMINAL_OUTPUT = "terminal_output";
         private boolean is_processing;
         private JTextArea outputArea;
         private JTextField inputField;
@@ -47,7 +49,6 @@
         static TerminalApp instance;
         static boolean bypassFilter;
         private TerminalDocumentFilter outputAreaFilter;
-        ConcurrentLinkedDeque<Object> runningThreads = new ConcurrentLinkedDeque<>();
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -61,7 +62,6 @@
             }
         }
 
-
         public static TerminalApp getInstance() {
             if (instance == null) {
                 instance = new TerminalApp();
@@ -73,24 +73,29 @@
                 close();
             };
             SwingUtilities.invokeLater(() -> {
-                inputField.addActionListener(
-                        new CommandListener(fm.getLanguage())
-                );
                 addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosing(WindowEvent e) {
                         System.out.println("windowClosing");
                         if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
-                        slaveWorkers.submit(()->Judge.cleanup(fm));
-                        instance = null;
+                        terminalProcess = null;
+                        slaveWorkers.submit(Judge.TASK_CLEANUP,()->Judge.cleanup(fm));
                         close();
                     }
                 });
             });
+            Judge.killJudge(true);
             this.fm = fm;
             this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
             return this;
+        }
+
+        public static void kill()
+        {
+            if (instance == null) return;
+            if (instance.terminalProcess != null && instance.terminalProcess.isAlive()) instance.terminalProcess.destroyForcibly();
+            instance.close();
         }
 
         public void start() {
@@ -98,7 +103,7 @@
             outputAreaFilter.lastInsertionStart = 0;
             setVisible(true);
 
-            slaveWorkers.submit(() -> {
+            slaveWorkers.submit(TASK_TERMINAL,() -> {
                 if (initTerminalProcess())
                     startTerminalProcess();
                 else {
@@ -107,27 +112,11 @@
             });
         }
 
-        public void stop() {
-            for(Object o : runningThreads)
-            {
-                if (o instanceof Future<?> f)
-                {
-                    f.cancel(true);
-                }
-                else if (o instanceof Process p)
-                {
-                    p.destroyForcibly();
-                }
-            }
-            runningThreads.clear();
-        }
-
-        public void close() {
+        private void close() {
             setVisible(false);
             is_processing = false;
             outputArea.setText("");
             outputAreaFilter.lastInsertionStart = 0;
-            stop();
         }
 
         private TerminalApp() {
@@ -142,7 +131,7 @@
             scrollPane.setPreferredSize(new Dimension(800, 600));
 
             inputField = new JTextField();
-
+            inputField.addActionListener(new CommandListener());
             setLayout(new BorderLayout());
             add(scrollPane, BorderLayout.CENTER);
             add(inputField, BorderLayout.SOUTH);
@@ -193,14 +182,17 @@
 
                 Map<String, String> env = new HashMap<>(System.getenv());
                 if (!env.containsKey("TERM")) env.put("TERM", "xterm");
-                terminalProcess = new PtyProcessBuilder()
-                        .setCommand(terminal_command)
-                        .setEnvironment(env)
-                        .setRedirectErrorStream(true)
-                        .setDirectory(fm.getRootdir().toString())
-                        .setConsole(false)
-                        .start();
-                runningThreads.add(terminalProcess);
+                try {
+                    terminalProcess = new PtyProcessBuilder()
+                            .setCommand(terminal_command)
+                            .setEnvironment(env)
+                            .setRedirectErrorStream(true)
+                            .setDirectory(fm.getRootdir().toString())
+                            .setConsole(false)
+                            .start();
+                } catch (Exception e) {
+                    kill();
+                }
 
 
                 // TERMINAL WILL EXIT HERE
@@ -225,7 +217,7 @@
                             prompt_again = true;
                             if (guiCallback != null) { guiCallback.updateGUI(); }
                         }
-                    }, null, runningThreads);
+                    }, null);
 
                     outputArea.append("");
 
@@ -234,7 +226,7 @@
 
                 // Setup the writer for sending commands to the process's input (stdin)
                 processWriter = new BufferedWriter(new OutputStreamWriter(terminalProcess.getOutputStream()));
-                slaveWorkers.submit(new ConsoleOutputReader(terminalProcess.getInputStream()));
+                slaveWorkers.submit(TASK_TERMINAL_OUTPUT,new ConsoleOutputReader(terminalProcess.getInputStream()));
 
             } catch (Exception e) {
                 outputArea.append("Error starting external process:\n" + e.getMessage() + "\n");
@@ -244,12 +236,14 @@
 
         private class CommandListener implements ActionListener {
             String language;
-            public CommandListener(String language) {
-                this.language = language;
+            String cmd_newline;
+            public CommandListener() {
+                cmd_newline = (ExecutionConfig.IS_WINDOWS) ? "\r\n" : "\n";
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
+                language = FileManager.getInstance().getLanguage();
                 System.out.println("Executing command");
                 String command = inputField.getText();
                 inputField.setText(""); // Clear the input field
@@ -273,7 +267,7 @@
                 inputs.add(command);
 
                 try {
-                    processWriter.write(command + "\r\n");
+                    processWriter.write(command + cmd_newline);
                     processWriter.flush();
                 } catch (IOException ex) {
                     outputArea.append("Error sending command to process: " + ex.getMessage() + "\n");
