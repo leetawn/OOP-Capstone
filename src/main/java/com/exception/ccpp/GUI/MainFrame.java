@@ -46,6 +46,18 @@ public class MainFrame extends JFrame {
             public void windowClosing(WindowEvent e) {
                 slaveWorkers.shutdown();
             }
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                FileExplorer.refreshFile();
+                super.windowGainedFocus(e);
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+                FileExplorer.refreshFile();
+                super.windowActivated(e);
+            }
         });
 
         addComponentListener(new ComponentAdapter() {

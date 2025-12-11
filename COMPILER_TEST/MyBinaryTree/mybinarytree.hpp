@@ -11,7 +11,13 @@ class MyBinaryTree : public BinaryTree {
 
     // TODO
     node* create_node(int e, node* parent) {
-        return nullptr;
+        node* n = new node;
+        n->elem = e;
+        n->left = nullptr;
+        n->right = nullptr;
+        n->parent = parent;
+        size++;
+        return n;
     }
 
 public:

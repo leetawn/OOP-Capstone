@@ -117,7 +117,6 @@ public class FileWatcher implements Runnable {
                 }
             }
         }
-
     }
     private void handleDelete(Path deletedPath) {
         if (Files.isDirectory(deletedPath, LinkOption.NOFOLLOW_LINKS)) {

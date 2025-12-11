@@ -5,7 +5,6 @@ import com.exception.ccpp.CCJudge.Judge.JudgeVerdict;
 import com.exception.ccpp.CCJudge.TestcasesPanel.TCEntry;
 import com.exception.ccpp.CCJudge.*;
 import com.exception.ccpp.CustomExceptions.InvalidFileException;
-import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemFileChooser;
@@ -39,7 +38,6 @@ import java.util.concurrent.Future;
 
 import static com.exception.ccpp.Common.Helpers.parallelSplit;
 import static com.exception.ccpp.Gang.SlaveManager.romanArmy;
-import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public class TextEditor extends JPanel {
     public static final String CCPP_FILE_DESC = "CC++ File";
@@ -1455,7 +1453,6 @@ public class TextEditor extends JPanel {
             FileManager fm = FileManager.getInstance();
             SwingUtilities.invokeLater(() -> {
                 TerminalApp.getInstance().stopSetAll(fm, null, null).start();
-//                new TerminalApp(fm, null, null);
             });
         }
     }
@@ -1583,18 +1580,22 @@ public class TextEditor extends JPanel {
 
 
     public static class SubmitButtonHandler extends ComponentHandler {
+        FileManager fm;
+        TextEditor te;
+
         public SubmitButtonHandler(TextEditor editor) {
             super(editor);
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            FileManager fm = FileManager.getInstance();
+            fm = FileManager.getInstance();
+            te = getTextEditor();
+
             if (!canProceedRunCode()) return;
 
             fm.saveAll(); // ADDED SAVING ALL FILES
 
-            TextEditor te = getTextEditor();
             TestcaseFile tf = te.fileExplorerPanel.getTestcaseFile();
             if (tf == null) {
                 JOptionPane.showMessageDialog(te, "IMPORT A TESTCASE FILE OR ELSE...", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1615,7 +1616,10 @@ public class TextEditor extends JPanel {
             System.out.println("TF has " + tf.getTestcases().size() + " testcases");
             Judge.judge(FileManager.getInstance(), tf, (results, verdict) -> {
 
-                if (results.length <= 0)  return;
+                if (results.length <= 0)  {
+                    enableButton();
+                    return;
+                };
 
                 List<Callable<Integer>> tasks  = new ArrayList<>();
                 for (SubmissionRecord s : results)
@@ -1625,7 +1629,10 @@ public class TextEditor extends JPanel {
                     tasks.add(new DiffSlave(s, entry.actualDoc, entry.expectedDoc));
                 }
 
-                if (verdict == JudgeVerdict.UE) return;
+                if (verdict == JudgeVerdict.UE) {
+                    enableButton();
+                    return;
+                };
 
                 System.out.println("[TextEditor] SENDING SLAVES");
                 List<Future<Integer>> futures = null;
@@ -1633,7 +1640,10 @@ public class TextEditor extends JPanel {
                     futures = romanArmy.invokeAll(tasks);
                 } catch (InterruptedException ex) {}
 
-                if (verdict == JudgeVerdict.CE) return;
+                if (verdict == JudgeVerdict.CE) {
+                    enableButton();
+                    return;
+                };
 
                 int total = 0;
                 int status_size = 0;
@@ -1672,17 +1682,21 @@ public class TextEditor extends JPanel {
                         }
                     }
                 }
+                enableButton();
+            });
+        }
 
-                romanArmy.submit(()->{
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    SwingUtilities.invokeLater(() -> {
-                        te.submitCodeButton.setBackground(Color.decode("#39ca79"));
-                        te.submitCodeButton.setEnabled(true);
-                    });
+        private void enableButton()
+        {
+            romanArmy.submit(()->{
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                SwingUtilities.invokeLater(() -> {
+                    te.submitCodeButton.setBackground(Color.decode("#39ca79"));
+                    te.submitCodeButton.setEnabled(true);
                 });
             });
         }

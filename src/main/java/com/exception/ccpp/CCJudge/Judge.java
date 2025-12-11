@@ -1,6 +1,7 @@
 package com.exception.ccpp.CCJudge;
 
 import com.exception.ccpp.Common.Helpers;
+import com.exception.ccpp.CCJudge.Judge.OutputReader;
 import com.exception.ccpp.Debug.CCLogger;
 import com.exception.ccpp.Debug.DebugLog;
 import com.exception.ccpp.FileManagement.FileManager;
@@ -106,41 +107,47 @@ public class Judge {
 
             // judgeInteractively (Parallel)
             String[] cmd = ExecutionConfig.getExecuteCommand(fm);
-            Queue<Future<SubmissionRecord>> futures = new LinkedList<>();
-//            List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
-            Queue<Callable<SubmissionRecord>> tasks = new LinkedList<>();
+            List<Callable<SubmissionRecord>> tasks = new ArrayList<>();
+            List<Future<SubmissionRecord>> futures = new ArrayList<>();
             i =1;
             for (Testcase tc : testcases.keySet()) {
                 judge_logger.logf("[Judge.judge]: Running Testcase %d...\n", i);
                 tasks.add(new JudgeSlave(cmd, rootdir, language, tc, i++, judge_logger));
             }
 
-            judge_logger.errln("[Judge.judge]: Running Testcase FAILED MISERABLY!");
-
+            try {
+                futures = slaveWorkers.invokeAll(tasks);
+            } catch (InterruptedException e) {}
             ArrayList<SubmissionRecord> res =  new ArrayList<>();
-
-            while(!tasks.isEmpty()) {
-                judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
-                futures.add(slaveWorkers.submit(tasks.remove()));
-                if (futures.size() > 10 || tasks.isEmpty())
-                {
-                    while (!futures.isEmpty())
-                    {
-                        Future<SubmissionRecord> f = futures.remove();
-                        try {
-                            res.add(f.get());
-                        } catch (InterruptedException | ExecutionException e) {
-                            judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
-                        }
-                        if (!tasks.isEmpty()) futures.add(slaveWorkers.submit(tasks.remove()));
-
-                    }
-                }
-            }
+//            Queue<Future<SubmissionRecord>> futures = new LinkedList<>();
+//            Queue<Callable<SubmissionRecord>> tasks = new LinkedList<>();
+//            while(!tasks.isEmpty()) {
+//                judge_logger.logf("[Judge.judge]: Fetching Testcase %d Results...\n", i+1);
+//                futures.add(slaveWorkers.submit(tasks.remove()));
+//                if (futures.size() > 10 || tasks.isEmpty())
+//                {
+//                    while (!futures.isEmpty())
+//                    {
+//                        Future<SubmissionRecord> f = futures.remove();
+//                        try {
+//                            res.add(f.get());
+//                        } catch (InterruptedException | ExecutionException e) {
+//                            judge_logger.errln("[Judge.judge]: Execution Error while Fetching Testcase Results.");
+//                        }
+//                        if (!tasks.isEmpty()) futures.add(slaveWorkers.submit(tasks.remove()));
+//
+//                    }
+//                }
+//            }
 
             i = 0;
             int status = 0;
-            for  (SubmissionRecord sr : res) {
+            for  (Future<SubmissionRecord> r : futures) {
+                SubmissionRecord sr = null;
+                try {
+                    sr = r.get();
+                } catch (InterruptedException | ExecutionException e) {}
+
                 verdicts[i++]
                         .setVerdict(sr.verdict())
                         .setOutput(sr.output());
@@ -476,6 +483,8 @@ public class Judge {
             if (is_python) cmd_newline = "\n";
             String[] inputs = tc.getInputs();
 
+
+            String n = String.join(cmd_newline,inputs);
             // PROCESS
             try {
                 process = new PtyProcessBuilder(executeCommand)
@@ -490,47 +499,34 @@ public class Judge {
             addThread(process);
 
 
-            Future<Void> output_reader_thread = slaveWorkers.submit(new Judge.OutputReader(process.getInputStream(), transcript));
             BufferedWriter processInputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-
             int inputIndex = 0;
             long startTime = System.currentTimeMillis();
 
             try {
-                do {
-                    if (System.currentTimeMillis() - startTime > TIME_LIMIT_MS) {
-                        return finishQuota().setVerdict(JudgeVerdict.TLE).setOutput(Helpers.stripAnsiCRLines(transcript.toString()).trim());
-                    }
-
-                    Thread.sleep(INPUT_DELAY_MS);
-
-                    if (inputIndex < inputs.length) {
-                        String inputLine = inputs[inputIndex++];
-                        logger.logf("-> [TC_%d]Judge providing input: %s\n", tc_num, inputLine);
-                        processInputWriter.write(inputLine + cmd_newline);
-                    }
-                    processInputWriter.flush();
-
-                } while (inputs != null && inputIndex < inputs.length);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return finishQuota().setOutput("Execution Interrupted\n");
-            } catch (IOException e) {
+                processInputWriter.write(n+cmd_newline);
+                processInputWriter.flush();
+            }
+            catch (IOException e) {
                 return finishQuota();
             } finally {
                 try {
                     processInputWriter.close();
                 } catch (IOException e) {}
             }
-            // Wait for termination using remaining time
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+
+            new Judge.OutputReader(process.getInputStream(), transcript).call();
+
             long remainingTime = TIME_LIMIT_MS - (System.currentTimeMillis() - startTime);
+
             try {
                 process.waitFor(remainingTime, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) { return finishQuota().setOutput("Execution Interrupted\n"); }
 
-            output_reader_thread.cancel(true);
-//            readerThread.interrupt();
-            // PROGRAM TLE
             if (process.isAlive()) {
                 return finishQuota()
                     .setVerdict(Judge.JudgeVerdict.TLE)
@@ -569,32 +565,27 @@ public class Judge {
 
     static class OutputReader implements Callable<Void> {
         private final InputStream in;
+        private final BufferedReader reader;
         private final StringBuffer transcript;
+        private final StringBuilder sb = new StringBuilder();
 
 
         public OutputReader(InputStream in, StringBuffer transcript) {
             this.in = in;
             this.transcript = transcript;
+            this.reader = new BufferedReader(new InputStreamReader(in));
         }
 
         @Override
         public Void call() {
-            byte[] buffer = new byte[8192];
-            int read;
+            byte[] buffer = new byte[1000];
+            int c;
             try {
+                int read;
 
                 while ((read = in.read(buffer)) != -1) {
                     String b = new String(buffer, 0, read);
                     transcript.append(b);
-//
-//                    StringBuilder output = new StringBuilder();
-//                    for (char c : b.toCharArray()) {
-//                        if (c == '\n') output.append("\\n");
-//                        else if (c == '\r') output.append("\\r");
-//                        else output.append(c);
-//                    }
-//                    System.out.printf("[%s]: \"%s\"\n\n",Thread.currentThread().getName(),output.toString());
-
                 }
             } catch (IOException e) {
                 e.printStackTrace();

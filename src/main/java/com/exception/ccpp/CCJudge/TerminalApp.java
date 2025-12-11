@@ -71,6 +71,8 @@
         public TerminalApp stopSetAll(FileManager fm, TerminalCallback exitCallback, UpdateGUICallback guiCallback) {
             if (is_processing) {
                 close();
+            };
+            SwingUtilities.invokeLater(() -> {
                 inputField.addActionListener(
                         new CommandListener(fm.getLanguage())
                 );
@@ -84,7 +86,7 @@
                         close();
                     }
                 });
-            };
+            });
             this.fm = fm;
             this.exitCallback = exitCallback;
             this.guiCallback = guiCallback;
@@ -232,7 +234,6 @@
 
                 // Setup the writer for sending commands to the process's input (stdin)
                 processWriter = new BufferedWriter(new OutputStreamWriter(terminalProcess.getOutputStream()));
-
                 slaveWorkers.submit(new ConsoleOutputReader(terminalProcess.getInputStream()));
 
             } catch (Exception e) {
@@ -249,6 +250,7 @@
 
             @Override
             public void actionPerformed(ActionEvent e) {
+                System.out.println("Executing command");
                 String command = inputField.getText();
                 inputField.setText(""); // Clear the input field
 

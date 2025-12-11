@@ -179,8 +179,36 @@ public class FileExplorer extends JPanel {
         setPreferredSize(new Dimension(150, 0));
     }
 
+    static public void refreshFile()
+    {
+        FileExplorer fe = FileExplorer.getInstance();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
+        if (node == null) return;
+
+        Object obj = node.getUserObject();
+        if (obj instanceof SFile sfile) {
+            try {
+                fe.loadFileContent(sfile);
+
+                String filename = sfile.getPath().getFileName().toString();
+                ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
+                fe.textEditor.setTextArea(true);
+                Path filePath = sfile.getPath();
+                String content = Files.readString(filePath);
+                fe.dTextArea.setText(content);
+                fe.textEditor.updateUnsavedIndicator(false);
+                TextEditor.getInstance().revalidate();
+                TextEditor.getInstance().repaint();
+                System.out.println("[REFRESH FILE]Current file: " + filePath);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void setupEventListeners() {
         fe_tree.addTreeSelectionListener(e -> {
+            textEditor.saveCurrentFileContent();
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
             if (node == null) return;
 
