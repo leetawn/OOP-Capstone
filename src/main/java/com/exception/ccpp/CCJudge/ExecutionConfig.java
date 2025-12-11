@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ExecutionConfig {
     public static final ConcurrentMap<String, Boolean> COMMAND_CACHE = new ConcurrentHashMap<>();
+    public static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
 
     public static String[] getCompileCommand(FileManager fm) {
         String[] sourceFilenames = fm.getLanguageFiles().stream().map(fm::getRelativePath).map(Path::toString).toArray(String[]::new);
@@ -20,7 +21,7 @@ public class ExecutionConfig {
     }
 
     private static String[] getCompileCommand(String language, String[] sourceFilenames) {
-        boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+
 
         String[] command;
         switch (language) {

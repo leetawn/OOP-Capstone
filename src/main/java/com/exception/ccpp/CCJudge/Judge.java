@@ -293,7 +293,7 @@ public class Judge {
             // VARS
             boolean is_python = language.equals("python");
             String cmd_newline = "\r\n";
-            if (is_python) cmd_newline = "\n";
+            if (is_python || !ExecutionConfig.IS_WINDOWS) cmd_newline = "\n";
             String[] inputs = tc.getInputs();
 
 

@@ -20,6 +20,26 @@ public class SlaveManager {
         abstract <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException;
     }
 
+//    public class ArmyDispatcher extends SlaveDispatcher
+//    {
+//        private ForkJoinPool romanArmy = ForkJoinPool.commonPool();
+//
+//        @Override
+//        void submit(Runnable tasks) {
+//
+//        }
+//
+//        @Override
+//        <V> void submit(Callable<V> task) {
+//
+//        }
+//
+//        @Override
+//        <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+//            return List.of();
+//        }
+//    }
+
     public interface Slave {
     }
 }
