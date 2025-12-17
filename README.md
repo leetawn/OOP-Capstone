@@ -104,4 +104,4 @@ CodeChum++ is built with a strong emphasis on Object-Oriented Programming (OOP) 
 * **Asynchronous UI:** The judging process runs on background worker threads, ensuring the JSwing graphical interface remains responsive and fluid while code is being evaluated.
 
 ## Class Diagram
-[Class Diagram](docs/imgs/class_diagram.png)
+[Class Diagram](ClassDiagram_CodeChum++.png)

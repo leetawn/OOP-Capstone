@@ -16,6 +16,7 @@ public class SlaveManager {
 
     static public abstract class ServiceDispatcher {
         protected ConcurrentHashMap<String,ConcurrentLinkedDeque<Future<?>>> runningThreads = new ConcurrentHashMap<>();
+
         protected void addThread(String purpose,Future<?> thread) {
             if (runningThreads.containsKey(purpose)) {
                 runningThreads.get(purpose).add(thread);
@@ -126,7 +127,5 @@ public class SlaveManager {
         }
     }
 
-    public interface Slave {
-    }
 }
 
