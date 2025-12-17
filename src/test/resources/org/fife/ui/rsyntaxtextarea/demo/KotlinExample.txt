@@ -1,8 +1,0 @@
-fun foo() {
-
-    if (x) {
-        val x: String = 'hi';
-        const y: Array<String> = 'yes';
-        java.lang.ArrayIndexOutOfBoundsException
-    }
-}

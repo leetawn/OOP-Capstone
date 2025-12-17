@@ -53,28 +53,53 @@
                     </archive>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jlink-plugin</artifactId>
-                <version>3.1.0</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
-                        <id>create-runtime-image</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>jlink</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <addModules>
-                                java.base,
-                                java.desktop,
-                                java.compiler
-                            </addModules>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.exception.ccpp.Main</mainClass>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.5.2</version>
+                <configuration>
+                    <input>${project.build.directory}</input>
+                    <mainJar>ccpp-1.0.jar</mainJar>
+                    <mainClass>com.exception.ccpp.Main</mainClass>
+                    <name>CC++</name>
+                    <type>APP_IMAGE</type>
+                    <icon>${project.basedir}/src/main/resources/assets/ccpp.ico</icon>
+                    <destination>${project.build.directory}/dist</destination>
+                    <appVersion>1.0.0</appVersion>
+                    <vendor>CCPP Project</vendor>
+<!--                    <winConsole>true</winConsole>-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>package-app</id>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
