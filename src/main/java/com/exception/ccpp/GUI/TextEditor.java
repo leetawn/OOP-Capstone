@@ -1534,6 +1534,7 @@ public class TextEditor extends JPanel {
                         }
 
                    } catch (InvalidFileException ex) {
+                        System.err.println("ERROR4");
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
@@ -1571,6 +1572,7 @@ public class TextEditor extends JPanel {
                         TestcaseManagerDialog tf_dialog = new TestcaseManagerDialog(SwingUtilities.getWindowAncestor(getTextEditor()), tf);
                         tf_dialog.setVisible(true);
                     } catch (Exception ex) { // we don't have to catch NotDir because we only display directories anyway
+                        System.err.println("ERROR3");
                         JOptionPane.showMessageDialog(getTextEditor(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }

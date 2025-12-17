@@ -187,6 +187,7 @@ public class FileExplorer extends JPanel {
 
         Object obj = node.getUserObject();
         if (obj instanceof SFile sfile) {
+            if (Files.isDirectory(sfile.getPath())) return;
             try {
                 fe.loadFileContent(sfile);
 
@@ -233,6 +234,7 @@ public class FileExplorer extends JPanel {
                     textEditor.updateUnsavedIndicator(false);
                     System.out.println("Current file: " + filePath);
                 } catch (Exception ex) {
+                    System.err.println("ERROR1");
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
