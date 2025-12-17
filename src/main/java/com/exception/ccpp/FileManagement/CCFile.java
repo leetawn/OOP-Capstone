@@ -10,7 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class CCFile {
     // testing
     protected Path path = null;
-    private static Map<Path, CCFile> loadedFiles = new ConcurrentHashMap<>();
+    private static Map<Path, CCFile> cachedFiles = new ConcurrentHashMap<>();
+    private static Map<Path, CCFile> tempCache = null;
 
     /****************** LOADS ******************/
     protected CCFile(String filepath) {
@@ -18,30 +19,43 @@ public abstract class CCFile {
     }
     protected CCFile(Path path) {
         this.path = path;
-        loadedFiles.put(this.path, this);
+        cachedFiles.put(this.path, this);
+        if (tempCache != null) { tempCache.put(this.path, this); }
     }
 
     /****************** INPUT/OUTPUT ******************/
     public static CCFile getCached(String path) { return getCached(Paths.get(path)); }
     public static CCFile getCached(Path path) {
-        if (loadedFiles.containsKey(path)) {
-            System.err.println("File " + path + " is already cached");
-            try {
-                throw new IOException("When this exception is thrown it probably mean\nEthan's code is in a loop and that loop is calling a recursive function");
-            } catch (IOException e) {
-                System.err.println("IOException: " + e.getMessage());
-            }
-            return loadedFiles.get(path);
+        path = path.toAbsolutePath().normalize();
+        if (cachedFiles.containsKey(path)) {
+            System.err.println("[CCFile.cache] " + path + " is already cached");
+            CCFile cached = cachedFiles.get(path);
+            if (tempCache != null) { tempCache.put(path, cached); }
+            return cached;
         }
-        System.out.println("File " + path + " is not cached");
+        System.out.println("[CCFile.cache] " + path + " is not cached");
         return null;
+    }
+    public static void clearOldCache() {
+        cachedFiles.clear();
+        if (tempCache != null) {
+            cachedFiles = tempCache;
+            tempCache = null;
+        }
+    }
+    public static void newCache() {
+        tempCache = new ConcurrentHashMap<>();
     }
 
     public void delete() {
         try {
-            Files.deleteIfExists(path);
+            if (Files.deleteIfExists(path))
+            {
+                cachedFiles.remove(path);
+                System.out.println("CCFile.rmCachedFile " + path);
+            }
         } catch (IOException ignored) {
-            System.out.printf("SFile.deleteDenied: %s\n", path);
+            System.out.printf("CCFile.rmDenied: %s\n", path);
         }
     }
     protected abstract void read();

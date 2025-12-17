@@ -56,24 +56,19 @@ public class FileManager {
     public boolean deleteFile(SFile sfile) {
         if (sfile == null) return false;
 
-        try {
-            Path filePath = sfile.getPath();
-            if (!Files.exists(filePath)) {
-                System.err.println("File not found: " + filePath);
-                return false;
-            }
-            removeFile(this,sfile.path);
-            Files.delete(filePath);
-            if (currentFile != null && currentFile.equals(sfile)) {
-                currentFile = null;
-            }
-            System.out.println("[DELETED] " + filePath);
-            return true;
-
-        } catch (IOException e) {
-            System.err.println("Failed to delete file: " + e.getMessage());
+        Path filePath = sfile.getPath();
+        if (!Files.exists(filePath)) {
+            System.err.println("File not found: " + filePath);
             return false;
         }
+        removeFile(this,sfile.path);
+        sfile.delete();
+        if (currentFile != null && currentFile.equals(sfile)) {
+            currentFile = null;
+        }
+        System.out.println("[DELETED] " + filePath);
+        return true;
+
     }
     public boolean isAllowedFile(String filename) {
         if (filename == null) return false;
@@ -161,23 +156,26 @@ public class FileManager {
         return this;
     }
     public FileManager setRootdir(Path rootPath) throws NotDirException {
+        rootPath = rootPath.toAbsolutePath().normalize();
         if (!Files.isDirectory(rootPath)) throw new NotDirException();
         this.rootdir = rootPath;
         return this;
     }
     public FileManager setRootdir(String rootDir) throws NotDirException {
-        return setRootdir(this.rootdir = Paths.get(rootDir));
+        return setRootdir(Paths.get(rootDir));
     }
     public FileManager update() {
         if (rootdir == null) return this;
         all_files.clear();
         s_files.clear();
+        CCFile.newCache();
         try {
             listAllContents(rootdir, getAllowedExtensions(language));
             openNewFolder();
         } catch (Exception e) {
             System.err.println("Failed to open new folder: " + e.getMessage());
         }
+        CCFile.clearOldCache();
         return this;
     }
     public FileManager setAll(Path rootPath, String language) throws NotDirException {
@@ -233,7 +231,7 @@ public class FileManager {
     // @ TODO: REMOVE sout WHEN DEBUGGING IS DONE
     private void listAllContents(Path rootDir, Set<String> allowed_extensions) throws IOException {
         Path absoluteRootDir = rootDir.toAbsolutePath().normalize();
-        final int MAX_DEPTH = 7;
+        final int MAX_DEPTH = 16;
         final int FILE_LIMIT = 512;
 
         System.out.println("--- Listing files: " + ALL_ALLOWED_EXTENSIONS + " inside: " + absoluteRootDir + " ---");
@@ -283,7 +281,7 @@ public class FileManager {
 
                         SFile sfile = SFile.open(file);
                         all_files.add(sfile);
-                        System.out.println("[FILE] " + file);
+                        System.out.println("[FILE.open] " + file);
                     }
 
                     return FileVisitResult.CONTINUE;
