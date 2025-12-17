@@ -156,12 +156,14 @@ public class FileManager {
         return this;
     }
     public FileManager setRootdir(Path rootPath) throws NotDirException {
+        if (null == rootPath) throw new NotDirException();
         rootPath = rootPath.toAbsolutePath().normalize();
         if (!Files.isDirectory(rootPath)) throw new NotDirException();
         this.rootdir = rootPath;
         return this;
     }
     public FileManager setRootdir(String rootDir) throws NotDirException {
+        if (null == rootDir) throw new NotDirException();
         return setRootdir(Paths.get(rootDir));
     }
     public FileManager update() {

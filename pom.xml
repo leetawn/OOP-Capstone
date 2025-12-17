@@ -9,6 +9,7 @@
     <groupId>com.exception</groupId>
     <artifactId>ccpp</artifactId>
     <version>1.0</version>
+
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.pty4j</groupId>
@@ -31,6 +32,7 @@
             <version>1.1.5.5</version>
         </dependency>
     </dependencies>
+
     <properties>
         <maven.compiler.source>24</maven.compiler.source>
         <maven.compiler.target>24</maven.compiler.target>
@@ -38,8 +40,8 @@
         <main.module>com.exception.ccpp</main.module>
         <main.class>com.exception.ccpp.Main</main.class>
     </properties>
-    <build>
 
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -53,6 +55,7 @@
                     </archive>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -76,31 +79,86 @@
             </plugin>
 
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>prepare-clean-package</id>
+                        <phase>package</phase> <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/app-files</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>ccpp-1.0.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${project.basedir}/redist</directory>
+                                    <targetPath>redist</targetPath>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.panteleyev</groupId>
                 <artifactId>jpackage-maven-plugin</artifactId>
                 <version>1.5.2</version>
                 <configuration>
-                    <input>${project.build.directory}</input>
+                    <input>${project.build.directory}/app-files</input>
                     <mainJar>ccpp-1.0.jar</mainJar>
                     <mainClass>com.exception.ccpp.Main</mainClass>
                     <name>CC++</name>
-                    <type>APP_IMAGE</type>
+                    <type>MSI</type>
                     <icon>${project.basedir}/src/main/resources/assets/ccpp.ico</icon>
                     <destination>${project.build.directory}/dist</destination>
-                    <appVersion>1.0.0</appVersion>
-                    <vendor>CCPP Project</vendor>
+                    <appVersion>1.0.2</appVersion>
+                    <vendor>Exception</vendor>
+                    <winShortcut>true</winShortcut>
 <!--                    <winConsole>true</winConsole>-->
                 </configuration>
                 <executions>
                     <execution>
                         <id>package-app</id>
-                        <goals>
-                            <goal>jpackage</goal>
-                        </goals>
+                        <phase>install</phase> <goals>
+                        <goal>jpackage</goal>
+                    </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
 </project>
+
+        <!--            <plugin>-->
+        <!--                <groupId>org.panteleyev</groupId>-->
+        <!--                <artifactId>jpackage-maven-plugin</artifactId>-->
+        <!--                <version>1.5.2</version>-->
+        <!--                <configuration>-->
+        <!--                    <input>${project.build.directory}</input>-->
+        <!--                    <mainJar>ccpp-1.0.jar</mainJar>-->
+        <!--                    <mainClass>com.exception.ccpp.Main</mainClass>-->
+        <!--                    <name>CC++</name>-->
+        <!--                    <type>APP_IMAGE</type>-->
+        <!--                    <icon>${project.basedir}/src/main/resources/assets/ccpp.ico</icon>-->
+        <!--                    <destination>${project.build.directory}/dist</destination>-->
+        <!--                    <appVersion>1.0.0</appVersion>-->
+        <!--                    <vendor>CCPP Project</vendor>-->
+
+        <!--                </configuration>-->
+
+        <!--                <executions>-->
+        <!--                    <execution>-->
+        <!--                        <id>package-app</id>-->
+        <!--                        <goals>-->
+        <!--                            <goal>jpackage</goal>-->
+        <!--                        </goals>-->
+        <!--                    </execution>-->
+        <!--                </executions>-->
+        <!--            </plugin>-->

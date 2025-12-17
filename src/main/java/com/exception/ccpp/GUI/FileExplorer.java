@@ -60,6 +60,7 @@ public class FileExplorer extends JPanel {
         try {
             // Ensure FileManager is initialized (using getInstance() handles singleton)
             fileManager = FileManager.getInstance();
+            if (rootDir == null) return;
             fileManager.setAll(rootDir, textEditor.getCurrentSelectedLanguage());
             selectedFile = null;
             testcaseFile = null;
@@ -392,7 +393,7 @@ public class FileExplorer extends JPanel {
         Path rootPath = fileManager.getRootdir();
 
         if (rootPath == null || !Files.exists(rootPath)) {
-            fe_tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Project Not Found")));
+            fe_tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode(".")));
             return;
         }
 

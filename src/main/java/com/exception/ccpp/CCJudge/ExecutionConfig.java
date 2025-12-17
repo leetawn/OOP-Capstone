@@ -4,6 +4,7 @@ package com.exception.ccpp.CCJudge;
 import com.exception.ccpp.Common.Helpers;
 import com.exception.ccpp.FileManagement.FileManager;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -33,16 +34,19 @@ public class ExecutionConfig {
                 return command;
             case "cpp", "c++":
                 command = new String[3 + sourceFilenames.length];
-                if (isCommandAvailable("clang++")) command[0] = "clang++";
+                if ((command[0] = getCPPPath()) != null);
+                else if (isCommandAvailable("clang++")) command[0] = "clang++";
                 else if (isCommandAvailable("g++")) command[0] = "g++";
                 else return null;
+
                 System.arraycopy(sourceFilenames, 0, command, 1, sourceFilenames.length);
                 command[1 + sourceFilenames.length] = "-o";
                 command[2 + sourceFilenames.length] = IS_WINDOWS ? "Submission.exe" : "Submission";
                 return command;
             case "c":
                 command = new String[3 + sourceFilenames.length];
-                if (isCommandAvailable("clang")) command[0] = "clang";
+                if ((command[0] = getCPath()) != null);
+                else if (isCommandAvailable("clang")) command[0] = "clang";
                 else if (isCommandAvailable("gcc")) command[0] = "gcc";
                 else return null;
 
@@ -59,7 +63,7 @@ public class ExecutionConfig {
         return switch (fm.getLanguage()) {
             case "java" -> new String[]{"java", fm.getCurrentFileStringPath().replace(".java","").replaceAll("[\\\\/]",".")}; // idk if com.exception.ccpp.Main is in all program
             case "cpp", "c++", "c" -> new String[]{(fm != null) ? (fm.getRootdir().toString() + "/Submission") : (Paths.get(".").toAbsolutePath().normalize().toString() + "/Submission")};
-            case "python" -> new String[]{ TerminalApp.TERMINAL_START_COMMAND[0], TerminalApp.TERMINAL_START_COMMAND[1], (isCommandAvailable("python3")) ? "python3" : "python", fm.getCurrentFileStringPath()};
+            case "python" -> new String[]{ TerminalApp.TERMINAL_START_COMMAND[0], TerminalApp.TERMINAL_START_COMMAND[1], (isCommandAvailable("python3")) ? ("python3") : (getPythonPath()), fm.getCurrentFileStringPath()};
             default -> throw new IllegalArgumentException("Unsupported language.");
         };
     }
@@ -106,6 +110,35 @@ public class ExecutionConfig {
         System.out.println("Command " + command+ " exists: " + isAvailable);
         return isAvailable;
     }
+
+    public static String getPythonPath() {
+        return getInternalPath("python/python.exe", "python");
+    }
+
+    public static String getCPath() {
+        return getInternalPath("w64devkit/bin/gcc.exe", null);
+    }
+    public static String getCPPPath() {
+        return getInternalPath("w64devkit/bin/g++.exe", null);
+    }
+
+    private static String getInternalPath(String relativePath, String fallback) {
+        // user.dir points to the folder containing the .exe launcher
+        String installPath = System.getProperty("user.dir");
+
+        // In a jpackage MSI/APP_IMAGE, resources usually end up in 'app'
+        File bundledFile = new File(installPath, "app/redist/" + relativePath);
+
+        if (bundledFile.exists()) {
+            System.err.println("[bundled_compiler]: "+bundledFile.getAbsolutePath());
+            return bundledFile.getAbsolutePath();
+        }
+
+        // Debug: Print where we looked if it fails
+        System.err.println("[bundled_compiler] Bundled tool not found at: " + bundledFile.getAbsolutePath());
+        return fallback; // Fallback to system PATH
+    }
+
 
 
     static String NO_JDK_ERROR = "Java Compiler not found.\nEnsure you are running on a JDK.\n";

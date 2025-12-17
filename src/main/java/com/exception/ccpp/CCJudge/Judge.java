@@ -216,6 +216,16 @@ public class Judge {
         }
         logger.logln("-> Compiling: " + String.join(" ", compileCommand));
         ProcessBuilder pb = new ProcessBuilder(compileCommand);
+
+        if (ExecutionConfig.IS_WINDOWS)
+        {
+            Map<String, String> env = pb.environment();
+            String systemPath = env.get("Path"); // Get the existing system path
+
+            String installPath = System.getProperty("user.dir");
+            File binDir = new File(installPath, "app/redist/w64devkit/bin");
+            env.put("Path", binDir.getAbsolutePath() + File.pathSeparator + systemPath);
+        }
         pb.directory(fm.getRootdir().toFile());
 
         return startCompilation(pb);

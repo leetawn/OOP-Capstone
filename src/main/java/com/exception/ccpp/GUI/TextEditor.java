@@ -1011,7 +1011,7 @@ public class TextEditor extends JPanel {
 //        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
 
-        fileExplorerPanel = new FileExplorer(".", codeArea, this);
+        fileExplorerPanel = new FileExplorer(null, codeArea, this);
     }
 
     private void initializeBackend() {
@@ -1334,7 +1334,7 @@ public class TextEditor extends JPanel {
             SystemFileChooser fileChooser = new SystemFileChooser();
             fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             fileChooser.setDialogTitle("Select Project Root Folder");
-            fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
+            if (fm.getRootdir() != null)  fileChooser.setCurrentDirectory(fm.getRootdir().toFile());
 
             int result = fileChooser.showOpenDialog(getTextEditor());
 
