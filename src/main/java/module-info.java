@@ -8,6 +8,7 @@ module com.exception.ccpp {
     requires kotlin.stdlib;
     requires com.formdev.flatlaf;
     requires com.kitfox.svgSalamander;
+    requires java.compiler;
     exports com.exception.ccpp;
     exports com.exception.ccpp.FileManagement;
 }

@@ -1,5 +1,6 @@
 package com.exception.ccpp.GUI;
 
+import com.exception.ccpp.CCJudge.ToolchainStatusDialog;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 
@@ -102,6 +103,11 @@ public class MainFrame extends JFrame {
         themesMenu.add(lightItem);
         themesMenu.add(darkItem);
 
+
+        JMenuItem statusItem = new JMenuItem("Judge Status");
+        viewMenu.add(statusItem);
+
+
         darkItem.addActionListener(e -> {
             System.out.println("Switch to dark mode");
             try {
@@ -119,6 +125,10 @@ public class MainFrame extends JFrame {
             } catch (UnsupportedLookAndFeelException ex) {
                 System.err.println("Welp deal with it");
             }
+        });
+
+        statusItem.addActionListener(e -> {
+            new ToolchainStatusDialog(null).setVisible(true);
         });
 
         JMenuItem fullscreenItem = new JMenuItem("Fullscreen");

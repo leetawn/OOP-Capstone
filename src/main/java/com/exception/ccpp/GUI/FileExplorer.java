@@ -224,7 +224,6 @@ public class FileExplorer extends JPanel {
 
                 try {
                     loadFileContent(sfile);
-                    textEditor.saveCurrentFileContent();
 
                     String filename = sfile.getPath().getFileName().toString();
                     ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
@@ -251,10 +250,18 @@ public class FileExplorer extends JPanel {
         });
 
         addFileItem.addActionListener(e -> {
+            if (FileManager.getInstance().getRootdir() == null) {
+                JOptionPane.showMessageDialog(null, "Please open a root directory", "No set project directory", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             textEditor.handleAddFileAction();
         });
 
         renameItem.addActionListener(e -> {
+            if (FileManager.getInstance().getRootdir() == null) {
+                JOptionPane.showMessageDialog(null, "Please open a root directory", "No set project directory", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
             if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
 
@@ -284,9 +291,17 @@ public class FileExplorer extends JPanel {
             }
         });
         createFolderItem.addActionListener(e -> {
+            if (FileManager.getInstance().getRootdir() == null) {
+                JOptionPane.showMessageDialog(null, "Please open a root directory", "No set project directory", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             handleCreateFolderAction();
         });
         deleteItem.addActionListener(e -> {
+            if (FileManager.getInstance().getRootdir() == null) {
+                JOptionPane.showMessageDialog(null, "Please open a root directory", "No set project directory", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) fe_tree.getLastSelectedPathComponent();
 
             if (node == null || !(node.getUserObject() instanceof SFile sfile)) return;
@@ -345,6 +360,7 @@ public class FileExplorer extends JPanel {
     public void handleCreateFolderAction() {
         FileManager fm = getFileManager();
         if (fm == null) return;
+        if (fm.getRootdir() == null) return;
 
         DefaultMutableTreeNode selectedNode = getSelectedNode();
         Path targetDir = fm.getRootdir();

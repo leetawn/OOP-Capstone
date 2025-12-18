@@ -7,6 +7,7 @@ import com.exception.ccpp.FileManagement.FileManager;
 import com.exception.ccpp.FileManagement.SFile;
 import com.pty4j.PtyProcessBuilder;
 
+import javax.tools.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -201,8 +202,12 @@ public class Judge {
         String[] compileCommand = null;
         switch (fm.getLanguage().toLowerCase()) {
             case "java": {
-                compileCommand = ExecutionConfig.getCompileCommand(fm);
-                break;
+                SubmissionRecord sr = startJavaCompilation(fm, logger);
+                if (sr == null) {
+                    compileCommand = ExecutionConfig.getCompileCommand(fm);
+                    break;
+                }
+                return sr;
             }
             case "c","cpp", "c++": {
                 compileCommand = ExecutionConfig.getCompileCommand(fm);
@@ -229,6 +234,65 @@ public class Judge {
         pb.directory(fm.getRootdir().toFile());
 
         return startCompilation(pb);
+    }
+
+    private static SubmissionRecord startJavaCompilation(FileManager fm, CCLogger logger) throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            return null;
+        }
+
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {
+
+            Iterable<Path> sourcePaths = fm.getFiles().stream()
+                    .filter(f -> f.getPath().toString().endsWith(".java"))
+                    .map(SFile::getPath)
+                    .collect(Collectors.toList());
+
+            if (!sourcePaths.iterator().hasNext()) {
+                return new SubmissionRecord(JudgeVerdict.CE, "No Java source files (.java) found for compilation.", null);
+            }
+
+            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromPaths(sourcePaths);
+
+            Path outputDir = fm.getRootdir();
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+
+            Iterable<String> options = Arrays.asList(
+                    "-d", outputDir.toAbsolutePath().toString()
+            );
+
+            JavaCompiler.CompilationTask task = compiler.getTask(
+                    null,
+                    fileManager,
+                    diagnostics,
+                    options,
+                    null,
+                    compilationUnits
+            );
+
+            boolean success = task.call();
+
+            if (!success) {
+                StringWriter output = new StringWriter();
+                for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                    output.write(String.format("Error [%s] on line %d in %s:\n%s\n",
+                            diagnostic.getKind().toString(),
+                            diagnostic.getLineNumber(),
+                            diagnostic.getSource() != null ? diagnostic.getSource().getName() : "Unknown File",
+                            diagnostic.getMessage(null)));
+                }
+                String ceMsg = "Compilation Errors (javax.tools):\n" + output.toString();
+                logger.logln(ceMsg);
+                return new SubmissionRecord(JudgeVerdict.CE, ceMsg, null);
+            }
+
+            logger.logln("Java Compilation Success!");
+            return new SubmissionRecord(JudgeVerdict.NONE, "Compilation Successful (javax.tools)", null);
+        }
     }
 
     private static SubmissionRecord startCompilation(ProcessBuilder pb) throws IOException, InterruptedException {

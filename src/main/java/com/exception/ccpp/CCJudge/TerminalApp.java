@@ -19,8 +19,7 @@
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.Map;
-    import java.util.concurrent.ConcurrentLinkedDeque;
-    import java.util.concurrent.Future;
+    import java.util.concurrent.*;
 
     import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
@@ -33,6 +32,7 @@
 
         public static final String TASK_TERMINAL = "terminal";
         public static final String TASK_TERMINAL_OUTPUT = "terminal_output";
+        public static final String TASK_TERMINAL_INPUT = "terminal_input";
         private boolean is_processing;
         private JTextArea outputArea;
         private JTextField inputField;
@@ -49,6 +49,7 @@
         static TerminalApp instance;
         static boolean bypassFilter;
         private TerminalDocumentFilter outputAreaFilter;
+        private Future<?> consoleOutput;
 
         static final String OS_NAME = System.getProperty("os.name").toLowerCase();
         static final String[] TERMINAL_START_COMMAND;
@@ -72,18 +73,7 @@
             if (is_processing) {
                 close();
             };
-            SwingUtilities.invokeLater(() -> {
-                addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        System.out.println("windowClosing");
-                        if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
-                        terminalProcess = null;
-                        slaveWorkers.submit(Judge.TASK_CLEANUP,()->Judge.cleanup(fm));
-                        close();
-                    }
-                });
-            });
+
             Judge.killJudge(true);
             this.fm = fm;
             this.exitCallback = exitCallback;
@@ -103,9 +93,12 @@
             outputAreaFilter.lastInsertionStart = 0;
             setVisible(true);
 
+            System.out.println("Terminal Start ---------------------------------");
             slaveWorkers.submit(TASK_TERMINAL,() -> {
-                if (initTerminalProcess())
+                if (initTerminalProcess()) {
+                    clearOutputArea();
                     startTerminalProcess();
+                }
                 else {
                     Judge.cleanup(fm);
                 }
@@ -115,8 +108,7 @@
         private void close() {
             setVisible(false);
             is_processing = false;
-            outputArea.setText("");
-            outputAreaFilter.lastInsertionStart = 0;
+            clearOutputArea();
         }
 
         private TerminalApp() {
@@ -146,6 +138,19 @@
 
             setLocationRelativeTo(null);
             setVisible(false);
+
+            SwingUtilities.invokeLater(() -> {
+                addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        System.out.println("[TerminalApp]: windowClosing");
+                        if (terminalProcess != null && terminalProcess.isAlive()) terminalProcess.destroyForcibly();
+                        terminalProcess = null;
+                        slaveWorkers.submit(Judge.TASK_CLEANUP,()->Judge.cleanup(fm));
+                        close();
+                    }
+                });
+            });
         }
 
 
@@ -155,7 +160,6 @@
         }
 
         private boolean initTerminalProcess() {
-            setBypassFilter(true);
             SubmissionRecord sr = null;
             try {
                 sr = Judge.compile(fm, output_logger);
@@ -169,11 +173,10 @@
                 return false;
             }
 
-            outputArea.setText("");
+            System.err.println("[TerminalApp.execCmd]: fetching exec command");
             execCmd = ExecutionConfig.getExecuteCommand(fm);
-            System.out.println(String.join(" ", execCmd));
+            System.err.println("[TerminalApp.execCmd]: " + String.join(" ", execCmd));
             terminal_command = execCmd;
-            setBypassFilter(false);
             return true;
         }
 
@@ -197,7 +200,6 @@
 
                 // TERMINAL WILL EXIT HERE
                 terminalProcess.onExit().thenApply( p -> {
-
                     System.out.println("Process exited with: " + p.exitValue());
                     if (p.exitValue() != 0) return p.exitValue();
 
@@ -205,13 +207,17 @@
                     inputs.clear();
                     System.out.printf("Inputs[%d]: %s\n", inputs_arr.length, String.join(", ", inputs_arr));
 
+                    try {
+                        consoleOutput.get(1000, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException | ExecutionException | TimeoutException ignored) {}
+
                     Judge.judgeInteractively(execCmd,fm,inputs_arr,res -> {
                         if (exitCallback != null) {
                             System.out.println(res[0].expected_output());
                             exitCallback.onTerminalExit(inputs_arr, res[0].output());
                             SwingUtilities.invokeLater(() -> {
                                 setBypassFilter(true);
-                                outputArea.append("\nContinue adding testcases [y/n]?\n");
+                                outputArea.append("\n\nContinue adding testcases [y/n]?\n");
                                 setBypassFilter(false);
                             });
                             prompt_again = true;
@@ -219,14 +225,13 @@
                         }
                     }, null);
 
-                    outputArea.append("");
 
                     return p.exitValue();
                 });
 
                 // Setup the writer for sending commands to the process's input (stdin)
                 processWriter = new BufferedWriter(new OutputStreamWriter(terminalProcess.getOutputStream()));
-                slaveWorkers.submit(TASK_TERMINAL_OUTPUT,new ConsoleOutputReader(terminalProcess.getInputStream()));
+                consoleOutput = slaveWorkers.submit(TASK_TERMINAL_OUTPUT,new ConsoleOutputReader(terminalProcess.getInputStream()));
 
             } catch (Exception e) {
                 outputArea.append("Error starting external process:\n" + e.getMessage() + "\n");
@@ -254,8 +259,8 @@
                         outputArea.append(command + "\n");
                         if (exitCallback != null)
                         {
+                            clearOutputArea();
                             startTerminalProcess();
-                            outputArea.setText("");
                             return;
                         }
                     }
@@ -295,7 +300,8 @@
                     char[] buffer = new char[1024];
                     int readChars;
 
-                    while (terminalProcess.isAlive() || inputStream.available() > 0) {
+                    while (terminalProcess.isAlive() || inputStream.available() > 0 || reader.ready()) {
+                        Thread.sleep(80);
                         if (reader.ready()) {
                             readChars = reader.read(buffer);
                             if (readChars > 0) {
@@ -311,17 +317,17 @@
                             }
                         }
 
-                        Thread.sleep(50);
                     }
                 } catch (IOException e) {
                     SwingUtilities.invokeLater(() -> {
                         System.err.println("TerminalApp Error: " + e.getMessage());
                     });
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     SwingUtilities.invokeLater(() -> System.out.println("Console output reader interrupted."));
                     Thread.currentThread().interrupt();
-                } finally {
-                    outputArea.append("\n");
+                }
+                finally {
                     // Ensure resources are cleaned up
                     if (terminalProcess != null) {
                         terminalProcess.destroy();
@@ -331,10 +337,9 @@
         }
 
         private static class TerminalDocumentFilter extends DocumentFilter {
-            int lastInsertionStart = 0;
-            int lastWarning = 0;
+            private final int MAX_CHARS = 100000;
             private boolean reached = false;
-            private int MAX_CHARS = 100000;
+            int lastInsertionStart = 0;
 
             @Override
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
@@ -477,5 +482,13 @@
             }
 
 
+        }
+
+        public void clearOutputArea() {
+            outputAreaFilter.lastInsertionStart = 0;
+            SwingUtilities.invokeLater(() -> {
+                outputArea.setText("");
+                outputAreaFilter.lastInsertionStart = 0;
+            });
         }
     }

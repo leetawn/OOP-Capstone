@@ -118,10 +118,11 @@
                     <type>MSI</type>
                     <icon>${project.basedir}/src/main/resources/assets/ccpp.ico</icon>
                     <destination>${project.build.directory}/dist</destination>
-                    <appVersion>1.0.2</appVersion>
+                    <appVersion>1.0.3</appVersion>
                     <vendor>Exception</vendor>
                     <winShortcut>true</winShortcut>
-<!--                    <winConsole>true</winConsole>-->
+                    <addModules>java.base,java.desktop,java.logging,jdk.compiler</addModules>
+                    <winUpgradeUuid>88eb6d5e-cacb-4791-9945-65564999772b</winUpgradeUuid>
                 </configuration>
                 <executions>
                     <execution>

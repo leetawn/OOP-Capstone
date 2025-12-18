@@ -1211,6 +1211,7 @@ public class TextEditor extends JPanel {
     public void handleAddFileAction() {
         FileManager fm = fileExplorerPanel.getFileManager();
         if (fm == null) return;
+        if (fm.getRootdir() == null) return;
 
         DefaultMutableTreeNode selectedNode = fileExplorerPanel.getSelectedNode();
         Path targetDir = fm.getRootdir();
@@ -1340,9 +1341,9 @@ public class TextEditor extends JPanel {
 
             if (result == SystemFileChooser.APPROVE_OPTION) {
                 File selectedDir = fileChooser.getSelectedFile();
+                getTextEditor().saveCurrentFileContent();
                 if (selectedDir != null && selectedDir.isDirectory()) {
                     try {
-                        getTextEditor().saveCurrentFileContent();
                         getTextEditor().fileExplorerPanel.updateRootDirectory(selectedDir.getAbsolutePath());
                         getTextEditor().setTextArea(false);
                         getTextEditor().actualOutputArea.setText("Successfully loaded new project: " + selectedDir.getName());
