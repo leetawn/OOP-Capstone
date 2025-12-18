@@ -9,6 +9,7 @@ import com.exception.ccpp.CustomExceptions.InvalidFileException;
 import com.exception.ccpp.CustomExceptions.NotDirException;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemFileChooser;
+import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -16,10 +17,12 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import com.exception.ccpp.FileManagement.SFile;
 import com.exception.ccpp.FileManagement.FileManager;
+import org.fife.ui.rtextarea.RUndoManager;
 
 import java.awt.event.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import javax.swing.*;
@@ -77,6 +80,7 @@ public class TextEditor extends JPanel {
     JSplitPane centerRightSplit;
     JLabel textEditorLabel;
     final int ICON_SIZE = 20;
+    public static Document defaultDoc;
 
     public static TextEditor getInstance()
     {
@@ -947,25 +951,26 @@ public class TextEditor extends JPanel {
         codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         codeArea.setTabsEmulated(true);
         codeArea.setTabSize(4); // 4 spaces per tab
-        codeArea.getDocument().addDocumentListener(new DocumentListener() {
-
-            private void updateModifiedState() {
-                SFile currentFile = fileExplorerPanel.getSelectedFile();
-                if (currentFile != null) {
-                    if (!currentFile.isDirty()) {
-                        currentFile.setModified(true);
-                    }
-
-                    SwingUtilities.invokeLater(() -> {
-                        updateUnsavedIndicator(true);
-                    });
-                }
-            }
-
-            @Override public void insertUpdate(DocumentEvent e) { updateModifiedState(); }
-            @Override public void removeUpdate(DocumentEvent e) { updateModifiedState(); }
-            @Override public void changedUpdate(DocumentEvent e) { }
-        });
+        defaultDoc = codeArea.getDocument();
+//                .addDocumentListener(new DocumentListener() {
+//
+//            private void updateModifiedState() {
+//                SFile currentFile = fileExplorerPanel.getSelectedFile();
+//                if (currentFile != null) {
+//                    if (!currentFile.isDirty()) {
+//                        currentFile.setModified(true);
+//                    }
+//
+//                    SwingUtilities.invokeLater(() -> {
+//                        updateUnsavedIndicator(true);
+//                    });
+//                }
+//            }
+//
+//            @Override public void insertUpdate(DocumentEvent e) { updateModifiedState(); }
+//            @Override public void removeUpdate(DocumentEvent e) { updateModifiedState(); }
+//            @Override public void changedUpdate(DocumentEvent e) { }
+//        });
 
         InputStream in = getClass().getClassLoader()
                 .getResourceAsStream("org/fife/ui/rsyntaxtextarea/themes/monokai.xml");
@@ -1014,11 +1019,16 @@ public class TextEditor extends JPanel {
         fileExplorerPanel = new FileExplorer(null, codeArea, this);
     }
 
+    public void setCodeAreaText(String codeAreaText) {
+        this.codeArea.setDocument(TextEditor.defaultDoc);
+        codeArea.setText(codeAreaText);
+    }
+
     private void initializeBackend() {
 
         Font font = codeArea.getFont();
         codeArea.setFont(codeArea.getFont().deriveFont(font.getStyle(),16));
-        codeArea.setText("No selected file. Select a file to start editing.");
+        setCodeAreaText("No selected file. Select a file to start editing.");
         codeArea.setEditable(false);
 
         oldLanguage = getCurrentSelectedLanguage();
@@ -1201,7 +1211,6 @@ public class TextEditor extends JPanel {
         String content = codeArea.getText();
 
         if (currentFile != null && !content.equals(placeholderText) && !content.equals(openFolderPlaceholderText)) {
-            currentFile.setContent(content);
             currentFile.write();
             updateUnsavedIndicator(false);
             System.out.println("File saved: " + currentFile.getStringPath());
@@ -1258,13 +1267,8 @@ public class TextEditor extends JPanel {
             }
 
             saveCurrentFileContent();
-
-            SFile newSFile = SFile.open(newFilePath);
-            newSFile.write();
-
-            fm.getFiles().add(newSFile);
-            fm.setCurrentFile(newSFile);
-            codeArea.setText(newSFile.getContent());
+            SFile s = SFile.open(newFilePath);
+            s.attachTo(codeArea);
             JOptionPane.showMessageDialog(this, "File created: " + newFilePath.getFileName());
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
@@ -1304,7 +1308,7 @@ public class TextEditor extends JPanel {
     public void setTextArea(boolean ok) {
         this.codeArea.setEditable(ok);
         if (!ok) {
-            this.codeArea.setText("No file selected. Please open a project or select a file to begin editing.");
+            setCodeAreaText("No file selected. Please open a project or select a file to begin editing.");
         }
     }
     public static void makeCoolAndNormal() {
@@ -1354,68 +1358,7 @@ public class TextEditor extends JPanel {
             }
         }
     };
-    public static class AddFileButtonHandler extends ComponentHandler {
 
-        public AddFileButtonHandler(TextEditor editor) {
-            super(editor);
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            FileExplorer fe = getTextEditor().fileExplorerPanel;
-            FileManager fileManager = fe.getFileManager();
-            if (fileManager == null) return;
-
-            DefaultMutableTreeNode selectedNode = fe.getSelectedNode();
-            Path targetDir = fileManager.getRootdir();
-
-            if (selectedNode != null) {
-                Object obj = selectedNode.getUserObject();
-                if (obj instanceof SFile sfile) {
-                    targetDir = Files.isDirectory(sfile.getPath()) ? sfile.getPath() : sfile.getPath().getParent();
-                } else {
-                    targetDir = fe.resolveNodeToPath(selectedNode);
-                }
-            }
-
-            String fileName = JOptionPane.showInputDialog(getTextEditor(), "Enter new file name (with extension):");
-            if (fileName == null || fileName.isBlank() || !fileManager.isAllowedFile(fileName)) {
-                return;
-            }
-            Path newFilePath = targetDir.resolve(fileName);
-
-            try {
-                if (Files.exists(newFilePath)) {
-                    JOptionPane.showMessageDialog(getTextEditor(), "File already exists in " + targetDir);
-                    return;
-                }
-
-                SFile newSFile = SFile.open(newFilePath);
-                newSFile.write();
-
-                fileManager.getFiles().add(newSFile);
-
-                fileManager.setCurrentFile(newSFile);
-                fe.setSelectedFile(newSFile);
-                getTextEditor().codeArea.setText(newSFile.getContent());
-
-                DefaultMutableTreeNode nodeToSelect = FileExplorer.findNodeByPath(newFilePath);
-                if (nodeToSelect != null) {
-                    DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) nodeToSelect.getParent();
-
-                    fe.getFeTree().setSelectionPath(new TreePath(nodeToSelect.getPath()));
-                    fe.getFeTree().expandPath(new TreePath(parentNode.getPath()));
-                }
-
-                JOptionPane.showMessageDialog(getTextEditor(), "File created: " + newFilePath);
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(getTextEditor(),
-                        "Error creating file: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
     public static class LanguageSelectHandler extends ComponentHandler {
         public LanguageSelectHandler(TextEditor editor) {
             super(editor);

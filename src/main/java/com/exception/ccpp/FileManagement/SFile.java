@@ -1,7 +1,12 @@
 package com.exception.ccpp.FileManagement;
 
-import com.exception.ccpp.GUI.ComponentHandler;
+import com.exception.ccpp.Common.Helpers;
+import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rtextarea.RUndoManager;
 
+import javax.swing.event.UndoableEditListener;
+import javax.swing.text.AbstractDocument;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,11 +14,12 @@ import java.nio.file.Paths;
 import static com.exception.ccpp.Gang.SlaveManager.slaveWorkers;
 
 public final class SFile extends CCFile {
-    private String content = "";
+    private RSyntaxDocument doc;
     private boolean isModified = false;
 
     private SFile(Path path) {
         super(path);
+        doc = new RSyntaxDocument(Helpers.getSyntaxHightlighting(path.toString()));
         read();
     }
 
@@ -28,29 +34,32 @@ public final class SFile extends CCFile {
     }
 
     /****************** INPUT/OUTPUT ******************/
-    protected void read() {
-        if (Files.exists(path)) {
-            try {
-                content = Files.readString(path);
-            } catch (Exception ignored) {}
-        }
+    public void read() {
+        try {
+            if (Files.exists(path)) doc.insertString(0, Files.readString(path), null);
+            else Files.createFile(path);
+        } catch (Exception ignored) {}
+        this.isModified = false;
     }
     public void write() {
         try {
+            String content = doc.getText(0, doc.getLength());
             Files.writeString(path, content);
         } catch (Exception ignored) {}
         this.isModified = false;
     }
 
     /****************** GETTERS ******************/
-    public String getContent() { return content; }
-
+    public RSyntaxDocument getDoc() { return doc; }
     public boolean isDirty() { return this.isModified; }
 
     /****************** SETTERS ******************/
-    public void setContent(String content) { this.content = content; }
     public void setModified(boolean modified) {
         this.isModified = modified;
     }
+    public void attachTo(RSyntaxTextArea textArea) {
+        textArea.setDocument(doc);
+    }
+
 
 }

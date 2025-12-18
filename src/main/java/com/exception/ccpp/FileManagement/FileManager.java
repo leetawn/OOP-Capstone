@@ -302,6 +302,14 @@ public class FileManager {
     }
     public void saveAll() { for (SFile sfile : s_files) sfile.write(); }
 
+    public void refreshAll()
+    {
+        for (SFile s : all_files)
+        {
+            s.read();
+        }
+    }
+
     /****************** File Watcher ******************/
     public void openNewFolder() throws Exception {
         if (fileWatcher != null) {

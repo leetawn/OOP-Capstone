@@ -25,7 +25,7 @@ import java.util.Enumeration; // Keep for JTree enumeration
 public class FileExplorer extends JPanel {
     private static JTree fe_tree;
     private static FileManager fileManager;
-    private RSyntaxTextArea dTextArea;
+    private RSyntaxTextArea codeArea;
     private JPopupMenu contextMenu;
     private JMenuItem renameItem;
     private JMenuItem createFolderItem;
@@ -38,7 +38,7 @@ public class FileExplorer extends JPanel {
 
     public FileExplorer(String rootDir, RSyntaxTextArea editorTextArea, TextEditor textEditor){
         fe_instance = FileExplorer.this;
-        this.dTextArea = editorTextArea;
+        this.codeArea = editorTextArea;
         this.textEditor = textEditor;
         initializeBackend(rootDir);
         initializeComponents();
@@ -51,7 +51,7 @@ public class FileExplorer extends JPanel {
         // Fetch language from TextEditor before updating FileManager
         String currentLang = textEditor.getCurrentSelectedLanguage();
         this.fileManager = fileManager.setAll(newRootDir, currentLang);
-        this.dTextArea.setText("");
+        textEditor.setCodeAreaText("");
         // Full rebuild required when root directory changes
         FileExplorer.buildFileTree();
     }
@@ -188,20 +188,17 @@ public class FileExplorer extends JPanel {
 
         Object obj = node.getUserObject();
         if (obj instanceof SFile sfile) {
-            if (Files.isDirectory(sfile.getPath())) return;
             try {
-                fe.loadFileContent(sfile);
-
+                FileManager.getInstance().refreshAll();
                 String filename = sfile.getPath().getFileName().toString();
                 ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
+
                 fe.textEditor.setTextArea(true);
-                Path filePath = sfile.getPath();
-                String content = Files.readString(filePath);
-                fe.dTextArea.setText(content);
+                fe.loadFileContent(sfile);
                 fe.textEditor.updateUnsavedIndicator(false);
+
                 TextEditor.getInstance().revalidate();
                 TextEditor.getInstance().repaint();
-                System.out.println("[REFRESH FILE]Current file: " + filePath);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -222,21 +219,13 @@ public class FileExplorer extends JPanel {
                     return;
                 }
 
-                try {
-                    loadFileContent(sfile);
+                String filename = sfile.getPath().getFileName().toString();
+                ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
+                textEditor.setTextArea(true);
+                loadFileContent(sfile);
 
-                    String filename = sfile.getPath().getFileName().toString();
-                    ComponentHandler.getTextEditor().textEditorLabel.setText(filename);
-                    textEditor.setTextArea(true);
-                    Path filePath = sfile.getPath();
-                    String content = Files.readString(filePath);
-                    dTextArea.setText(content);
-                    textEditor.updateUnsavedIndicator(false);
-                    System.out.println("Current file: " + filePath);
-                } catch (Exception ex) {
-                    System.err.println("ERROR1");
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                textEditor.updateUnsavedIndicator(false);
+
             }
         });
 
@@ -328,7 +317,7 @@ public class FileExplorer extends JPanel {
 
                     // UX Fix: Update the Text Editor state immediately
                     if (sfile.equals(fileManager.getCurrentFile()) || isDirectory) {
-                        dTextArea.setText("");
+                        textEditor.setCodeAreaText("");
                         fileManager.setCurrentFile(null);
                         textEditor.getSetEntryPointButton().setText("Set Entry Point");
                     }
@@ -531,7 +520,7 @@ public class FileExplorer extends JPanel {
 
             FileExplorer explorer = getInstance();
             if (explorer != null && explorer.getSelectedFile() != null && explorer.getSelectedFile().getPath().equals(filePath)) {
-                explorer.dTextArea.setText("");
+                explorer.textEditor.setCodeAreaText("");
                 explorer.setSelectedFile(null);
                 explorer.textEditor.updateUnsavedIndicator(false);
             }
@@ -642,24 +631,18 @@ public class FileExplorer extends JPanel {
     public void setSyntaxHightlighting(String path) {
         String ext = getFileExtension(path);
         switch(ext) {
-            case "java" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
-            case "py" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
-            case "cpp", "hpp" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
-            case "c", "h" -> dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
-            default ->  dTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+            case "java" -> codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+            case "py" -> codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+            case "cpp", "hpp" -> codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
+            case "c", "h" -> codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
+            default ->  codeArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         }
     }
-    private void loadFileContent(SFile sfile) throws IOException {
+    private void loadFileContent(SFile sfile) {
         setSelectedFile(sfile);
-
-        Path filePath = sfile.getPath();
-        String content = Files.readString(filePath);
-
-        dTextArea.setText(content);
-
+        sfile.attachTo(codeArea);
+        codeArea.setTabSize(4);
         textEditor.updateUnsavedIndicator(false);
-
-        System.out.println("Current file: " + filePath);
     }
     public TestcaseFile getTestcaseFile() {
         return this.testcaseFile;

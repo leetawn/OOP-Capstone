@@ -1,4 +1,7 @@
 package com.exception.ccpp.Common;
+import com.exception.ccpp.GUI.FileExplorer;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -82,6 +85,19 @@ public class Helpers {
             }
         }
     }
+
+    public static String getSyntaxHightlighting(String path) {
+        String ext = FileExplorer.getFileExtension(path);
+        return switch(ext) {
+            case "java" -> SyntaxConstants.SYNTAX_STYLE_JAVA;
+            case "py" -> SyntaxConstants.SYNTAX_STYLE_PYTHON;
+            case "cpp", "hpp" -> SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS;
+            case "c", "h" -> SyntaxConstants.SYNTAX_STYLE_C;
+            default ->  SyntaxConstants.SYNTAX_STYLE_NONE;
+        };
+    }
+    
+    
 
     public static void main2(String[] args) {
         // 1. Your specific byte array
