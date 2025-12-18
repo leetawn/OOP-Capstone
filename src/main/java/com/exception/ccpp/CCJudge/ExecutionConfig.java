@@ -21,19 +21,18 @@ public class ExecutionConfig {
     public static String c_exec      = null;
     public static String java_exec   = "java";
     static {
-        if ((python_exec = getPythonPath()) != null);
-        else if (isCommandAvailable("python3")) python_exec = "python3";
+        if (isCommandAvailable("python3")) python_exec = "python3";
+        else if ((python_exec = getPythonPath()) != null);
         else python_exec = "python";
-        python_exec = "C:/Program Files/CC++/app/redist/python/python.exe";
 
-        if ((cpp_exec = getCPPPath()) != null);
-        else if (isCommandAvailable("clang++")) cpp_exec = "clang++";
+        if (isCommandAvailable("clang++")) cpp_exec = "clang++";
         else if (isCommandAvailable("g++")) cpp_exec = "g++";
+        else if ((cpp_exec = getCPPPath()) != null);
         else cpp_exec = null;
 
-        if ((c_exec = getCPath()) != null);
-        else if (isCommandAvailable("clang")) c_exec = "clang";
+        if (isCommandAvailable("clang")) c_exec = "clang";
         else if (isCommandAvailable("gcc")) c_exec = "gcc";
+        else if ((c_exec = getCPath()) != null);
         else cpp_exec = null;
     }
 
